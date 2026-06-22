@@ -1,0 +1,61 @@
+from django.urls import path
+
+from . import views
+
+app_name = "formulaire"
+
+urlpatterns = [
+    # Candidat list & create
+    path("", views.candidat_list, name="candidat_list"),
+    path("candidat/nouveau/", views.candidat_create, name="candidat_create"),
+    path("candidat/<uuid:pk>/", views.candidat_detail, name="candidat_detail"),
+    path("candidat/<uuid:pk>/modifier/", views.candidat_edit, name="candidat_edit"),
+    path("candidat/<uuid:pk>/export/", views.candidat_export_docx, name="candidat_export"),
+
+    # Sections (HTMX)
+    path("candidat/<uuid:pk>/section/ajouter/", views.section_add, name="section_add"),
+    path(
+        "candidat/<uuid:pk>/section/<str:section_id>/sauvegarder/",
+        views.section_save,
+        name="section_save",
+    ),
+    path(
+        "candidat/<uuid:pk>/section/<str:section_id>/supprimer/",
+        views.section_delete,
+        name="section_delete",
+    ),
+
+    # Postes (HTMX)
+    path(
+        "candidat/<uuid:pk>/section/<str:section_id>/poste/ajouter/",
+        views.poste_add,
+        name="poste_add",
+    ),
+    path(
+        "candidat/<uuid:pk>/section/<str:section_id>/poste/<str:poste_id>/sauvegarder/",
+        views.poste_save,
+        name="poste_save",
+    ),
+    path(
+        "candidat/<uuid:pk>/section/<str:section_id>/poste/<str:poste_id>/supprimer/",
+        views.poste_delete,
+        name="poste_delete",
+    ),
+
+    # Sous-postes (HTMX)
+    path(
+        "candidat/<uuid:pk>/section/<str:section_id>/poste/<str:poste_id>/sous-poste/ajouter/",
+        views.sous_poste_add,
+        name="sous_poste_add",
+    ),
+    path(
+        "candidat/<uuid:pk>/section/<str:section_id>/poste/<str:poste_id>/sous-poste/<str:sous_poste_id>/sauvegarder/",
+        views.sous_poste_save,
+        name="sous_poste_save",
+    ),
+    path(
+        "candidat/<uuid:pk>/section/<str:section_id>/poste/<str:poste_id>/sous-poste/<str:sous_poste_id>/supprimer/",
+        views.sous_poste_delete,
+        name="sous_poste_delete",
+    ),
+]

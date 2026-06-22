@@ -1,0 +1,7 @@
+Django==5.1.4
+psycopg2-binary==2.9.10
+python-docx==1.1.2
+docxtpl==0.19.0
+gunicorn==23.0.0
+whitenoise==6.8.2
+python-decouple==3.8
