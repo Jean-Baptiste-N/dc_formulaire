@@ -12,6 +12,22 @@ urlpatterns = [
     path("candidat/<uuid:pk>/modifier/", views.candidat_edit, name="candidat_edit"),
     path("candidat/<uuid:pk>/export/", views.candidat_export_docx, name="candidat_export"),
 
+    # Compétences
+    path("candidat/<uuid:pk>/competences/ajouter/", views.skills_add, name="skills_add"),
+    path("candidat/<uuid:pk>/competence/<str:skill>/supprimer/", views.skill_remove, name="skill_remove"),
+
+    # Formations
+    path("candidat/<uuid:pk>/formation/ajouter/", views.formation_add, name="formation_add"),
+    path("candidat/<uuid:pk>/formation/<int:index>/supprimer/", views.formation_remove, name="formation_remove"),
+
+    # Certifications
+    path("candidat/<uuid:pk>/certification/ajouter/", views.certification_add, name="certification_add"),
+    path("candidat/<uuid:pk>/certification/<int:index>/supprimer/", views.certification_remove, name="certification_remove"),
+
+    # Expériences professionnelles
+    path("candidat/<uuid:pk>/experience/ajouter/", views.experience_add, name="experience_add"),
+    path("candidat/<uuid:pk>/experience/<int:index>/supprimer/", views.experience_remove, name="experience_remove"),
+
     # Sections (HTMX)
     path("candidat/<uuid:pk>/section/ajouter/", views.section_add, name="section_add"),
     path(
@@ -59,3 +75,4 @@ urlpatterns = [
         name="sous_poste_delete",
     ),
 ]
+

@@ -22,8 +22,17 @@ def _new_id():
     return str(uuid.uuid4())
 
 
-def _empty_parcours():
-    return {"sections": []}
+def _empty_dossier():
+    """Initialise la structure du dossier de compétences."""
+    return {
+        "header": {
+            "skills": []
+        },
+        "formations": [],
+        "certifications": [],
+        "xp_pro": [],
+        "sections": []  # Pour compatibilité avec l'ancien système
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -40,7 +49,7 @@ def candidat_create(request):
         form = CandidatInfoForm(request.POST)
         if form.is_valid():
             candidat = form.save(commit=False)
-            candidat.parcours = _empty_parcours()
+            candidat.dossier = _empty_dossier()
             candidat.save()
             return redirect("formulaire:candidat_edit", pk=candidat.pk)
     else:
@@ -49,7 +58,7 @@ def candidat_create(request):
 
 
 # ---------------------------------------------------------------------------
-# Candidat edit (main form with HTMX)
+# Candidat edit (main form)
 # ---------------------------------------------------------------------------
 
 def candidat_edit(request, pk):
@@ -73,17 +82,206 @@ def candidat_detail(request, pk):
 
 
 # ---------------------------------------------------------------------------
-# Section CRUD (HTMX)
+# Compétences (Skills)
+# ---------------------------------------------------------------------------
+
+@require_POST
+def skills_add(request, pk):
+    """Ajoute les compétences du candidat."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    skills_input = request.POST.get("skills", "").strip()
+    if skills_input:
+        # Parse les compétences séparées par des virgules
+        new_skills = [s.strip() for s in skills_input.split(",") if s.strip()]
+
+        # Ajoute les nouvelles compétences (évite les doublons)
+        existing_skills = dossier.get("header", {}).get("skills", [])
+        for skill in new_skills:
+            if skill not in existing_skills:
+                existing_skills.append(skill)
+
+        if "header" not in dossier:
+            dossier["header"] = {}
+        dossier["header"]["skills"] = existing_skills
+
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return redirect("formulaire:candidat_edit", pk=pk)
+
+
+@require_POST
+def skill_remove(request, pk, skill):
+    """Supprime une compétence."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    if "header" in dossier and "skills" in dossier["header"]:
+        skills = dossier["header"]["skills"]
+        if skill in skills:
+            skills.remove(skill)
+        dossier["header"]["skills"] = skills
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return redirect("formulaire:candidat_edit", pk=pk)
+
+
+# ---------------------------------------------------------------------------
+# Formations
+# ---------------------------------------------------------------------------
+
+@require_POST
+def formation_add(request, pk):
+    """Ajoute une formation."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    formation = {
+        "title": request.POST.get("title", "").strip(),
+        "school": request.POST.get("school", "").strip(),
+        "date": request.POST.get("date", "").strip(),
+        "description": request.POST.get("description", "").strip(),
+    }
+
+    if formation["title"] and formation["school"]:
+        if "formations" not in dossier:
+            dossier["formations"] = []
+        dossier["formations"].append(formation)
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return redirect("formulaire:candidat_edit", pk=pk)
+
+
+@require_POST
+def formation_remove(request, pk, index):
+    """Supprime une formation."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        index = int(index)
+        if "formations" in dossier and 0 <= index < len(dossier["formations"]):
+            dossier["formations"].pop(index)
+            candidat.dossier = dossier
+            candidat.save(update_fields=["dossier"])
+    except (ValueError, IndexError):
+        pass
+
+    return redirect("formulaire:candidat_edit", pk=pk)
+
+
+# ---------------------------------------------------------------------------
+# Certifications
+# ---------------------------------------------------------------------------
+
+@require_POST
+def certification_add(request, pk):
+    """Ajoute une certification."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    certification = {
+        "title": request.POST.get("title", "").strip(),
+        "date": request.POST.get("date", "").strip(),
+        "description": request.POST.get("description", "").strip(),
+    }
+
+    if certification["title"]:
+        if "certifications" not in dossier:
+            dossier["certifications"] = []
+        dossier["certifications"].append(certification)
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return redirect("formulaire:candidat_edit", pk=pk)
+
+
+@require_POST
+def certification_remove(request, pk, index):
+    """Supprime une certification."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        index = int(index)
+        if "certifications" in dossier and 0 <= index < len(dossier["certifications"]):
+            dossier["certifications"].pop(index)
+            candidat.dossier = dossier
+            candidat.save(update_fields=["dossier"])
+    except (ValueError, IndexError):
+        pass
+
+    return redirect("formulaire:candidat_edit", pk=pk)
+
+
+# ---------------------------------------------------------------------------
+# Expériences professionnelles
+# ---------------------------------------------------------------------------
+
+@require_POST
+def experience_add(request, pk):
+    """Ajoute une expérience professionnelle."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    technologies = request.POST.get("technologies", "").strip()
+    tech_list = [t.strip() for t in technologies.split(",") if t.strip()] if technologies else []
+
+    experience = {
+        "company": request.POST.get("company", "").strip(),
+        "poste": request.POST.get("poste", "").strip(),
+        "date": request.POST.get("date", "").strip(),
+        "context": request.POST.get("context", "").strip(),
+        "description": request.POST.get("description", "").strip(),
+        "env_tech": tech_list,
+    }
+
+    if experience["company"] and experience["poste"]:
+        if "xp_pro" not in dossier:
+            dossier["xp_pro"] = []
+        dossier["xp_pro"].append(experience)
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return redirect("formulaire:candidat_edit", pk=pk)
+
+
+@require_POST
+def experience_remove(request, pk, index):
+    """Supprime une expérience."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        index = int(index)
+        if "xp_pro" in dossier and 0 <= index < len(dossier["xp_pro"]):
+            dossier["xp_pro"].pop(index)
+            candidat.dossier = dossier
+            candidat.save(update_fields=["dossier"])
+    except (ValueError, IndexError):
+        pass
+
+    return redirect("formulaire:candidat_edit", pk=pk)
+
+
+# ---------------------------------------------------------------------------
+# Section CRUD (Ancien système - compatibilité)
 # ---------------------------------------------------------------------------
 
 @require_POST
 def section_add(request, pk):
     candidat = get_object_or_404(Candidat, pk=pk)
-    parcours = candidat.parcours or _empty_parcours()
+    dossier = candidat.dossier or _empty_dossier()
     new_section = {"id": _new_id(), "titre": "", "postes": []}
-    parcours["sections"].append(new_section)
-    candidat.parcours = parcours
-    candidat.save(update_fields=["parcours"])
+    if "sections" not in dossier:
+        dossier["sections"] = []
+    dossier["sections"].append(new_section)
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
     return render(
         request,
         "formulaire/partials/section_item.html",
@@ -94,46 +292,52 @@ def section_add(request, pk):
 @require_POST
 def section_save(request, pk, section_id):
     candidat = get_object_or_404(Candidat, pk=pk)
-    parcours = candidat.parcours or _empty_parcours()
+    dossier = candidat.dossier or _empty_dossier()
     titre = request.POST.get("titre", "").strip()
-    for section in parcours["sections"]:
+    if "sections" not in dossier:
+        dossier["sections"] = []
+    for section in dossier["sections"]:
         if section["id"] == section_id:
             section["titre"] = titre
             break
-    candidat.parcours = parcours
-    candidat.save(update_fields=["parcours"])
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
     return render(
         request,
         "formulaire/partials/section_item.html",
-        {"section": next(s for s in parcours["sections"] if s["id"] == section_id), "candidat": candidat},
+        {"section": next(s for s in dossier["sections"] if s["id"] == section_id), "candidat": candidat},
     )
 
 
 @require_POST
 def section_delete(request, pk, section_id):
     candidat = get_object_or_404(Candidat, pk=pk)
-    parcours = candidat.parcours or _empty_parcours()
-    parcours["sections"] = [s for s in parcours["sections"] if s["id"] != section_id]
-    candidat.parcours = parcours
-    candidat.save(update_fields=["parcours"])
+    dossier = candidat.dossier or _empty_dossier()
+    if "sections" not in dossier:
+        dossier["sections"] = []
+    dossier["sections"] = [s for s in dossier["sections"] if s["id"] != section_id]
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
     return HttpResponse("")
 
 
 # ---------------------------------------------------------------------------
-# Item CRUD (HTMX)
+# Item CRUD (Ancien système - compatibilité)
 # ---------------------------------------------------------------------------
 
 @require_POST
 def poste_add(request, pk, section_id):
     candidat = get_object_or_404(Candidat, pk=pk)
-    parcours = candidat.parcours or _empty_parcours()
+    dossier = candidat.dossier or _empty_dossier()
     new_poste = {"id": _new_id(), "texte": "", "sous_postes": []}
-    for section in parcours["sections"]:
+    if "sections" not in dossier:
+        dossier["sections"] = []
+    for section in dossier["sections"]:
         if section["id"] == section_id:
             section["postes"].append(new_poste)
             break
-    candidat.parcours = parcours
-    candidat.save(update_fields=["parcours"])
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
     return render(
         request,
         "formulaire/partials/poste_row.html",
@@ -144,18 +348,20 @@ def poste_add(request, pk, section_id):
 @require_POST
 def poste_save(request, pk, section_id, poste_id):
     candidat = get_object_or_404(Candidat, pk=pk)
-    parcours = candidat.parcours or _empty_parcours()
+    dossier = candidat.dossier or _empty_dossier()
     texte = request.POST.get("texte", "").strip()
-    for section in parcours["sections"]:
+    if "sections" not in dossier:
+        dossier["sections"] = []
+    for section in dossier["sections"]:
         if section["id"] == section_id:
             for poste in section["postes"]:
                 if poste["id"] == poste_id:
                     poste["texte"] = texte
                     break
             break
-    candidat.parcours = parcours
-    candidat.save(update_fields=["parcours"])
-    for section in parcours["sections"]:
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
+    for section in dossier["sections"]:
         if section["id"] == section_id:
             for poste in section["postes"]:
                 if poste["id"] == poste_id:
@@ -170,34 +376,38 @@ def poste_save(request, pk, section_id, poste_id):
 @require_POST
 def poste_delete(request, pk, section_id, poste_id):
     candidat = get_object_or_404(Candidat, pk=pk)
-    parcours = candidat.parcours or _empty_parcours()
-    for section in parcours["sections"]:
+    dossier = candidat.dossier or _empty_dossier()
+    if "sections" not in dossier:
+        dossier["sections"] = []
+    for section in dossier["sections"]:
         if section["id"] == section_id:
             section["postes"] = [p for p in section["postes"] if p["id"] != poste_id]
             break
-    candidat.parcours = parcours
-    candidat.save(update_fields=["parcours"])
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
     return HttpResponse("")
 
 
 # ---------------------------------------------------------------------------
-# Sous-item CRUD (HTMX)
+# Sous-item CRUD (Ancien système - compatibilité)
 # ---------------------------------------------------------------------------
 
 @require_POST
 def sous_poste_add(request, pk, section_id, poste_id):
     candidat = get_object_or_404(Candidat, pk=pk)
-    parcours = candidat.parcours or _empty_parcours()
+    dossier = candidat.dossier or _empty_dossier()
     new_sous_poste = {"id": _new_id(), "texte": ""}
-    for section in parcours["sections"]:
+    if "sections" not in dossier:
+        dossier["sections"] = []
+    for section in dossier["sections"]:
         if section["id"] == section_id:
             for poste in section["postes"]:
                 if poste["id"] == poste_id:
                     poste["sous_postes"].append(new_sous_poste)
                     break
             break
-    candidat.parcours = parcours
-    candidat.save(update_fields=["parcours"])
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
     return render(
         request,
         "formulaire/partials/sous_poste_row.html",
@@ -213,9 +423,11 @@ def sous_poste_add(request, pk, section_id, poste_id):
 @require_POST
 def sous_poste_save(request, pk, section_id, poste_id, sous_poste_id):
     candidat = get_object_or_404(Candidat, pk=pk)
-    parcours = candidat.parcours or _empty_parcours()
+    dossier = candidat.dossier or _empty_dossier()
     texte = request.POST.get("texte", "").strip()
-    for section in parcours["sections"]:
+    if "sections" not in dossier:
+        dossier["sections"] = []
+    for section in dossier["sections"]:
         if section["id"] == section_id:
             for poste in section["postes"]:
                 if poste["id"] == poste_id:
@@ -225,9 +437,9 @@ def sous_poste_save(request, pk, section_id, poste_id, sous_poste_id):
                             break
                     break
             break
-    candidat.parcours = parcours
-    candidat.save(update_fields=["parcours"])
-    for section in parcours["sections"]:
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
+    for section in dossier["sections"]:
         if section["id"] == section_id:
             for poste in section["postes"]:
                 if poste["id"] == poste_id:
@@ -249,8 +461,10 @@ def sous_poste_save(request, pk, section_id, poste_id, sous_poste_id):
 @require_POST
 def sous_poste_delete(request, pk, section_id, poste_id, sous_poste_id):
     candidat = get_object_or_404(Candidat, pk=pk)
-    parcours = candidat.parcours or _empty_parcours()
-    for section in parcours["sections"]:
+    dossier = candidat.dossier or _empty_dossier()
+    if "sections" not in dossier:
+        dossier["sections"] = []
+    for section in dossier["sections"]:
         if section["id"] == section_id:
             for poste in section["postes"]:
                 if poste["id"] == poste_id:
@@ -259,8 +473,8 @@ def sous_poste_delete(request, pk, section_id, poste_id, sous_poste_id):
                     ]
                     break
             break
-    candidat.parcours = parcours
-    candidat.save(update_fields=["parcours"])
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
     return HttpResponse("")
 
 
@@ -288,7 +502,11 @@ def candidat_export_docx(request, pk):
             "nom": candidat.nom,
             "prenom": candidat.prenom,
             "email": candidat.email,
+            "trigramme": candidat.trigramme,
+            "poste": candidat.poste,
+            "xp_duration": candidat.xp_duration,
             "sections": candidat.get_sections(),
+            "dossier": candidat.dossier,
         }
         tpl.render(context)
 
