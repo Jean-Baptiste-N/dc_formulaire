@@ -23,10 +23,11 @@ def _new_id():
 
 
 def _empty_dossier():
-    """Initialise la structure du dossier de compétences."""
+    """Initialise la structure du dossier de competences."""
     return {
-        "header": {
-            "skills": []
+        "header": {},
+        "main_skills": {
+            "bullet": []
         },
         "formations": [],
         "certifications": [],
@@ -87,24 +88,31 @@ def candidat_detail(request, pk):
 
 @require_POST
 def skills_add(request, pk):
-    """Ajoute les compétences du candidat."""
+    """Ajoute les competences du candidat dans main_skills.bullet."""
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
     skills_input = request.POST.get("skills", "").strip()
     if skills_input:
-        # Parse les compétences séparées par des virgules
+        # Parse les competences separees par des virgules
         new_skills = [s.strip() for s in skills_input.split(",") if s.strip()]
 
-        # Ajoute les nouvelles compétences (évite les doublons)
-        existing_skills = dossier.get("header", {}).get("skills", [])
-        for skill in new_skills:
-            if skill not in existing_skills:
-                existing_skills.append(skill)
+        # Initialiser main_skills si necessaire
+        if "main_skills" not in dossier:
+            dossier["main_skills"] = {"bullet": []}
+        if "bullet" not in dossier["main_skills"]:
+            dossier["main_skills"]["bullet"] = []
 
-        if "header" not in dossier:
-            dossier["header"] = {}
-        dossier["header"]["skills"] = existing_skills
+        # Recuperer les skills existants (par titre)
+        existing_titles = {item["title"] for item in dossier["main_skills"]["bullet"]}
+
+        # Ajoute les nouvelles competences (evite les doublons)
+        for skill in new_skills:
+            if skill not in existing_titles:
+                dossier["main_skills"]["bullet"].append({
+                    "title": skill,
+                    "description": []
+                })
 
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
@@ -114,15 +122,16 @@ def skills_add(request, pk):
 
 @require_POST
 def skill_remove(request, pk, skill):
-    """Supprime une compétence."""
+    """Supprime une competence de main_skills.bullet."""
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
-    if "header" in dossier and "skills" in dossier["header"]:
-        skills = dossier["header"]["skills"]
-        if skill in skills:
-            skills.remove(skill)
-        dossier["header"]["skills"] = skills
+    if "main_skills" in dossier and "bullet" in dossier["main_skills"]:
+        bullet = dossier["main_skills"]["bullet"]
+        # Supprimer l'element avec le titre correspondant
+        dossier["main_skills"]["bullet"] = [
+            item for item in bullet if item.get("title") != skill
+        ]
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
@@ -488,15 +497,27 @@ def candidat_export_docx(request, pk):
 
     if not template_path.exists():
         return HttpResponse(
-            "Le template DOCX est introuvable. Veuillez le placer dans templates_docx/dc_template.docx.",
+            "Le template DOCX est introuvable. Veuillez le placer dans templates_docx/template_jinja.docx.",
             status=404,
-            content_type="text/plain",
+            content_type="text/plain; charset=utf-8",
         )
 
     try:
         from docxtpl import DocxTemplate
 
         tpl = DocxTemplate(template_path)
+        # Extraire les données du dossier JSON
+        dossier_data = candidat.dossier or {}
+
+        # Enrichir le header avec les infos du candidat
+        header_data = dossier_data.get("header", {})
+        header_data.update({
+            "trigramme": candidat.trigramme,
+            "poste": candidat.poste,
+            "skills": [],
+            "xp_duration": candidat.xp_duration,
+        })
+
         context = {
             "candidat": candidat,
             "nom": candidat.nom,
@@ -507,6 +528,12 @@ def candidat_export_docx(request, pk):
             "xp_duration": candidat.xp_duration,
             "sections": candidat.get_sections(),
             "dossier": candidat.dossier,
+            # Passer les clés du dossier directement au contexte
+            "header": header_data,
+            "main_skills": dossier_data.get("main_skills", {"bullet": []}),
+            "xp_pro": dossier_data.get("xp_pro", []),
+            "formations": dossier_data.get("formations", []),
+            "certifications": dossier_data.get("certifications", []),
         }
         tpl.render(context)
 
@@ -516,7 +543,7 @@ def candidat_export_docx(request, pk):
         tpl.save(buffer)
         buffer.seek(0)
 
-        filename = f"dc_{candidat.nom}_{candidat.prenom}.docx".replace(" ", "_")
+        filename = f"DC_{candidat.trigramme}_{candidat.poste}.docx".replace(" ", "_")
         response = HttpResponse(
             buffer.read(),
             content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -529,5 +556,5 @@ def candidat_export_docx(request, pk):
             "Une erreur est survenue lors de la génération du document. "
             "Vérifiez que votre template DOCX est valide.",
             status=500,
-            content_type="text/plain",
+            content_type="text/plain; charset=utf-8",
         )

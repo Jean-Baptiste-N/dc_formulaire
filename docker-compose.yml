@@ -10,10 +10,10 @@ services:
       - ./templates_docx:/templates_docx
     environment:
       - SECRET_KEY=${SECRET_KEY}
-      - DEBUG=${DEBUG:-False}
+      - DEBUG=${DEBUG:-True}
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
-      - DOCX_TEMPLATE_PATH=/templates_docx/dc_template.docx
+      - DOCX_TEMPLATE_PATH=/templates_docx/template_jinja.docx
     depends_on:
       db:
         condition: service_healthy

@@ -5,3 +5,4 @@ docxtpl==0.19.0
 gunicorn==23.0.0
 whitenoise==6.8.2
 python-decouple==3.8
+dj-database-url==2.1.0

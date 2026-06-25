@@ -20,7 +20,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-L'application est accessible sur <http://localhost:8000>.
+L'application est accessible sur <http://localhost:8001>.
 
 ## Structure du projet
 
@@ -43,7 +43,7 @@ dc_formulaire/
 
 ## Template DOCX (docxtpl)
 
-Placez votre template dans `templates_docx/dc_template.docx`.
+Placez votre template dans `templates_docx/template_jinja.docx`.
 
 ### Variables disponibles dans le contexte
 

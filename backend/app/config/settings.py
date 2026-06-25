@@ -5,6 +5,7 @@ Django settings for dc_formulaire project.
 import os
 from pathlib import Path
 
+import dj_database_url
 from decouple import Csv, config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -58,33 +59,12 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # In production (Docker), DATABASE_URL is set via environment variable.
 # In local development without Docker, falls back to SQLite.
-DATABASE_URL = config("DATABASE_URL", default="")
-
-if DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql://"):
-    # Parse ******host:port/dbname
-    _url = DATABASE_URL.split("://", 1)[1]
-    _userpass, _rest = _url.split("@", 1)
-    _host_port, _db_name = _rest.rsplit("/", 1)
-    _db_user, _db_password = (_userpass.split(":", 1) if ":" in _userpass else (_userpass, ""))
-    _db_host, _db_port = (_host_port.split(":", 1) if ":" in _host_port else (_host_port, "5432"))
-
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": _db_name,
-            "USER": _db_user,
-            "PASSWORD": _db_password,
-            "HOST": _db_host,
-            "PORT": _db_port,
-        }
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
+DATABASES = {
+    "default": dj_database_url.config(
+        default="sqlite:///db.sqlite3",  # Fallback SQLite pour le dev local
+        conn_max_age=600
+    )
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -106,5 +86,5 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 DOCX_TEMPLATE_PATH = config(
     "DOCX_TEMPLATE_PATH",
-    default=str(BASE_DIR.parent.parent / "templates_docx" / "dc_template.docx"),
+    default=str(BASE_DIR.parent.parent / "templates_docx" / "template_jinja.docx"),
 )
