@@ -92,38 +92,38 @@
 
 <!-- Formations -->
 <div class="card shadow-sm mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
+  <div class="card-header">
     <h2 class="h6 mb-0"><i class="bi bi-book"></i> Formations</h2>
-    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#formation-form">
-      <i class="bi bi-plus-lg"></i> Ajouter une formation
-    </button>
   </div>
   <div class="card-body">
     <!-- Formulaire d'ajout -->
-    <div class="collapse mb-3" id="formation-form">
-      <form method="post" action="{% url 'formulaire:formation_add' candidat.pk %}" class="card card-body">
-        {% csrf_token %}
-        <div class="row g-3">
-          <div class="col-md-6">
-            <input type="text" name="title" class="form-control" placeholder="Titre" required>
-          </div>
-          <div class="col-md-6">
-            <input type="text" name="school" class="form-control" placeholder="École/Université" required>
-          </div>
-          <div class="col-md-6">
-            <input type="text" name="date" class="form-control" placeholder="Période (ex: 2018-2020)" required>
-          </div>
-          <div class="col-md-12">
-            <textarea name="description" class="form-control" placeholder="Description" rows="2"></textarea>
-          </div>
-          <div class="col-md-12">
-            <button type="submit" class="btn btn-success">
-              <i class="bi bi-check-lg"></i> Ajouter la formation
-            </button>
-          </div>
+    <form method="post" action="{% url 'formulaire:formation_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
+      {% csrf_token %}
+      <h5 class="mb-3"><i class="bi bi-plus-lg"></i> Ajouter une formation</h5>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Titre</label>
+          <input type="text" name="title" class="form-control" placeholder="Master en Informatique" required>
         </div>
-      </form>
-    </div>
+        <div class="col-md-6">
+          <label class="form-label">École/Université</label>
+          <input type="text" name="school" class="form-control" placeholder="Université de Technologie" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Période</label>
+          <input type="text" name="date" class="form-control" placeholder="2018-2020" required>
+        </div>
+        <div class="col-md-12">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" placeholder="Spécialisation, détails..." rows="2"></textarea>
+        </div>
+        <div class="col-md-12">
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-lg"></i> Ajouter la formation
+          </button>
+        </div>
+      </div>
+    </form>
 
     <!-- Liste des formations -->
     <div id="formations-list">
@@ -151,35 +151,34 @@
 
 <!-- Certifications -->
 <div class="card shadow-sm mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
+  <div class="card-header">
     <h2 class="h6 mb-0"><i class="bi bi-award"></i> Certifications</h2>
-    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#certification-form">
-      <i class="bi bi-plus-lg"></i> Ajouter une certification
-    </button>
   </div>
   <div class="card-body">
     <!-- Formulaire d'ajout -->
-    <div class="collapse mb-3" id="certification-form">
-      <form method="post" action="{% url 'formulaire:certification_add' candidat.pk %}" class="card card-body">
-        {% csrf_token %}
-        <div class="row g-3">
-          <div class="col-md-6">
-            <input type="text" name="title" class="form-control" placeholder="Titre de la certification" required>
-          </div>
-          <div class="col-md-6">
-            <input type="text" name="date" class="form-control" placeholder="Date" required>
-          </div>
-          <div class="col-md-12">
-            <textarea name="description" class="form-control" placeholder="Description" rows="2"></textarea>
-          </div>
-          <div class="col-md-12">
-            <button type="submit" class="btn btn-success">
-              <i class="bi bi-check-lg"></i> Ajouter la certification
-            </button>
-          </div>
+    <form method="post" action="{% url 'formulaire:certification_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
+      {% csrf_token %}
+      <h5 class="mb-3"><i class="bi bi-plus-lg"></i> Ajouter une certification</h5>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Titre</label>
+          <input type="text" name="title" class="form-control" placeholder="Certification Python" required>
         </div>
-      </form>
-    </div>
+        <div class="col-md-6">
+          <label class="form-label">Date</label>
+          <input type="text" name="date" class="form-control" placeholder="2021" required>
+        </div>
+        <div class="col-md-12">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" placeholder="Détails de la certification..." rows="2"></textarea>
+        </div>
+        <div class="col-md-12">
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-lg"></i> Ajouter la certification
+          </button>
+        </div>
+      </div>
+    </form>
 
     <!-- Liste des certifications -->
     <div id="certifications-list">
@@ -207,44 +206,46 @@
 
 <!-- Expériences professionnelles -->
 <div class="card shadow-sm">
-  <div class="card-header d-flex justify-content-between align-items-center">
+  <div class="card-header">
     <h2 class="h6 mb-0"><i class="bi bi-briefcase"></i> Expériences professionnelles</h2>
-    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#experience-form">
-      <i class="bi bi-plus-lg"></i> Ajouter une expérience
-    </button>
   </div>
   <div class="card-body">
     <!-- Formulaire d'ajout -->
-    <div class="collapse mb-3" id="experience-form">
-      <form method="post" action="{% url 'formulaire:experience_add' candidat.pk %}" class="card card-body">
-        {% csrf_token %}
-        <div class="row g-3">
-          <div class="col-md-6">
-            <input type="text" name="company" class="form-control" placeholder="Entreprise" required>
-          </div>
-          <div class="col-md-6">
-            <input type="text" name="poste" class="form-control" placeholder="Poste" required>
-          </div>
-          <div class="col-md-6">
-            <input type="text" name="date" class="form-control" placeholder="Période (ex: 2020-2023)" required>
-          </div>
-          <div class="col-md-6">
-            <input type="text" name="technologies" class="form-control" placeholder="Technologies (séparées par des virgules)">
-          </div>
-          <div class="col-md-12">
-            <textarea name="context" class="form-control" placeholder="Contexte du rôle" rows="2"></textarea>
-          </div>
-          <div class="col-md-12">
-            <textarea name="description" class="form-control" placeholder="Responsabilités et réalisations" rows="3"></textarea>
-          </div>
-          <div class="col-md-12">
-            <button type="submit" class="btn btn-success">
-              <i class="bi bi-check-lg"></i> Ajouter l'expérience
-            </button>
-          </div>
+    <form method="post" action="{% url 'formulaire:experience_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
+      {% csrf_token %}
+      <h5 class="mb-3"><i class="bi bi-plus-lg"></i> Ajouter une expérience</h5>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Entreprise</label>
+          <input type="text" name="company" class="form-control" placeholder="Tech Solutions" required>
         </div>
-      </form>
-    </div>
+        <div class="col-md-6">
+          <label class="form-label">Poste</label>
+          <input type="text" name="poste" class="form-control" placeholder="Développeur Python" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Période</label>
+          <input type="text" name="date" class="form-control" placeholder="2020-2023" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Technologies</label>
+          <input type="text" name="technologies" class="form-control" placeholder="Django, Flask, FastAPI...">
+        </div>
+        <div class="col-md-12">
+          <label class="form-label">Contexte</label>
+          <textarea name="context" class="form-control" placeholder="Contexte du rôle..." rows="2"></textarea>
+        </div>
+        <div class="col-md-12">
+          <label class="form-label">Responsabilités/Réalisations</label>
+          <textarea name="description" class="form-control" placeholder="Décrivez vos responsabilités et réalisations principales" rows="3"></textarea>
+        </div>
+        <div class="col-md-12">
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-lg"></i> Ajouter l'expérience
+          </button>
+        </div>
+      </div>
+    </form>
 
     <!-- Liste des expériences -->
     <div id="experiences-list">
