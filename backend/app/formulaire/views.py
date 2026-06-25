@@ -103,16 +103,13 @@ def skills_add(request, pk):
         if "bullet" not in dossier["main_skills"]:
             dossier["main_skills"]["bullet"] = []
 
-        # Recuperer les skills existants (par titre)
-        existing_titles = {item["title"] for item in dossier["main_skills"]["bullet"]}
+        # Recuperer les skills existants
+        existing_skills = set(dossier["main_skills"]["bullet"])
 
         # Ajoute les nouvelles competences (evite les doublons)
         for skill in new_skills:
-            if skill not in existing_titles:
-                dossier["main_skills"]["bullet"].append({
-                    "title": skill,
-                    "description": []
-                })
+            if skill not in existing_skills:
+                dossier["main_skills"]["bullet"].append(skill)
 
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
@@ -127,10 +124,9 @@ def skill_remove(request, pk, skill):
     dossier = candidat.dossier or _empty_dossier()
 
     if "main_skills" in dossier and "bullet" in dossier["main_skills"]:
-        bullet = dossier["main_skills"]["bullet"]
-        # Supprimer l'element avec le titre correspondant
+        # Supprimer la competence de la liste
         dossier["main_skills"]["bullet"] = [
-            item for item in bullet if item.get("title") != skill
+            s for s in dossier["main_skills"]["bullet"] if s != skill
         ]
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
