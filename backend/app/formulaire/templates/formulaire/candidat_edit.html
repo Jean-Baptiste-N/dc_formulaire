@@ -78,8 +78,8 @@
         <div class="d-flex flex-wrap gap-2">
           {% for skill in candidat.dossier.main_skills.bullet %}
             <span class="badge bg-primary">
-              {{ skill }}
-              <a href="{% url 'formulaire:skill_remove' candidat.pk skill %}" class="ms-1 text-white" style="cursor: pointer;">×</a>
+              {{ skill.title }}
+              <a href="{% url 'formulaire:skill_remove' candidat.pk skill.title %}" class="ms-1 text-white" style="cursor: pointer;">×</a>
             </span>
           {% endfor %}
         </div>

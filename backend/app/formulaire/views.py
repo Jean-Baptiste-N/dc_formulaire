@@ -104,12 +104,15 @@ def skills_add(request, pk):
             dossier["main_skills"]["bullet"] = []
 
         # Recuperer les skills existants
-        existing_skills = set(dossier["main_skills"]["bullet"])
+        existing_skills = {item["title"] for item in dossier["main_skills"]["bullet"]}
 
         # Ajoute les nouvelles competences (evite les doublons)
         for skill in new_skills:
             if skill not in existing_skills:
-                dossier["main_skills"]["bullet"].append(skill)
+                dossier["main_skills"]["bullet"].append({
+                    "title": skill,
+                    "description": []
+                })
 
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
@@ -124,9 +127,9 @@ def skill_remove(request, pk, skill):
     dossier = candidat.dossier or _empty_dossier()
 
     if "main_skills" in dossier and "bullet" in dossier["main_skills"]:
-        # Supprimer la competence de la liste
+        # Supprimer la competence avec le titre correspondant
         dossier["main_skills"]["bullet"] = [
-            s for s in dossier["main_skills"]["bullet"] if s != skill
+            item for item in dossier["main_skills"]["bullet"] if item.get("title") != skill
         ]
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
@@ -546,11 +549,10 @@ def candidat_export_docx(request, pk):
         )
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
-    except Exception:
-        logger.exception("Erreur lors de la génération du DOCX pour le candidat %s", pk)
+    except Exception as e:
+        logger.exception("Erreur lors de la génération du DOCX pour le candidat %s: %s", pk, str(e))
         return HttpResponse(
-            "Une erreur est survenue lors de la génération du document. "
-            "Vérifiez que votre template DOCX est valide.",
+            f"Une erreur est survenue lors de la génération du document:\n{str(e)}",
             status=500,
             content_type="text/plain; charset=utf-8",
         )
