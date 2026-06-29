@@ -1,4 +1,3 @@
-import io
 import logging
 import uuid
 from pathlib import Path
@@ -6,6 +5,7 @@ from pathlib import Path
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 
 from .forms import CandidatInfoForm
@@ -20,6 +20,21 @@ logger = logging.getLogger(__name__)
 
 def _new_id():
     return str(uuid.uuid4())
+
+
+def _ensure_realization_ids(description):
+    """Ajoute des IDs aux réalisations qui n'en ont pas (migration)."""
+    if not isinstance(description, list):
+        return description
+
+    for item in description:
+        if "id" not in item:
+            item["id"] = _new_id()
+        if "description" in item and isinstance(item["description"], list):
+            _ensure_realization_ids(item["description"])
+
+    return description
+
 
 
 def _empty_dossier():
@@ -64,10 +79,36 @@ def candidat_create(request):
 
 def candidat_edit(request, pk):
     candidat = get_object_or_404(Candidat, pk=pk)
+
+    # Enrichir les réalisations avec des IDs si nécessaire et sauvegarder
+    ids_added = False
+    if candidat.dossier and "xp_pro" in candidat.dossier:
+        for exp in candidat.dossier["xp_pro"]:
+            if "description" in exp:
+                _ensure_realization_ids(exp["description"])
+                ids_added = True
+
+    # Sauvegarder si des IDs ont été ajoutés (migration data)
+    if ids_added:
+        candidat.save(update_fields=["dossier"])
+
     if request.method == "POST":
         form = CandidatInfoForm(request.POST, instance=candidat)
         if form.is_valid():
             form.save()
+
+            # Synchroniser les infos dans le dossier['header']
+            dossier = candidat.dossier or _empty_dossier()
+            dossier['header'] = {
+                'nom': candidat.nom,
+                'prenom': candidat.prenom,
+                'email': candidat.email,
+                'trigramme': candidat.trigramme,
+                'poste': candidat.poste,
+                'xp_duration': candidat.xp_duration,
+            }
+            candidat.dossier = dossier
+            candidat.save(update_fields=['dossier'])
     else:
         form = CandidatInfoForm(instance=candidat)
     return render(
@@ -239,12 +280,20 @@ def experience_add(request, pk):
     technologies = request.POST.get("technologies", "").strip()
     tech_list = [t.strip() for t in technologies.split(",") if t.strip()] if technologies else []
 
+    # Pré-remplir avec un premier item vide (scaffolding UX)
+    # L'utilisateur ajoutera les réalisations hiérarchiquement après création
+    description_array = [{
+        "id": _new_id(),
+        "title": "",
+        "description": []
+    }]
+
     experience = {
         "company": request.POST.get("company", "").strip(),
         "poste": request.POST.get("poste", "").strip(),
         "date": request.POST.get("date", "").strip(),
         "context": request.POST.get("context", "").strip(),
-        "description": request.POST.get("description", "").strip(),
+        "description": description_array,  # Array de réalisations, pas texte
         "env_tech": tech_list,
     }
 
@@ -484,6 +533,183 @@ def sous_poste_delete(request, pk, section_id, poste_id, sous_poste_id):
     candidat.dossier = dossier
     candidat.save(update_fields=["dossier"])
     return HttpResponse("")
+
+
+# ---------------------------------------------------------------------------
+# Réalisations (Hiérarchie dans expériences)
+# ---------------------------------------------------------------------------
+
+def _calculate_depth(items, item_id, current_depth=0):
+    """Calcule la profondeur d'un item dans la hiérarchie (pour validation)."""
+    for item in items:
+        if item.get("id") == item_id:
+            return current_depth
+        if "description" in item and isinstance(item["description"], list):
+            result = _calculate_depth(item["description"], item_id, current_depth + 1)
+            if result is not None:
+                return result
+    return None
+
+
+def _find_realization_recursive(items, item_id):
+    """Cherche un item par son ID dans la structure récursive (description)."""
+    for item in items:
+        if item.get("id") == item_id:
+            return item
+        if "description" in item and isinstance(item["description"], list):
+            found = _find_realization_recursive(item["description"], item_id)
+            if found:
+                return found
+    return None
+
+
+def _find_parent_and_index(items, item_id):
+    """Cherche le parent et l'index d'un item dans la structure récursive."""
+    for i, item in enumerate(items):
+        if item.get("id") == item_id:
+            return items, i
+        if "description" in item and isinstance(item["description"], list):
+            parent, idx = _find_parent_and_index(item["description"], item_id)
+            if parent is not None:
+                return parent, idx
+    return None, None
+
+
+@require_POST
+def realization_add(request, pk, exp_index):
+    """Ajoute une réalisation ou un sous-item à une réalisation."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        exp_index = int(exp_index)
+        if "xp_pro" not in dossier or exp_index >= len(dossier["xp_pro"]):
+            return HttpResponse("Expérience introuvable", status=404)
+
+        experience = dossier["xp_pro"][exp_index]
+
+        # Initialiser description si nécessaire
+        if "description" not in experience:
+            experience["description"] = []
+        elif not isinstance(experience["description"], list):
+            experience["description"] = []
+
+        new_item = {
+            "id": _new_id(),
+            "title": "",
+            "description": []
+        }
+
+        # Vérifier si c'est un sous-item (a un parent_id)
+        parent_id = request.POST.get("parent_id")
+        requested_depth = request.POST.get("depth")
+
+        # Limiter à 3 niveaux de détails (depth max = 3)
+        if requested_depth:
+            requested_depth = int(requested_depth)
+            if requested_depth > 3:
+                return HttpResponse("Limite de profondeur atteinte (3 niveaux de détails maximum)", status=400)
+
+        if parent_id:
+            logger.info(f"Cherche parent_id={parent_id} dans exp {exp_index}")
+            logger.info(f"Items en base avec IDs: {[item.get('id') for item in experience['description']]}")
+            parent = _find_realization_recursive(experience["description"], parent_id)
+            if parent:
+                if "description" not in parent:
+                    parent["description"] = []
+                parent["description"].append(new_item)
+                logger.info(f"Parent trouvé! Nouvel item ajouté sous {parent.get('id')}")
+            else:
+                logger.error(f"❌ Parent {parent_id} non trouvé!")
+                logger.error(f"   Tous les IDs disponibles: {[item.get('id') for item in experience['description']]}")
+                logger.error(f"   Cherchait dans: {experience['description']}")
+                return HttpResponse(f"Parent introuvable (cherchait {parent_id[:8]}...)", status=404)
+        else:
+            # C'est un item racine
+            experience["description"].append(new_item)
+
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+        # Retourner le HTML du nouvel item avec la profondeur correcte
+        current_depth = requested_depth if requested_depth else 0
+        html = render_to_string(
+            "formulaire/partials/realization_item.html",
+            {
+                "item": new_item,
+                "exp_index": exp_index,
+                "depth": current_depth,
+            }
+        )
+        return HttpResponse(html)
+
+    except (ValueError, IndexError) as e:
+        logger.error(f"Erreur realization_add: {e}")
+        return HttpResponse(f"Erreur: {e}", status=400)
+
+
+@require_POST
+def realization_update(request, pk, exp_index, item_id):
+    """Met à jour le titre d'une réalisation."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        exp_index = int(exp_index)
+        if "xp_pro" not in dossier or exp_index >= len(dossier["xp_pro"]):
+            return HttpResponse("Expérience introuvable", status=404)
+
+        experience = dossier["xp_pro"][exp_index]
+        if "description" not in experience or not isinstance(experience["description"], list):
+            return HttpResponse("Description introuvable", status=404)
+
+        item = _find_realization_recursive(experience["description"], item_id)
+        if not item:
+            return HttpResponse("Item introuvable", status=404)
+
+        # Mettre à jour le titre
+        item["title"] = request.POST.get("title", "").strip()
+
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+        return HttpResponse("OK")
+
+    except (ValueError, IndexError) as e:
+        logger.error(f"Erreur realization_update: {e}")
+        return HttpResponse(f"Erreur: {e}", status=400)
+
+
+@require_POST
+def realization_delete(request, pk, exp_index, item_id):
+    """Supprime une réalisation et ses enfants."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        exp_index = int(exp_index)
+        if "xp_pro" not in dossier or exp_index >= len(dossier["xp_pro"]):
+            return HttpResponse("Expérience introuvable", status=404)
+
+        experience = dossier["xp_pro"][exp_index]
+        if "description" not in experience or not isinstance(experience["description"], list):
+            return HttpResponse("Description introuvable", status=404)
+
+        parent, idx = _find_parent_and_index(experience["description"], item_id)
+        if parent is None or idx is None:
+            return HttpResponse("Item introuvable", status=404)
+
+        # Supprimer l'item
+        parent.pop(idx)
+
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+        return HttpResponse("OK")
+
+    except (ValueError, IndexError) as e:
+        logger.error(f"Erreur realization_delete: {e}")
+        return HttpResponse(f"Erreur: {e}", status=400)
 
 
 # ---------------------------------------------------------------------------

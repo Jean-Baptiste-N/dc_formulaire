@@ -1,0 +1,50 @@
+{# Template récursif pour afficher les réalisations hiérarchiques avec structure title/description #}
+<div id="item-{{ item.id }}"
+     class="realization-item mb-2 {% if depth > 0 %}ms-4{% endif %}"
+     data-item-id="{{ item.id }}">
+
+  <div class="realization-row d-flex gap-2 align-items-start">
+
+    {# Champ de texte pour le titre #}
+    <input type="text"
+           class="form-control form-control-sm realization-title"
+           value="{{ item.title }}"
+           placeholder="{% if depth == 0 %}Activité{% elif depth == 1 %}Mission{% elif depth == 2 %}Tâche{% elif depth == 3 %}Sous-tâche{% else %}Détail{% endif %}"
+           data-item-id="{{ item.id }}"
+           data-exp-index="{{ exp_index }}"
+           name="title"
+           style="flex: 1;">
+
+    {# Bouton ajouter sous-item (seulement si depth < 3 pour max 3 niveaux de détails) #}
+    {% if depth < 3 %}
+    <button type="button"
+            class="btn btn-sm btn-outline-primary btn-add-child"
+            data-item-id="{{ item.id }}"
+            data-exp-index="{{ exp_index }}"
+            data-depth="{{ depth }}"
+            title="Ajouter un sous-item">
+      <i class="bi bi-plus-lg"></i>
+    </button>
+    {% endif %}
+
+    {# Bouton supprimer #}
+    <button type="button"
+            class="btn btn-sm btn-outline-danger btn-delete-item"
+            data-item-id="{{ item.id }}"
+            data-exp-index="{{ exp_index }}"
+            title="Supprimer">
+      <i class="bi bi-trash"></i>
+    </button>
+  </div>
+
+  {# Zone des enfants (récursion sur description array) #}
+  {% if item.description %}
+  <div id="description-{{ item.id }}" class="description-zone mt-2">
+    {% for child in item.description %}
+      {% include "formulaire/partials/realization_item.html" with item=child depth=depth|add:1 %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div id="description-{{ item.id }}" class="description-zone mt-2"></div>
+  {% endif %}
+</div>

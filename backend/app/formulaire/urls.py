@@ -74,5 +74,23 @@ urlpatterns = [
         views.sous_poste_delete,
         name="sous_poste_delete",
     ),
+
+    # Réalisations (HTMX)
+    path(
+        "candidat/<uuid:pk>/experience/<int:exp_index>/realization/ajouter/",
+        views.realization_add,
+        name="realization_add",
+    ),
+    path(
+        "candidat/<uuid:pk>/experience/<int:exp_index>/realization/<str:item_id>/mettre-a-jour/",
+        views.realization_update,
+        name="realization_update",
+    ),
+    path(
+        "candidat/<uuid:pk>/experience/<int:exp_index>/realization/<str:item_id>/supprimer/",
+        views.realization_delete,
+        name="realization_delete",
+    ),
+
 ]
 

@@ -1,6 +1,5 @@
 from django import forms
 from django.forms import ModelForm
-import json
 
 from .models import Candidat
 
@@ -12,14 +11,14 @@ class CandidatInfoForm(ModelForm):
         model = Candidat
         fields = ["nom", "prenom", "email", "trigramme", "poste", "xp_duration"]
         widgets = {
-            "nom": forms.TextInput(attrs={"class": "form-control", "placeholder": "Dupont"}),
+            "nom": forms.TextInput(attrs={"class": "form-control", "placeholder": "DUPONT"}),
             "prenom": forms.TextInput(attrs={"class": "form-control", "placeholder": "Jean"}),
             "email": forms.EmailInput(
                 attrs={"class": "form-control", "placeholder": "jean.dupont@example.com"}
             ),
-            "trigramme": forms.TextInput(attrs={"class": "form-control", "placeholder": "JDU", "maxlength": "3"}),
+            "trigramme": forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: JDT", "maxlength": "3"}),
             "poste": forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: Développeur Python"}),
-            "xp_duration": forms.NumberInput(attrs={"class": "form-control", "placeholder": "3", "min": "0"}),
+            "xp_duration": forms.NumberInput(attrs={"class": "form-control", "placeholder": "ex: 3", "min": "0"}),
         }
         labels = {
             "nom": "Nom",
@@ -50,16 +49,19 @@ class FormationForm(forms.Form):
 
     title = forms.CharField(
         label="Titre",
+        help_text="Nom du diplôme ou de la formation",
         max_length=200,
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Master en Informatique"})
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: Master en Informatique"})
     )
     school = forms.CharField(
         label="École/Université",
+        help_text="Nom de l'établissement",
         max_length=200,
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Université de Technologie"})
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: Université de Technologie"})
     )
     description = forms.CharField(
         label="Description",
+        help_text="Détails sur les contenus de la formation",
         required=False,
         widget=forms.Textarea(attrs={
             "class": "form-control",
@@ -69,8 +71,9 @@ class FormationForm(forms.Form):
     )
     date = forms.CharField(
         label="Période",
+        help_text="Format: YYYY-YYYY ou YYYY, MM/YYYY-MM/YYYY ou MM/YYYY",
         max_length=50,
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "2018-2020"})
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: 2015-2020"})
     )
 
 
@@ -79,11 +82,13 @@ class CertificationForm(forms.Form):
 
     title = forms.CharField(
         label="Titre",
+        help_text="Titre de la certification",
         max_length=200,
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Certification Python"})
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: Certification Python"})
     )
     description = forms.CharField(
         label="Description",
+        help_text="Détails sur les contenus de la certification",
         required=False,
         widget=forms.Textarea(attrs={
             "class": "form-control",
@@ -93,8 +98,9 @@ class CertificationForm(forms.Form):
     )
     date = forms.CharField(
         label="Date",
+        help_text="Format: YYYY ou YYYY-MM",
         max_length=50,
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "2021"})
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: 2021"})
     )
 
 
@@ -103,35 +109,30 @@ class ExperienceForm(forms.Form):
 
     company = forms.CharField(
         label="Entreprise",
+        help_text="Nom de l'entreprise ou de l'organisation",
         max_length=200,
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Tech Solutions"})
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: Tech Solutions"})
     )
     poste = forms.CharField(
         label="Poste",
+        help_text="Titre du poste occupé",
         max_length=200,
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Développeur Python"})
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: Développeur Junior"})
     )
     date = forms.CharField(
         label="Période",
+        help_text="Format: YYYY-YYYY ou YYYY, MM/YYYY-MM/YYYY ou MM/YYYY",
         max_length=50,
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "2020-2023"})
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: 2020-2023"})
     )
     context = forms.CharField(
         label="Contexte",
         required=False,
+        help_text="Décrivez le contexte de votre rôle dans cette expérience",
         widget=forms.Textarea(attrs={
             "class": "form-control",
             "rows": 2,
             "placeholder": "Contexte du rôle..."
-        })
-    )
-    description = forms.CharField(
-        label="Responsabilités/Réalisations",
-        required=False,
-        widget=forms.Textarea(attrs={
-            "class": "form-control",
-            "rows": 3,
-            "placeholder": "Décrivez vos responsabilités et réalisations principales"
         })
     )
     technologies = forms.CharField(
@@ -140,7 +141,7 @@ class ExperienceForm(forms.Form):
         help_text="Séparées par des virgules",
         widget=forms.TextInput(attrs={
             "class": "form-control",
-            "placeholder": "Django, Flask, FastAPI, PostgreSQL"
+            "placeholder": "ex: Python, Django, PostgreSQL..."
         })
     )
 
