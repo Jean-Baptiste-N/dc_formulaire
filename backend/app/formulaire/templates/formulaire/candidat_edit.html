@@ -103,19 +103,23 @@
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Titre</label>
-          <input type="text" name="title" class="form-control" placeholder="Master en Informatique" required>
+          <input type="text" name="title" class="form-control" placeholder="ex: Master en Informatique" required>
+          <small class="form-text text-muted">Nom du diplôme ou de la formation</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">École/Université</label>
-          <input type="text" name="school" class="form-control" placeholder="Université de Technologie" required>
+          <input type="text" name="school" class="form-control" placeholder="ex: Université de Technologie" required>
+          <small class="form-text text-muted">Nom de l'établissement</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">Période</label>
-          <input type="text" name="date" class="form-control" placeholder="2018-2020" required>
+          <input type="text" name="date" class="form-control" placeholder="ex: 2015-2020" required>
+          <small class="form-text text-muted">Format: YYYY-YYYY ou YYYY, MM/YYYY-MM/YYYY ou MM/YYYY</small>
         </div>
         <div class="col-md-12">
           <label class="form-label">Description</label>
-          <textarea name="description" class="form-control" placeholder="Spécialisation, détails..." rows="2"></textarea>
+          <textarea name="description" class="form-control" placeholder="ex: Cours sur les algorithmes, structures de données, etc." rows="2"></textarea>
+          <small class="form-text text-muted">Détails sur les contenus de la formation</small>
         </div>
         <div class="col-md-12">
           <button type="submit" class="btn btn-success">
@@ -162,15 +166,18 @@
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Titre</label>
-          <input type="text" name="title" class="form-control" placeholder="Certification Python" required>
+          <input type="text" name="title" class="form-control" placeholder="ex: Certification Python" required>
+          <small class="form-text text-muted">Titre de la certification</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">Date</label>
-          <input type="text" name="date" class="form-control" placeholder="2021" required>
+          <input type="text" name="date" class="form-control" placeholder="ex: 2021" required>
+          <small class="form-text text-muted">Format: YYYY ou YYYY-MM</small>
         </div>
         <div class="col-md-12">
           <label class="form-label">Description</label>
-          <textarea name="description" class="form-control" placeholder="Détails de la certification..." rows="2"></textarea>
+          <textarea name="description" class="form-control" placeholder="ex: Formules et classes avancées en Python, gestion des exceptions, etc." rows="2"></textarea>
+          <small class="form-text text-muted">Détails sur les contenus de la certification</small>
         </div>
         <div class="col-md-12">
           <button type="submit" class="btn btn-success">
@@ -217,23 +224,28 @@
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Entreprise</label>
-          <input type="text" name="company" class="form-control" placeholder="Tech Solutions" required>
+          <input type="text" name="company" class="form-control" placeholder="ex: Tech Solutions" required>
+          <small class="form-text text-muted">Nom de l'entreprise ou de l'organisation</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">Poste</label>
-          <input type="text" name="poste" class="form-control" placeholder="Développeur Python" required>
+          <input type="text" name="poste" class="form-control" placeholder="ex: Développeur Junior" required>
+          <small class="form-text text-muted">Titre du poste occupé</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">Période</label>
-          <input type="text" name="date" class="form-control" placeholder="2020-2023" required>
+          <input type="text" name="date" class="form-control" placeholder="ex: 2020-2023" required>
+          <small class="form-text text-muted">Format: YYYY-YYYY ou YYYY, MM/YYYY-MM/YYYY ou MM/YYYY</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">Technologies</label>
-          <input type="text" name="technologies" class="form-control" placeholder="Django, Flask, FastAPI...">
+          <input type="text" name="technologies" class="form-control" placeholder="ex: Python, Django, PostgreSQL...">
+          <small class="form-text text-muted">Séparées par des virgules</small>
         </div>
         <div class="col-md-12">
           <label class="form-label">Contexte</label>
-          <textarea name="context" class="form-control" placeholder="Contexte du rôle..." rows="2"></textarea>
+          <textarea name="context" class="form-control" placeholder="ex: J'ai participé au développement d'une application pour la gestion des stocks, dans un équipe de 5 développeurs, en utilisant la méthodologie Agile..." rows="2"></textarea>
+          <small class="form-text text-muted">Décrivez le contexte de votre rôle dans cette expérience</small>
         </div>
         <div class="col-md-12">
           <button type="submit" class="btn btn-success">

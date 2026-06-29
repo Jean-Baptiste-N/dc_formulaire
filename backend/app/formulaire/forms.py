@@ -28,6 +28,14 @@ class CandidatInfoForm(ModelForm):
             "poste": "Poste",
             "xp_duration": "Années d'expérience",
         }
+        help_texts = {
+            "nom": "Votre nom de famille",
+            "prenom": "Votre prénom",
+            "email": "Adresse email professionnelle",
+            "trigramme": "3 lettres (ex: JDT pour Jean DUPONT)",
+            "poste": "Titre du poste actuel ou ciblé",
+            "xp_duration": "Nombre total d'années d'expérience sur le poste",
+        }
 
 
 class SkillsForm(forms.Form):
@@ -36,11 +44,7 @@ class SkillsForm(forms.Form):
     skills = forms.CharField(
         label="Compétences principales",
         help_text="Entrez les compétences séparées par des virgules (ex: Python, SQL, Git)",
-        widget=forms.Textarea(attrs={
-            "class": "form-control",
-            "rows": 3,
-            "placeholder": "Python, SQL, Git"
-        })
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3, "placeholder": "Python, SQL, Git"})
     )
 
 
@@ -63,11 +67,7 @@ class FormationForm(forms.Form):
         label="Description",
         help_text="Détails sur les contenus de la formation",
         required=False,
-        widget=forms.Textarea(attrs={
-            "class": "form-control",
-            "rows": 2,
-            "placeholder": "Spécialisation, détails..."
-        })
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "ex: Cours sur les algorithmes, structures de données, etc."})
     )
     date = forms.CharField(
         label="Période",
@@ -90,11 +90,7 @@ class CertificationForm(forms.Form):
         label="Description",
         help_text="Détails sur les contenus de la certification",
         required=False,
-        widget=forms.Textarea(attrs={
-            "class": "form-control",
-            "rows": 2,
-            "placeholder": "Détails de la certification..."
-        })
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "ex: Formules et classes avancées en Python, gestion des exceptions, etc."})
     )
     date = forms.CharField(
         label="Date",
@@ -132,16 +128,13 @@ class ExperienceForm(forms.Form):
         widget=forms.Textarea(attrs={
             "class": "form-control",
             "rows": 2,
-            "placeholder": "Contexte du rôle..."
+            "placeholder": "ex: J'ai participé au développement d'une application pour la gestion des stocks, dans un équipe de 5 développeurs, en utilisant la méthodologie Agile..."
         })
     )
     technologies = forms.CharField(
         label="Technologies utilisées",
         required=False,
         help_text="Séparées par des virgules",
-        widget=forms.TextInput(attrs={
-            "class": "form-control",
-            "placeholder": "ex: Python, Django, PostgreSQL..."
-        })
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: Python, Django, PostgreSQL..."})
     )
 
