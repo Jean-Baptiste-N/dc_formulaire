@@ -79,7 +79,10 @@
           {% for skill in candidat.dossier.main_skills.bullet %}
             <span class="badge bg-primary">
               {{ skill.title }}
-              <a href="{% url 'formulaire:skill_remove' candidat.pk skill.title %}" class="ms-1 text-white" style="cursor: pointer;">×</a>
+              <form method="post" action="{% url 'formulaire:skill_remove' candidat.pk skill.title %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-close btn-close-white ms-1" style="background-color: transparent; border: none; padding: 0; cursor: pointer; font-size: 0.8rem;" title="Supprimer"></button>
+              </form>
             </span>
           {% endfor %}
         </div>

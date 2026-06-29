@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 
 from .forms import CandidatInfoForm
 from .models import Candidat
+from .utils import clean_text
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,11 @@ logger = logging.getLogger(__name__)
 
 def _new_id():
     return str(uuid.uuid4())
+
+
+def _clean_text(text):
+    """Wrapper pour compatibilité avec le code existant."""
+    return clean_text(text)
 
 
 def _ensure_realization_ids(description):
@@ -136,7 +142,7 @@ def skills_add(request, pk):
     skills_input = request.POST.get("skills", "").strip()
     if skills_input:
         # Parse les competences separees par des virgules
-        new_skills = [s.strip() for s in skills_input.split(",") if s.strip()]
+        new_skills = [clean_text(s) for s in skills_input.split(",") if s.strip()]
 
         # Initialiser main_skills si necessaire
         if "main_skills" not in dossier:
@@ -189,10 +195,10 @@ def formation_add(request, pk):
     dossier = candidat.dossier or _empty_dossier()
 
     formation = {
-        "title": request.POST.get("title", "").strip(),
-        "school": request.POST.get("school", "").strip(),
-        "date": request.POST.get("date", "").strip(),
-        "description": request.POST.get("description", "").strip(),
+        "title": _clean_text(request.POST.get("title", "")),
+        "school": _clean_text(request.POST.get("school", "")),
+        "date": _clean_text(request.POST.get("date", "")),
+        "description": _clean_text(request.POST.get("description", "")),
     }
 
     if formation["title"] and formation["school"]:
@@ -234,9 +240,9 @@ def certification_add(request, pk):
     dossier = candidat.dossier or _empty_dossier()
 
     certification = {
-        "title": request.POST.get("title", "").strip(),
-        "date": request.POST.get("date", "").strip(),
-        "description": request.POST.get("description", "").strip(),
+        "title": _clean_text(request.POST.get("title", "")),
+        "date": _clean_text(request.POST.get("date", "")),
+        "description": _clean_text(request.POST.get("description", "")),
     }
 
     if certification["title"]:
@@ -278,7 +284,7 @@ def experience_add(request, pk):
     dossier = candidat.dossier or _empty_dossier()
 
     technologies = request.POST.get("technologies", "").strip()
-    tech_list = [t.strip() for t in technologies.split(",") if t.strip()] if technologies else []
+    tech_list = [_clean_text(t) for t in technologies.split(",") if t.strip()] if technologies else []
 
     # Pré-remplir avec un premier item vide (scaffolding UX)
     # L'utilisateur ajoutera les réalisations hiérarchiquement après création
@@ -289,11 +295,11 @@ def experience_add(request, pk):
     }]
 
     experience = {
-        "company": request.POST.get("company", "").strip(),
-        "poste": request.POST.get("poste", "").strip(),
-        "date": request.POST.get("date", "").strip(),
-        "context": request.POST.get("context", "").strip(),
-        "description": description_array,  # Array de réalisations, pas texte
+        "company": _clean_text(request.POST.get("company", "")),
+        "poste": _clean_text(request.POST.get("poste", "")),
+        "date": _clean_text(request.POST.get("date", "")),
+        "context": _clean_text(request.POST.get("context", "")),
+        "description": description_array,
         "env_tech": tech_list,
     }
 
@@ -350,7 +356,7 @@ def section_add(request, pk):
 def section_save(request, pk, section_id):
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
-    titre = request.POST.get("titre", "").strip()
+    titre = _clean_text(request.POST.get("titre", ""))
     if "sections" not in dossier:
         dossier["sections"] = []
     for section in dossier["sections"]:
@@ -481,7 +487,7 @@ def sous_poste_add(request, pk, section_id, poste_id):
 def sous_poste_save(request, pk, section_id, poste_id, sous_poste_id):
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
-    texte = request.POST.get("texte", "").strip()
+    texte = _clean_text(request.POST.get("texte", ""))
     if "sections" not in dossier:
         dossier["sections"] = []
     for section in dossier["sections"]:
@@ -668,7 +674,7 @@ def realization_update(request, pk, exp_index, item_id):
             return HttpResponse("Item introuvable", status=404)
 
         # Mettre à jour le titre
-        item["title"] = request.POST.get("title", "").strip()
+        item["title"] = _clean_text(request.POST.get("title", ""))
 
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])

@@ -2,6 +2,7 @@ from django import forms
 from django.forms import ModelForm
 
 from .models import Candidat
+from .utils import clean_text
 
 
 class CandidatInfoForm(ModelForm):
@@ -37,6 +38,17 @@ class CandidatInfoForm(ModelForm):
             "xp_duration": "Nombre total d'années d'expérience sur le poste",
         }
 
+    def clean(self):
+        """Nettoie les champs texte avant validation."""
+        cleaned_data = super().clean()
+        
+        # Nettoyer les champs texte
+        for field_name in ["nom", "prenom", "trigramme", "poste"]:
+            if field_name in cleaned_data and isinstance(cleaned_data[field_name], str):
+                cleaned_data[field_name] = clean_text(cleaned_data[field_name])
+        
+        return cleaned_data
+
 
 class SkillsForm(forms.Form):
     """Formulaire pour ajouter les compétences clés."""
@@ -46,6 +58,7 @@ class SkillsForm(forms.Form):
         help_text="Entrez les compétences séparées par des virgules (ex: Python, SQL, Git)",
         widget=forms.Textarea(attrs={"class": "form-control", "rows": 3, "placeholder": "Python, SQL, Git"})
     )
+
 
 
 class FormationForm(forms.Form):
