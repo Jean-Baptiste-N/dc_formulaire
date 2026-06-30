@@ -1,26 +1,30 @@
 {# Template récursif pour afficher les réalisations hiérarchiques (xp_pro) avec structure title/description #}
 <div id="item-{{ item.id }}"
-     class="realization-item mb-2 {% if depth > 0 %}ms-4{% endif %}"
-     data-item-id="{{ item.id }}">
+     class="xp-pro-hierarchy-item mb-2 {% if depth > 0 %}ms-4{% endif %}"
+     data-item-id="{{ item.id }}"
+     data-max-depth="3">
 
-  <div class="realization-row d-flex gap-2 align-items-start">
+  <div class="xp-pro-hierarchy-row d-flex gap-2 align-items-start">
 
     {# Champ de texte pour le titre #}
     <input type="text"
-           class="form-control form-control-sm realization-title"
+           class="form-control form-control-sm xp-pro-hierarchy-title"
            value="{{ item.title }}"
            placeholder="{% if depth == 0 %}Activité{% elif depth == 1 %}Mission{% elif depth == 2 %}Tâche{% elif depth == 3 %}Sous-tâche{% else %}Détail{% endif %}"
            data-item-id="{{ item.id }}"
-           data-exp-index="{{ exp_index }}"
+           data-target-index="{{ exp_index }}"
+           data-endpoint-base="xp_pro"
+           data-depth="{{ depth }}"
            name="title"
            style="flex: 1;">
 
     {# Bouton ajouter sous-item (seulement si depth < 3 pour max 3 niveaux de détails) #}
     {% if depth < 3 %}
     <button type="button"
-            class="btn btn-sm btn-outline-primary btn-add-child-realization"
+            class="btn btn-sm btn-outline-primary btn-xp-pro-hierarchy-add-child"
             data-item-id="{{ item.id }}"
-            data-exp-index="{{ exp_index }}"
+            data-target-index="{{ exp_index }}"
+            data-endpoint-base="xp_pro"
             data-depth="{{ depth }}"
             title="Ajouter un sous-item">
       <i class="bi bi-plus-lg"></i>
@@ -29,9 +33,10 @@
 
     {# Bouton supprimer #}
     <button type="button"
-            class="btn btn-sm btn-outline-danger btn-delete-realization"
+            class="btn btn-sm btn-outline-danger btn-xp-pro-hierarchy-delete"
             data-item-id="{{ item.id }}"
-            data-exp-index="{{ exp_index }}"
+            data-target-index="{{ exp_index }}"
+            data-endpoint-base="xp_pro"
             title="Supprimer">
       <i class="bi bi-trash"></i>
     </button>
@@ -39,12 +44,12 @@
 
   {# Zone des enfants (récursion sur description array) #}
   {% if item.description %}
-  <div id="description-{{ item.id }}" class="description-zone mt-2">
+  <div id="description-{{ item.id }}" class="xp-pro-hierarchy-zone mt-2">
     {% for child in item.description %}
-      {% include "formulaire/partials/realization_item.html" with item=child depth=depth|add:1 %}
+      {% include "formulaire/partials/xp_pro_hierarchy_item.html" with item=child depth=depth|add:1 exp_index=exp_index %}
     {% endfor %}
   </div>
   {% else %}
-  <div id="description-{{ item.id }}" class="description-zone mt-2"></div>
+  <div id="description-{{ item.id }}" class="xp-pro-hierarchy-zone mt-2"></div>
   {% endif %}
 </div>

@@ -1,25 +1,27 @@
-{# Template générique pour afficher les items hiérarchiques (bullets, tables, réalisations, etc.) #}
+{# Template pour afficher les items hiérarchiques main_skills (bullets et table) #}
 <div id="item-{{ item.id }}"
-     class="hierarchy-item mb-2 {% if depth > 0 %}ms-4{% endif %}"
-     data-item-id="{{ item.id }}">
+     class="main-skills-hierarchy-item mb-2 {% if depth > 0 %}ms-4{% endif %}"
+     data-item-id="{{ item.id }}"
+     data-max-depth="{{ max_depth|default:3 }}">
 
-  <div class="hierarchy-row d-flex gap-2 align-items-start">
+  <div class="main-skills-hierarchy-row d-flex gap-2 align-items-start">
 
     {# Champ de texte pour le titre #}
     <input type="text"
-           class="form-control form-control-sm hierarchy-title"
+           class="form-control form-control-sm main-skills-hierarchy-title"
            value="{{ item.title }}"
            placeholder="{% if depth == 0 %}{{ placeholder_root|default:'Item' }}{% elif depth == 1 %}{{ placeholder_level1|default:'Sous-item' }}{% elif depth == 2 %}{{ placeholder_level2|default:'Détail' }}{% else %}{{ placeholder_level3|default:'Sous-détail' }}{% endif %}"
            data-item-id="{{ item.id }}"
            data-target-index="{{ target_index }}"
            data-endpoint-base="{{ endpoint_base }}"
+           data-depth="{{ depth }}"
            name="title"
            style="flex: 1;">
 
     {# Bouton ajouter sous-item (seulement si depth < max_depth) #}
     {% if depth < max_depth|default:3 %}
     <button type="button"
-            class="btn btn-sm btn-outline-primary btn-add-child"
+            class="btn btn-sm btn-outline-primary btn-main-skills-hierarchy-add-child"
             data-item-id="{{ item.id }}"
             data-target-index="{{ target_index }}"
             data-endpoint-base="{{ endpoint_base }}"
@@ -31,8 +33,9 @@
 
     {# Bouton supprimer #}
     <button type="button"
-            class="btn btn-sm btn-outline-danger btn-delete-hierarchy"
+            class="btn btn-sm btn-outline-danger btn-main-skills-hierarchy-delete"
             data-item-id="{{ item.id }}"
+            data-target-index="{{ target_index }}"
             data-endpoint-base="{{ endpoint_base }}"
             title="Supprimer">
       <i class="bi bi-trash"></i>
@@ -41,12 +44,12 @@
 
   {# Zone des enfants (récursion sur description array) #}
   {% if item.description %}
-  <div id="description-{{ item.id }}" class="hierarchy-zone mt-2">
+  <div id="description-{{ item.id }}" class="main-skills-hierarchy-zone mt-2">
     {% for child in item.description %}
-      {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=child depth=depth|add:1 %}
+      {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=child depth=depth|add:1 target_index=target_index endpoint_base=endpoint_base max_depth=max_depth placeholder_root=placeholder_root placeholder_level1=placeholder_level1 placeholder_level2=placeholder_level2 placeholder_level3=placeholder_level3 %}
     {% endfor %}
   </div>
   {% else %}
-  <div id="description-{{ item.id }}" class="hierarchy-zone mt-2"></div>
+  <div id="description-{{ item.id }}" class="main-skills-hierarchy-zone mt-2"></div>
   {% endif %}
 </div>

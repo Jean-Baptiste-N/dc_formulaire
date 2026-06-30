@@ -546,45 +546,45 @@ def sous_poste_delete(request, pk, section_id, poste_id, sous_poste_id):
 # Réalisations (Hiérarchie dans expériences)
 # ---------------------------------------------------------------------------
 
-def _calculate_depth(items, item_id, current_depth=0):
-    """Calcule la profondeur d'un item dans la hiérarchie (pour validation)."""
+def _calculate_xp_pro_depth(items, item_id, current_depth=0):
+    """Calcule la profondeur d'un item xp_pro dans la hiérarchie (pour validation)."""
     for item in items:
         if item.get("id") == item_id:
             return current_depth
         if "description" in item and isinstance(item["description"], list):
-            result = _calculate_depth(item["description"], item_id, current_depth + 1)
+            result = _calculate_xp_pro_depth(item["description"], item_id, current_depth + 1)
             if result is not None:
                 return result
     return None
 
 
-def _find_realization_recursive(items, item_id):
-    """Cherche un item par son ID dans la structure récursive (description)."""
+def _find_xp_pro_item_recursive(items, item_id):
+    """Cherche un item xp_pro par son ID dans la structure récursive (description)."""
     for item in items:
         if item.get("id") == item_id:
             return item
         if "description" in item and isinstance(item["description"], list):
-            found = _find_realization_recursive(item["description"], item_id)
+            found = _find_xp_pro_item_recursive(item["description"], item_id)
             if found:
                 return found
     return None
 
 
-def _find_parent_and_index(items, item_id):
-    """Cherche le parent et l'index d'un item dans la structure récursive."""
+def _find_xp_pro_parent_and_index(items, item_id):
+    """Cherche le parent et l'index d'un item xp_pro dans la structure récursive."""
     for i, item in enumerate(items):
         if item.get("id") == item_id:
             return items, i
         if "description" in item and isinstance(item["description"], list):
-            parent, idx = _find_parent_and_index(item["description"], item_id)
+            parent, idx = _find_xp_pro_parent_and_index(item["description"], item_id)
             if parent is not None:
                 return parent, idx
     return None, None
 
 
 @require_POST
-def realization_add(request, pk, exp_index):
-    """Ajoute une réalisation ou un sous-item à une réalisation."""
+def xp_pro_realization_add(request, pk, exp_index):
+    """Ajoute une réalisation xp_pro ou un sous-item à une réalisation."""
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
@@ -620,7 +620,7 @@ def realization_add(request, pk, exp_index):
         if parent_id:
             logger.info(f"Cherche parent_id={parent_id} dans exp {exp_index}")
             logger.info(f"Items en base avec IDs: {[item.get('id') for item in experience['description']]}")
-            parent = _find_realization_recursive(experience["description"], parent_id)
+            parent = _find_xp_pro_item_recursive(experience["description"], parent_id)
             if parent:
                 if "description" not in parent:
                     parent["description"] = []
@@ -641,7 +641,7 @@ def realization_add(request, pk, exp_index):
         # Retourner le HTML du nouvel item avec la profondeur correcte
         current_depth = requested_depth if requested_depth else 0
         html = render_to_string(
-            "formulaire/partials/realization_item.html",
+            "formulaire/partials/xp_pro_hierarchy_item.html",
             {
                 "item": new_item,
                 "exp_index": exp_index,
@@ -651,13 +651,13 @@ def realization_add(request, pk, exp_index):
         return HttpResponse(html)
 
     except (ValueError, IndexError) as e:
-        logger.error(f"Erreur realization_add: {e}")
+        logger.error(f"Erreur xp_pro_realization_add: {e}")
         return HttpResponse(f"Erreur: {e}", status=400)
 
 
 @require_POST
-def realization_update(request, pk, exp_index, item_id):
-    """Met à jour le titre d'une réalisation."""
+def xp_pro_realization_update(request, pk, exp_index, item_id):
+    """Met à jour le titre d'une réalisation xp_pro."""
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
@@ -670,7 +670,7 @@ def realization_update(request, pk, exp_index, item_id):
         if "description" not in experience or not isinstance(experience["description"], list):
             return HttpResponse("Description introuvable", status=404)
 
-        item = _find_realization_recursive(experience["description"], item_id)
+        item = _find_xp_pro_item_recursive(experience["description"], item_id)
         if not item:
             return HttpResponse("Item introuvable", status=404)
 
@@ -683,13 +683,13 @@ def realization_update(request, pk, exp_index, item_id):
         return HttpResponse("OK")
 
     except (ValueError, IndexError) as e:
-        logger.error(f"Erreur realization_update: {e}")
+        logger.error(f"Erreur xp_pro_realization_update: {e}")
         return HttpResponse(f"Erreur: {e}", status=400)
 
 
 @require_POST
-def realization_delete(request, pk, exp_index, item_id):
-    """Supprime une réalisation et ses enfants."""
+def xp_pro_realization_delete(request, pk, exp_index, item_id):
+    """Supprime une réalisation xp_pro et ses enfants."""
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
@@ -702,7 +702,7 @@ def realization_delete(request, pk, exp_index, item_id):
         if "description" not in experience or not isinstance(experience["description"], list):
             return HttpResponse("Description introuvable", status=404)
 
-        parent, idx = _find_parent_and_index(experience["description"], item_id)
+        parent, idx = _find_xp_pro_parent_and_index(experience["description"], item_id)
         if parent is None or idx is None:
             return HttpResponse("Item introuvable", status=404)
 
@@ -715,7 +715,7 @@ def realization_delete(request, pk, exp_index, item_id):
         return HttpResponse("OK")
 
     except (ValueError, IndexError) as e:
-        logger.error(f"Erreur realization_delete: {e}")
+        logger.error(f"Erreur xp_pro_realization_delete: {e}")
         return HttpResponse(f"Erreur: {e}", status=400)
 
 
@@ -723,20 +723,20 @@ def realization_delete(request, pk, exp_index, item_id):
 # Main Skills - Hierarchy Items (Bullets & Table)
 # ---------------------------------------------------------------------------
 
-def _find_hierarchy_parent_and_index(items, item_id):
-    """Cherche récursivement un item par ID et retourne (parent_list, index)."""
+def _find_main_skills_hierarchy_parent_and_index(items, item_id):
+    """Cherche récursivement un item main_skills par ID et retourne (parent_list, index)."""
     for idx, item in enumerate(items):
         if item.get("id") == item_id:
             return items, idx
         if "description" in item and isinstance(item["description"], list):
-            result = _find_hierarchy_parent_and_index(item["description"], item_id)
+            result = _find_main_skills_hierarchy_parent_and_index(item["description"], item_id)
             if result[0] is not None:
                 return result
     return None, None
 
 
 @require_POST
-def main_skills_item_add(request, pk, section):
+def main_skills_hierarchy_add(request, pk, section):
     """Ajoute un item racine à main_skills.bullet ou main_skills.table."""
     # section: 'bullet' ou 'table'
     candidat = get_object_or_404(Candidat, pk=pk)
@@ -773,7 +773,7 @@ def main_skills_item_add(request, pk, section):
 
 
 @require_POST
-def main_skills_item_add_child(request, pk, section):
+def main_skills_hierarchy_add_child(request, pk, section):
     """Ajoute un enfant à un item de main_skills."""
     try:
         candidat = get_object_or_404(Candidat, pk=pk)
@@ -790,7 +790,7 @@ def main_skills_item_add_child(request, pk, section):
             return HttpResponse("⚠️ Limite de profondeur atteinte (3 niveaux maximum)", status=400)
 
         # Trouver le parent
-        parent_list, parent_idx = _find_hierarchy_parent_and_index(dossier["main_skills"][section], parent_id)
+        parent_list, parent_idx = _find_main_skills_hierarchy_parent_and_index(dossier["main_skills"][section], parent_id)
         if parent_list is None:
             return HttpResponse("Parent introuvable", status=404)
 
@@ -818,13 +818,13 @@ def main_skills_item_add_child(request, pk, section):
             }
         )
     except (ValueError, KeyError) as e:
-        logger.error(f"Erreur main_skills_item_add_child: {e}")
+        logger.error(f"Erreur main_skills_hierarchy_add_child: {e}")
         return HttpResponse(f"Erreur: {e}", status=400)
 
 
 @require_POST
-def main_skills_item_update(request, pk, section, item_id):
-    """Met à jour le titre d'un item."""
+def main_skills_hierarchy_update(request, pk, section, item_id):
+    """Met à jour le titre d'un item main_skills."""
     try:
         candidat = get_object_or_404(Candidat, pk=pk)
         dossier = candidat.dossier or _empty_dossier()
@@ -833,7 +833,7 @@ def main_skills_item_update(request, pk, section, item_id):
         if "main_skills" not in dossier or section not in dossier["main_skills"]:
             return HttpResponse("Section introuvable", status=404)
 
-        parent_list, idx = _find_hierarchy_parent_and_index(dossier["main_skills"][section], item_id)
+        parent_list, idx = _find_main_skills_hierarchy_parent_and_index(dossier["main_skills"][section], item_id)
         if parent_list is None or idx is None:
             return HttpResponse("Item introuvable", status=404)
 
@@ -843,13 +843,13 @@ def main_skills_item_update(request, pk, section, item_id):
 
         return HttpResponse("OK")
     except Exception as e:
-        logger.error(f"Erreur main_skills_item_update: {e}")
+        logger.error(f"Erreur main_skills_hierarchy_update: {e}")
         return HttpResponse(f"Erreur: {e}", status=400)
 
 
 @require_POST
-def main_skills_item_delete(request, pk, section, item_id):
-    """Supprime un item et ses enfants."""
+def main_skills_hierarchy_delete(request, pk, section, item_id):
+    """Supprime un item main_skills et ses enfants."""
     try:
         candidat = get_object_or_404(Candidat, pk=pk)
         dossier = candidat.dossier or _empty_dossier()
@@ -857,7 +857,7 @@ def main_skills_item_delete(request, pk, section, item_id):
         if "main_skills" not in dossier or section not in dossier["main_skills"]:
             return HttpResponse("Section introuvable", status=404)
 
-        parent_list, idx = _find_hierarchy_parent_and_index(dossier["main_skills"][section], item_id)
+        parent_list, idx = _find_main_skills_hierarchy_parent_and_index(dossier["main_skills"][section], item_id)
         if parent_list is None or idx is None:
             return HttpResponse("Item introuvable", status=404)
 
@@ -867,7 +867,7 @@ def main_skills_item_delete(request, pk, section, item_id):
 
         return HttpResponse("OK")
     except Exception as e:
-        logger.error(f"Erreur main_skills_item_delete: {e}")
+        logger.error(f"Erreur main_skills_hierarchy_delete: {e}")
         return HttpResponse(f"Erreur: {e}", status=400)
 
 

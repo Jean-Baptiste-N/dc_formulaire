@@ -75,43 +75,43 @@ urlpatterns = [
         name="sous_poste_delete",
     ),
 
-    # Réalisations (HTMX)
+    # Réalisations XP_PRO (HTMX)
     path(
         "candidat/<uuid:pk>/experience/<int:exp_index>/realization/ajouter/",
-        views.realization_add,
-        name="realization_add",
+        views.xp_pro_realization_add,
+        name="xp_pro_realization_add",
     ),
     path(
         "candidat/<uuid:pk>/experience/<int:exp_index>/realization/<str:item_id>/mettre-a-jour/",
-        views.realization_update,
-        name="realization_update",
+        views.xp_pro_realization_update,
+        name="xp_pro_realization_update",
     ),
     path(
         "candidat/<uuid:pk>/experience/<int:exp_index>/realization/<str:item_id>/supprimer/",
-        views.realization_delete,
-        name="realization_delete",
+        views.xp_pro_realization_delete,
+        name="xp_pro_realization_delete",
     ),
 
     # Main Skills - Hierarchy Items (HTMX)
     path(
         "candidat/<uuid:pk>/main_skills/<str:section>/item/ajouter/",
-        views.main_skills_item_add,
-        name="main_skills_item_add",
+        views.main_skills_hierarchy_add,
+        name="main_skills_hierarchy_add",
     ),
     path(
         "candidat/<uuid:pk>/main_skills/<str:section>/item/ajouter_enfant/",
-        views.main_skills_item_add_child,
-        name="main_skills_item_add_child",
+        views.main_skills_hierarchy_add_child,
+        name="main_skills_hierarchy_add_child",
     ),
     path(
         "candidat/<uuid:pk>/main_skills/<str:section>/item/<str:item_id>/mettre-a-jour/",
-        views.main_skills_item_update,
-        name="main_skills_item_update",
+        views.main_skills_hierarchy_update,
+        name="main_skills_hierarchy_update",
     ),
     path(
         "candidat/<uuid:pk>/main_skills/<str:section>/item/<str:item_id>/supprimer/",
-        views.main_skills_item_delete,
-        name="main_skills_item_delete",
+        views.main_skills_hierarchy_delete,
+        name="main_skills_hierarchy_delete",
     ),
 
 ]

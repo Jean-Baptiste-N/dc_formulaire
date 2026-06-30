@@ -61,7 +61,7 @@
   <div class="card-body">
     <p class="text-muted small mb-3">Ajoutez des compétences argumentées avec leur hiérarchie (ex: Ingénierie système > Déploiement > Vérification)</p>
 
-    <button type="button" class="btn btn-success mb-3 btn-add-root" data-section="bullet" data-candidat-pk="{{ candidat.pk }}">
+    <button type="button" class="btn btn-success mb-3 btn-main-skills-hierarchy-add-root" data-section="bullet" data-candidat-pk="{{ candidat.pk }}">
       <i class="bi bi-plus-lg"></i> Ajouter une compétence
     </button>
 
@@ -85,7 +85,7 @@
   <div class="card-body">
     <p class="text-muted small mb-3">Ajoutez les catégories d'outils (ex: Langages > Python, Bash) ou technologies maîtrisées</p>
 
-    <button type="button" class="btn btn-success mb-3 btn-add-root" data-section="table" data-candidat-pk="{{ candidat.pk }}">
+    <button type="button" class="btn btn-success mb-3 btn-main-skills-hierarchy-add-root" data-section="table" data-candidat-pk="{{ candidat.pk }}">
       <i class="bi bi-plus-lg"></i> Ajouter une catégorie
     </button>
 
@@ -319,13 +319,13 @@
               {# Liste des réalisations existantes #}
               <div id="realizations-{{ forloop.counter0 }}" class="mb-2">
                 {% for realization in exp.description %}
-                  {% include "formulaire/partials/realization_item.html" with item=realization exp_index=forloop.counter0 depth=0 candidat=candidat %}
+                  {% include "formulaire/partials/xp_pro_hierarchy_item.html" with item=realization exp_index=forloop.counter0 depth=0 candidat=candidat %}
                 {% endfor %}
               </div>
 
               {# Bouton pour ajouter une réalisation #}
               <button type="button"
-                      class="btn btn-sm btn-outline-success btn-add-realization"
+                      class="btn btn-sm btn-outline-success btn-xp-pro-hierarchy-add-root"
                       data-exp-index="{{ forloop.counter0 }}"
                       data-candidat-pk="{{ candidat.pk }}">
                 <i class="bi bi-plus-lg"></i> Ajouter une activité
@@ -380,45 +380,45 @@ const CANDIDAT_PK = '{{ candidat.pk }}';
 // HANDLERS POUR MAIN_SKILLS (main_skills_hierarchy_item.html)
 // ========================================================================
 
-function initHierarchyHandlers() {
-  // Ajouter root item (pour main_skills)
-  document.querySelectorAll('.btn-add-root').forEach(btn => {
+function initMainSkillsHierarchyHandlers() {
+  // Ajouter root item pour main_skills
+  document.querySelectorAll('.btn-main-skills-hierarchy-add-root').forEach(btn => {
     if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', addRootItemHandler);
+      btn.addEventListener('click', addMainSkillsHierarchyParentItem);
       btn.setAttribute('data-listener-initialized', 'true');
     }
   });
 
   // Ajouter sous-item pour main_skills
-  document.querySelectorAll('.btn-add-child').forEach(btn => {
+  document.querySelectorAll('.btn-main-skills-hierarchy-add-child').forEach(btn => {
     if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', addChildHierarchyHandler);
+      btn.addEventListener('click', addMainSkillsHierarchyChildItem);
       btn.setAttribute('data-listener-initialized', 'true');
     }
   });
 
   // Mettre à jour item main_skills
-  document.querySelectorAll('.hierarchy-title').forEach(input => {
+  document.querySelectorAll('.main-skills-hierarchy-title').forEach(input => {
     if (!input.hasAttribute('data-listener-initialized')) {
-      input.addEventListener('change', updateHierarchyItemHandler);
-      input.addEventListener('blur', updateHierarchyItemHandler);
+      input.addEventListener('change', updateMainSkillsHierarchyItem);
+      input.addEventListener('blur', updateMainSkillsHierarchyItem);
       input.setAttribute('data-listener-initialized', 'true');
     }
   });
 
-  // Supprimer item main_skills (uniquement .btn-delete-hierarchy)
-  document.querySelectorAll('.btn-delete-hierarchy').forEach(btn => {
+  // Supprimer item main_skills
+  document.querySelectorAll('.btn-main-skills-hierarchy-delete').forEach(btn => {
     if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', deleteHierarchyItemHandler);
+      btn.addEventListener('click', deleteMainSkillsHierarchyItem);
       btn.setAttribute('data-listener-initialized', 'true');
     }
   });
 }
 
 // Ajouter un root item pour main_skills (bullet ou table)
-function addRootItemHandler(e) {
+function addMainSkillsHierarchyParentItem(e) {
   e.preventDefault();
-  const btn = e.target.closest('.btn-add-root');
+  const btn = e.target.closest('.btn-main-skills-hierarchy-add-root');
   const section = btn.dataset.section; // 'bullet' ou 'table'
   const candidatPk = btn.dataset.candidatPk;
 
@@ -441,15 +441,15 @@ function addRootItemHandler(e) {
     }
 
     listDiv.insertAdjacentHTML('beforeend', html);
-    initHierarchyHandlers();
+    initMainSkillsHierarchyHandlers();
   })
-  .catch(err => console.error('Erreur addRootItemHandler:', err));
+  .catch(err => console.error('Erreur addMainSkillsHierarchyParentItem:', err));
 }
 
 // Ajouter un sous-item pour main_skills
-function addChildHierarchyHandler(e) {
+function addMainSkillsHierarchyChildItem(e) {
   e.preventDefault();
-  const btn = e.target.closest('.btn-add-child');
+  const btn = e.target.closest('.btn-main-skills-hierarchy-add-child');
   const itemId = btn.dataset.itemId;
   const endpointBase = btn.dataset.endpointBase; // 'main_skills_bullet' ou 'main_skills_table'
   const depth = parseInt(btn.dataset.depth) || 0;
@@ -479,16 +479,16 @@ function addChildHierarchyHandler(e) {
   })
   .then(html => {
     document.getElementById(`description-${itemId}`).insertAdjacentHTML('beforeend', html);
-    initHierarchyHandlers();
+    initMainSkillsHierarchyHandlers();
   })
   .catch(err => {
-    console.error('Erreur addChildHierarchyHandler:', err);
+    console.error('Erreur addMainSkillsHierarchyChildItem:', err);
     alert(`❌ Erreur: ${err}`);
   });
 }
 
 // Mettre à jour un item main_skills
-function updateHierarchyItemHandler(e) {
+function updateMainSkillsHierarchyItem(e) {
   const input = e.target;
   const itemId = input.dataset.itemId;
   const endpointBase = input.dataset.endpointBase;
@@ -503,13 +503,13 @@ function updateHierarchyItemHandler(e) {
     method: 'POST',
     body: formData,
   })
-  .catch(err => console.error('Erreur updateHierarchyItemHandler:', err));
+  .catch(err => console.error('Erreur updateMainSkillsHierarchyItem:', err));
 }
 
 // Supprimer un item main_skills
-function deleteHierarchyItemHandler(e) {
+function deleteMainSkillsHierarchyItem(e) {
   e.preventDefault();
-  const btn = e.target.closest('.btn-delete-item');
+  const btn = e.target.closest('.btn-main-skills-hierarchy-delete');
   const itemId = btn.dataset.itemId;
   const endpointBase = btn.dataset.endpointBase;
 
@@ -526,53 +526,53 @@ function deleteHierarchyItemHandler(e) {
       const itemDiv = document.getElementById(`item-${itemId}`);
       if (itemDiv) itemDiv.remove();
     })
-    .catch(err => console.error('Erreur deleteHierarchyItemHandler:', err));
+    .catch(err => console.error('Erreur deleteMainSkillsHierarchyItem:', err));
   }
 }
 
 // ========================================================================
-// HANDLERS POUR XP_PRO RÉALISATIONS (realization_item.html)
+// HANDLERS POUR XP_PRO RÉALISATIONS (xp_pro_hierarchy_item.html)
 // ========================================================================
 
-function initRealizationHandlers() {
+function initXpProHierarchyHandlers() {
   // Ajouter sous-item réalisation
-  document.querySelectorAll('.btn-add-child-realization').forEach(btn => {
+  document.querySelectorAll('.btn-xp-pro-hierarchy-add-child').forEach(btn => {
     if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', addChildRealizationHandler);
+      btn.addEventListener('click', addXpProHierarchyChildItem);
       btn.setAttribute('data-listener-initialized', 'true');
     }
   });
 
   // Mettre à jour réalisation
-  document.querySelectorAll('.realization-title').forEach(input => {
+  document.querySelectorAll('.xp-pro-hierarchy-title').forEach(input => {
     if (!input.hasAttribute('data-listener-initialized')) {
-      input.addEventListener('change', updateRealizationHandler);
-      input.addEventListener('blur', updateRealizationHandler);
+      input.addEventListener('change', updateXpProHierarchyItem);
+      input.addEventListener('blur', updateXpProHierarchyItem);
       input.setAttribute('data-listener-initialized', 'true');
     }
   });
 
   // Supprimer réalisation
-  document.querySelectorAll('.btn-delete-realization').forEach(btn => {
+  document.querySelectorAll('.btn-xp-pro-hierarchy-delete').forEach(btn => {
     if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', deleteRealizationHandler);
+      btn.addEventListener('click', deleteXpProHierarchyItem);
       btn.setAttribute('data-listener-initialized', 'true');
     }
   });
 
   // Ajouter une réalisation racine
-  document.querySelectorAll('.btn-add-realization').forEach(btn => {
+  document.querySelectorAll('.btn-xp-pro-hierarchy-add-root').forEach(btn => {
     if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', addRealizationRootHandler);
+      btn.addEventListener('click', addXpProHierarchyParentItem);
       btn.setAttribute('data-listener-initialized', 'true');
     }
   });
 }
 
 // Ajouter une réalisation racine (xp_pro)
-function addRealizationRootHandler(e) {
+function addXpProHierarchyParentItem(e) {
   e.preventDefault();
-  const btn = e.target.closest('.btn-add-realization');
+  const btn = e.target.closest('.btn-xp-pro-hierarchy-add-root');
   const expIndex = btn.dataset.expIndex;
   const candidatPk = btn.dataset.candidatPk;
 
@@ -586,17 +586,17 @@ function addRealizationRootHandler(e) {
   .then(r => r.text())
   .then(html => {
     document.getElementById(`realizations-${expIndex}`).insertAdjacentHTML('beforeend', html);
-    initRealizationHandlers();
+    initXpProHierarchyHandlers();
   })
-  .catch(err => console.error('Erreur addRealizationRootHandler:', err));
+  .catch(err => console.error('Erreur addXpProHierarchyParentItem:', err));
 }
 
 // Ajouter un sous-item réalisation
-function addChildRealizationHandler(e) {
+function addXpProHierarchyChildItem(e) {
   e.preventDefault();
-  const btn = e.target.closest('.btn-add-child-realization');
+  const btn = e.target.closest('.btn-xp-pro-hierarchy-add-child');
   const itemId = btn.dataset.itemId;
-  const expIndex = btn.dataset.expIndex;
+  const expIndex = btn.dataset.targetIndex;
   const parentDepth = parseInt(btn.dataset.depth) || 0;
   const childDepth = parentDepth + 1;
 
@@ -621,19 +621,19 @@ function addChildRealizationHandler(e) {
   })
   .then(html => {
     document.getElementById(`description-${itemId}`).insertAdjacentHTML('beforeend', html);
-    initRealizationHandlers();
+    initXpProHierarchyHandlers();
   })
   .catch(err => {
-    console.error('Erreur addChildRealizationHandler:', err);
+    console.error('Erreur addXpProHierarchyChildItem:', err);
     alert(`❌ Erreur: ${err}`);
   });
 }
 
 // Mettre à jour une réalisation
-function updateRealizationHandler(e) {
+function updateXpProHierarchyItem(e) {
   const input = e.target;
   const itemId = input.dataset.itemId;
-  const expIndex = input.dataset.expIndex;
+  const expIndex = input.dataset.targetIndex;
 
   const formData = new FormData();
   formData.append('title', input.value);
@@ -643,15 +643,15 @@ function updateRealizationHandler(e) {
     method: 'POST',
     body: formData,
   })
-  .catch(err => console.error('Erreur updateRealizationHandler:', err));
+  .catch(err => console.error('Erreur updateXpProHierarchyItem:', err));
 }
 
 // Supprimer une réalisation
-function deleteRealizationHandler(e) {
+function deleteXpProHierarchyItem(e) {
   e.preventDefault();
-  const btn = e.target.closest('.btn-delete-realization');
+  const btn = e.target.closest('.btn-xp-pro-hierarchy-delete');
   const itemId = btn.dataset.itemId;
-  const expIndex = btn.dataset.expIndex;
+  const expIndex = btn.dataset.targetIndex;
 
   if (confirm('Supprimer cette réalisation et ses enfants ?')) {
     const formData = new FormData();
@@ -665,7 +665,7 @@ function deleteRealizationHandler(e) {
       const itemDiv = document.getElementById(`item-${itemId}`);
       if (itemDiv) itemDiv.remove();
     })
-    .catch(err => console.error('Erreur deleteRealizationHandler:', err));
+    .catch(err => console.error('Erreur deleteXpProHierarchyItem:', err));
   }
 }
 
@@ -675,14 +675,14 @@ function deleteRealizationHandler(e) {
 
 // Initialiser au chargement
 document.addEventListener('DOMContentLoaded', () => {
-  initHierarchyHandlers();
-  initRealizationHandlers();
+  initMainSkillsHierarchyHandlers();
+  initXpProHierarchyHandlers();
 });
 
 // Réinitialiser après chaque insertion HTMX
 document.addEventListener('htmx:afterSwap', () => {
-  initHierarchyHandlers();
-  initRealizationHandlers();
+  initMainSkillsHierarchyHandlers();
+  initXpProHierarchyHandlers();
 });
 </script>
 {% endblock %}
