@@ -42,6 +42,19 @@ def _ensure_realization_ids(description):
     return description
 
 
+def _ensure_hierarchy_ids(items):
+    """Ajoute des IDs aux items main_skills qui n'en ont pas (migration)."""
+    if not isinstance(items, list):
+        return items
+
+    for item in items:
+        if "id" not in item:
+            item["id"] = _new_id()
+        if "description" in item and isinstance(item["description"], list):
+            _ensure_hierarchy_ids(item["description"])
+
+    return items
+
 
 def _empty_dossier():
     """Initialise la structure du dossier de competences."""
@@ -142,12 +155,23 @@ def candidat_create(request):
 def candidat_edit(request, pk):
     candidat = get_object_or_404(Candidat, pk=pk)
 
-    # Enrichir les réalisations avec des IDs si nécessaire et sauvegarder
+    # Enrichir les réalisations et hiérarchies avec des IDs si nécessaire et sauvegarder
     ids_added = False
-    if candidat.dossier and "xp_pro" in candidat.dossier:
-        for exp in candidat.dossier["xp_pro"]:
-            if "description" in exp:
-                _ensure_realization_ids(exp["description"])
+    if candidat.dossier:
+        # Enrichir xp_pro
+        if "xp_pro" in candidat.dossier:
+            for exp in candidat.dossier["xp_pro"]:
+                if "description" in exp:
+                    _ensure_realization_ids(exp["description"])
+                    ids_added = True
+
+        # Enrichir main_skills (bullet et table)
+        if "main_skills" in candidat.dossier:
+            if "bullet" in candidat.dossier["main_skills"]:
+                _ensure_hierarchy_ids(candidat.dossier["main_skills"]["bullet"])
+                ids_added = True
+            if "table" in candidat.dossier["main_skills"]:
+                _ensure_hierarchy_ids(candidat.dossier["main_skills"]["table"])
                 ids_added = True
 
     # Sauvegarder si des IDs ont été ajoutés (migration data)
@@ -173,7 +197,7 @@ def candidat_edit(request, pk):
             candidat.save(update_fields=['dossier'])
     else:
         form = CandidatInfoForm(instance=candidat)
-    
+
     placeholders = _get_placeholders()
     context = {
         "candidat": candidat,
@@ -181,7 +205,7 @@ def candidat_edit(request, pk):
         "placeholders": placeholders,
         "xp_pro_placeholders": placeholders.get("xp_pro", []),
     }
-    
+
     return render(
         request,
         "formulaire/candidat_edit.html",
@@ -913,7 +937,7 @@ def main_skills_hierarchy_add_child(request, pk, section):
 
         # Récupérer les placeholders
         placeholders = _get_main_skills_placeholders(section)
-        
+
         return render(
             request,
             "formulaire/partials/main_skills_hierarchy_item.html",
