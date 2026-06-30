@@ -59,6 +59,60 @@ def _empty_dossier():
     }
 
 
+def _get_placeholders():
+    """Centralize tous les placeholders pour l'UI."""
+    return {
+        "formations": {
+            "title": "ex: Master en Informatique",
+            "school": "ex: Université de Technologie",
+            "date": "ex: 2015-2020",
+            "description": "ex: Cours sur les algorithmes, structures de données, etc.",
+        },
+        "certifications": {
+            "title": "ex: Certification Python",
+            "date": "ex: 2021",
+            "description": "ex: Formules et classes avancées en Python, gestion des exceptions, etc.",
+        },
+        "langues": {
+            "title": "ex: Anglais",
+            "description": "ex: Bilingue, TOEIC 925/990",
+        },
+        "experiences": {
+            "company": "ex: Tech Solutions",
+            "poste": "ex: Développeur Junior",
+            "date": "ex: 2020-2023",
+            "context": "ex: J'ai participé au développement d'une application pour la gestion des stocks, dans un équipe de 5 développeurs, en utilisant la méthodologie Agile...",
+            "technologies": "ex: Python, Django, PostgreSQL...",
+        },
+        "main_skills": {
+            "bullet": {
+                0: "Domaine de Compétence",
+                1: "Expertise",
+            },
+            "table": {
+                0: "Catégorie",
+                1: "Outil/Langage",
+            },
+        },
+        "xp_pro": [
+            "Activité",
+            "Mission",
+            "Tâche",
+            "Sous-tâche",
+        ],
+    }
+
+
+def _get_main_skills_placeholders(section):
+    """Retourne les placeholders pour une section main_skills (bullet ou table)."""
+    placeholders_dict = _get_placeholders()
+    main_skills_placeholders = placeholders_dict["main_skills"][section]
+    return {
+        "placeholder_root": main_skills_placeholders.get(0, "Item"),
+        "placeholder_level1": main_skills_placeholders.get(1, "Sous-item"),
+    }
+
+
 # ---------------------------------------------------------------------------
 # Candidat list / create
 # ---------------------------------------------------------------------------
@@ -119,10 +173,19 @@ def candidat_edit(request, pk):
             candidat.save(update_fields=['dossier'])
     else:
         form = CandidatInfoForm(instance=candidat)
+    
+    placeholders = _get_placeholders()
+    context = {
+        "candidat": candidat,
+        "form": form,
+        "placeholders": placeholders,
+        "xp_pro_placeholders": placeholders.get("xp_pro", []),
+    }
+    
     return render(
         request,
         "formulaire/candidat_edit.html",
-        {"candidat": candidat, "form": form},
+        context,
     )
 
 
@@ -680,12 +743,14 @@ def xp_pro_realization_add(request, pk, exp_index):
 
         # Retourner le HTML du nouvel item avec la profondeur correcte
         current_depth = requested_depth if requested_depth else 0
+        xp_pro_placeholders = _get_placeholders()["xp_pro"]
         html = render_to_string(
-            "formulaire/partials/xp_pro_hierarchy_item.html",
+            "formulaire/partials/xp_pro_realization_item.html",
             {
                 "item": new_item,
                 "exp_index": exp_index,
                 "depth": current_depth,
+                "xp_pro_placeholders": xp_pro_placeholders,
             }
         )
         return HttpResponse(html)
@@ -798,6 +863,7 @@ def main_skills_hierarchy_add(request, pk, section):
     candidat.save(update_fields=["dossier"])
 
     # Retourner le template HTML du nouvel item
+    placeholders = _get_main_skills_placeholders(section)
     return render(
         request,
         "formulaire/partials/main_skills_hierarchy_item.html",
@@ -807,8 +873,7 @@ def main_skills_hierarchy_add(request, pk, section):
             "target_index": len(dossier["main_skills"][section]) - 1,
             "endpoint_base": f"main_skills_{section}",
             "max_depth": 1,
-            "placeholder_root": "Domaine de Compétence" if section == "bullet" else "Catégorie",
-            "placeholder_level1": "Expertise" if section == "bullet" else "Outil/Langage",
+            "main_skills_placeholders": placeholders,
         }
     )
 
@@ -846,6 +911,9 @@ def main_skills_hierarchy_add_child(request, pk, section):
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
+        # Récupérer les placeholders
+        placeholders = _get_main_skills_placeholders(section)
+        
         return render(
             request,
             "formulaire/partials/main_skills_hierarchy_item.html",
@@ -855,7 +923,7 @@ def main_skills_hierarchy_add_child(request, pk, section):
                 "target_index": target_index,
                 "endpoint_base": f"main_skills_{section}",
                 "max_depth": 1,
-                "placeholder_level1": "Expertise" if section == "bullet" else "Outil/Langage",
+                "main_skills_placeholders": placeholders,
             }
         )
     except (ValueError, KeyError) as e:

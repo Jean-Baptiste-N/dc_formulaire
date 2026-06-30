@@ -68,7 +68,7 @@
     <div id="main_skills_bullet_list">
       {% if candidat.dossier.main_skills.bullet %}
         {% for item in candidat.dossier.main_skills.bullet %}
-          {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_bullet" placeholder_root="Compétence" placeholder_level1="Détail" max_depth=3 %}
+          {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_bullet" main_skills_placeholders=placeholders.main_skills.bullet max_depth=1 %}
         {% endfor %}
       {% else %}
         <p class="text-muted">Aucune compétence ajoutée</p>
@@ -92,7 +92,7 @@
     <div id="main_skills_table_list">
       {% if candidat.dossier.main_skills.table %}
         {% for item in candidat.dossier.main_skills.table %}
-          {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_table" placeholder_root="Catégorie" placeholder_level1="Outil/Langage" max_depth=2 %}
+          {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_table" main_skills_placeholders=placeholders.main_skills.table max_depth=1 %}
         {% endfor %}
       {% else %}
         <p class="text-muted">Aucune compétence ajoutée</p>
@@ -137,22 +137,22 @@
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Titre</label>
-          <input type="text" name="title" class="form-control" placeholder="ex: Master en Informatique" required>
+          <input type="text" name="title" class="form-control" placeholder="{{ placeholders.formations.title }}" required>
           <small class="form-text text-muted">Nom du diplôme ou de la formation</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">École/Université</label>
-          <input type="text" name="school" class="form-control" placeholder="ex: Université de Technologie" required>
+          <input type="text" name="school" class="form-control" placeholder="{{ placeholders.formations.school }}" required>
           <small class="form-text text-muted">Nom de l'établissement</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">Période</label>
-          <input type="text" name="date" class="form-control" placeholder="ex: 2015-2020" required>
+          <input type="text" name="date" class="form-control" placeholder="{{ placeholders.formations.date }}" required>
           <small class="form-text text-muted">Format: YYYY-YYYY ou YYYY, MM/YYYY-MM/YYYY ou MM/YYYY</small>
         </div>
         <div class="col-md-12">
           <label class="form-label">Description</label>
-          <textarea name="description" class="form-control" placeholder="ex: Cours sur les algorithmes, structures de données, etc." rows="2"></textarea>
+          <textarea name="description" class="form-control" placeholder="{{ placeholders.formations.description }}" rows="2"></textarea>
           <small class="form-text text-muted">Détails sur les contenus de la formation</small>
         </div>
         <div class="col-md-12">
@@ -200,17 +200,17 @@
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Titre</label>
-          <input type="text" name="title" class="form-control" placeholder="ex: Certification Python" required>
+          <input type="text" name="title" class="form-control" placeholder="{{ placeholders.certifications.title }}" required>
           <small class="form-text text-muted">Titre de la certification</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">Date</label>
-          <input type="text" name="date" class="form-control" placeholder="ex: 2021" required>
+          <input type="text" name="date" class="form-control" placeholder="{{ placeholders.certifications.date }}" required>
           <small class="form-text text-muted">Format: YYYY ou YYYY-MM</small>
         </div>
         <div class="col-md-12">
           <label class="form-label">Description</label>
-          <textarea name="description" class="form-control" placeholder="ex: Formules et classes avancées en Python, gestion des exceptions, etc." rows="2"></textarea>
+          <textarea name="description" class="form-control" placeholder="{{ placeholders.certifications.description }}" rows="2"></textarea>
           <small class="form-text text-muted">Détails sur les contenus de la certification</small>
         </div>
         <div class="col-md-12">
@@ -258,12 +258,12 @@
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Langue</label>
-          <input type="text" name="title" class="form-control" placeholder="ex: Anglais" required>
+          <input type="text" name="title" class="form-control" placeholder="{{ placeholders.langues.title }}" required>
           <small class="form-text text-muted">Nom de la langue</small>
         </div>
         <div class="col-md-12">
-          <label class="form-label">Niveau / Détails</label>
-          <textarea name="description" class="form-control" placeholder="ex: Bilingue, TOEIC 925/990" rows="2"></textarea>
+          <label class="form-label">Niveau/Détails</label>
+          <textarea name="description" class="form-control" placeholder="{{ placeholders.langues.description }}" rows="2"></textarea>
           <small class="form-text text-muted">Niveau de maîtrise et certifications éventuelles</small>
         </div>
         <div class="col-md-12">
@@ -310,27 +310,27 @@
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Entreprise</label>
-          <input type="text" name="company" class="form-control" placeholder="ex: Tech Solutions" required>
+          <input type="text" name="company" class="form-control" placeholder="{{ placeholders.experiences.company }}" required>
           <small class="form-text text-muted">Nom de l'entreprise ou de l'organisation</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">Poste</label>
-          <input type="text" name="poste" class="form-control" placeholder="ex: Développeur Junior" required>
+          <input type="text" name="poste" class="form-control" placeholder="{{ placeholders.experiences.poste }}" required>
           <small class="form-text text-muted">Titre du poste occupé</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">Période</label>
-          <input type="text" name="date" class="form-control" placeholder="ex: 2020-2023" required>
+          <input type="text" name="date" class="form-control" placeholder="{{ placeholders.experiences.date }}" required>
           <small class="form-text text-muted">Format: YYYY-YYYY ou YYYY, MM/YYYY-MM/YYYY ou MM/YYYY</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">Technologies</label>
-          <input type="text" name="technologies" class="form-control" placeholder="ex: Python, Django, PostgreSQL...">
+          <input type="text" name="technologies" class="form-control" placeholder="{{ placeholders.experiences.technologies }}">
           <small class="form-text text-muted">Séparées par des virgules</small>
         </div>
         <div class="col-md-12">
           <label class="form-label">Contexte</label>
-          <textarea name="context" class="form-control" placeholder="ex: J'ai participé au développement d'une application pour la gestion des stocks, dans un équipe de 5 développeurs, en utilisant la méthodologie Agile..." rows="2"></textarea>
+          <textarea name="context" class="form-control" placeholder="{{ placeholders.experiences.context }}" rows="2"></textarea>
           <small class="form-text text-muted">Décrivez le contexte de votre rôle dans cette expérience</small>
         </div>
         <div class="col-md-12">
@@ -373,7 +373,7 @@
               {# Liste des réalisations existantes #}
               <div id="realizations-{{ forloop.counter0 }}" class="mb-2">
                 {% for realization in exp.description %}
-                  {% include "formulaire/partials/xp_pro_hierarchy_item.html" with item=realization exp_index=forloop.counter0 depth=0 candidat=candidat %}
+                  {% include "formulaire/partials/xp_pro_realization_item.html" with item=realization exp_index=forloop.counter0 depth=0 candidat=candidat xp_pro_placeholders=placeholders.xp_pro %}
                 {% endfor %}
               </div>
 
@@ -398,31 +398,31 @@
 
 {% block extra_js %}
 <style>
-.main_skills_hierarchy-item, .xp_pro_hierarchy-item {
+.main_skills_hierarchy-item, .xp_pro_realization-item {
   padding: 8px;
   border-left: 2px solid #dee2e6;
 }
 
-.main_skills_hierarchy-row, .xp_pro_hierarchy-row {
+.main_skills_hierarchy-row, .xp_pro_realization-row {
   gap: 0.5rem;
 }
 
-.main_skills_hierarchy-title, .xp_pro_hierarchy-title {
+.main_skills_hierarchy-title, .xp_pro_realization-title {
   font-size: 0.95rem;
 }
 
-.main_skills_hierarchy-title:focus, .xp_pro_hierarchy-title:focus {
+.main_skills_hierarchy-title:focus, .xp_pro_realization-title:focus {
   border-color: #0d6efd;
   box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
-.main_skills_hierarchy-zone, .xp_pro_hierarchy-zone {
+.main_skills_hierarchy-zone, .xp_pro_realization-zone {
   margin-left: 1rem;
   padding-left: 0.5rem;
   border-left: 1px dashed #dee2e6;
 }
 
-.main_skills_hierarchy-item.ms-4, .xp_pro_hierarchy-item.ms-4 {
+.main_skills_hierarchy-item.ms-4, .xp_pro_realization-item.ms-4 {
   margin-left: 1rem;
 }
 </style>
@@ -584,7 +584,7 @@ function deleteMainSkillsHierarchyItem(e) {
 }
 
 // ========================================================================
-// HANDLERS POUR XP_PRO RÉALISATIONS (xp_pro_hierarchy_item.html)
+// HANDLERS POUR XP_PRO RÉALISATIONS (xp_pro_realization_item.html)
 // ========================================================================
 
 function initXpProHierarchyHandlers() {

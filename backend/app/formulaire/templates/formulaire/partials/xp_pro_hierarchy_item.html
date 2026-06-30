@@ -1,4 +1,5 @@
 {# Template récursif pour afficher les réalisations hiérarchiques (xp_pro) avec structure title/description #}
+{% load custom_filters %}
 <div id="item-{{ item.id }}"
      class="xp-pro-hierarchy-item mb-2 {% if depth > 0 %}ms-4{% endif %}"
      data-item-id="{{ item.id }}"
@@ -10,7 +11,7 @@
     <input type="text"
            class="form-control form-control-sm xp-pro-hierarchy-title"
            value="{{ item.title }}"
-           placeholder="{% if depth == 0 %}Activité{% elif depth == 1 %}Mission{% elif depth == 2 %}Tâche{% elif depth == 3 %}Sous-tâche{% else %}Détail{% endif %}"
+           placeholder="{{ xp_pro_placeholders|get_item:depth|default:'Détail' }}"
            data-item-id="{{ item.id }}"
            data-target-index="{{ exp_index }}"
            data-endpoint-base="xp_pro"
@@ -46,7 +47,9 @@
   {% if item.description %}
   <div id="description-{{ item.id }}" class="xp-pro-hierarchy-zone mt-2">
     {% for child in item.description %}
-      {% include "formulaire/partials/xp_pro_hierarchy_item.html" with item=child depth=depth|add:1 exp_index=exp_index %}
+      {% with next_depth=depth|add:1 %}
+        {% include "formulaire/partials/xp_pro_realization_item.html" with item=child depth=next_depth exp_index=exp_index placeholder=xp_pro_placeholders|get_item:next_depth %}
+      {% endwith %}
     {% endfor %}
   </div>
   {% else %}
