@@ -766,6 +766,7 @@ def main_skills_hierarchy_add(request, pk, section):
             "depth": 0,
             "target_index": len(dossier["main_skills"][section]) - 1,
             "endpoint_base": f"main_skills_{section}",
+            "max_depth": 1,
             "placeholder_root": "Compétence" if section == "bullet" else "Catégorie",
             "placeholder_level1": "Détail" if section == "bullet" else "Outil/Langage",
         }
@@ -778,7 +779,7 @@ def main_skills_hierarchy_add_child(request, pk, section):
     try:
         candidat = get_object_or_404(Candidat, pk=pk)
         dossier = candidat.dossier or _empty_dossier()
-        
+
         parent_id = request.POST.get("parent_id", "")
         depth = int(request.POST.get("depth", "0"))
         target_index = request.POST.get("target_index", "")
@@ -786,8 +787,8 @@ def main_skills_hierarchy_add_child(request, pk, section):
         if "main_skills" not in dossier or section not in dossier["main_skills"]:
             return HttpResponse("Section introuvable", status=404)
 
-        if depth > 2:
-            return HttpResponse("⚠️ Limite de profondeur atteinte (3 niveaux maximum)", status=400)
+        if depth > 1:
+            return HttpResponse("⚠️ Limite de profondeur atteinte (2 niveaux maximum)", status=400)
 
         # Trouver le parent
         parent_list, parent_idx = _find_main_skills_hierarchy_parent_and_index(dossier["main_skills"][section], parent_id)
@@ -813,6 +814,7 @@ def main_skills_hierarchy_add_child(request, pk, section):
                 "depth": depth + 1,
                 "target_index": target_index,
                 "endpoint_base": f"main_skills_{section}",
+                "max_depth": 1,
                 "placeholder_level1": "Détail" if section == "bullet" else "Outil/Langage",
                 "placeholder_level2": "Sous-détail" if section == "bullet" else "",
             }

@@ -4,7 +4,6 @@ from django.forms import ModelForm
 from .models import Candidat
 from .utils import clean_text
 
-
 class CandidatInfoForm(ModelForm):
     """Formulaire pour les informations de base du candidat."""
 
@@ -41,14 +40,13 @@ class CandidatInfoForm(ModelForm):
     def clean(self):
         """Nettoie les champs texte avant validation."""
         cleaned_data = super().clean()
-        
+
         # Nettoyer les champs texte
         for field_name in ["nom", "prenom", "trigramme", "poste"]:
             if field_name in cleaned_data and isinstance(cleaned_data[field_name], str):
                 cleaned_data[field_name] = clean_text(cleaned_data[field_name])
-        
-        return cleaned_data
 
+        return cleaned_data
 
 class SkillsForm(forms.Form):
     """Formulaire pour ajouter les compétences clés."""
@@ -58,8 +56,6 @@ class SkillsForm(forms.Form):
         help_text="Entrez les compétences séparées par des virgules (ex: Python, SQL, Git)",
         widget=forms.Textarea(attrs={"class": "form-control", "rows": 3, "placeholder": "Python, SQL, Git"})
     )
-
-
 
 class FormationForm(forms.Form):
     """Formulaire pour ajouter une formation."""
@@ -89,7 +85,6 @@ class FormationForm(forms.Form):
         widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: 2015-2020"})
     )
 
-
 class CertificationForm(forms.Form):
     """Formulaire pour ajouter une certification."""
 
@@ -111,7 +106,6 @@ class CertificationForm(forms.Form):
         max_length=50,
         widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: 2021"})
     )
-
 
 class ExperienceForm(forms.Form):
     """Formulaire pour ajouter une expérience professionnelle."""
