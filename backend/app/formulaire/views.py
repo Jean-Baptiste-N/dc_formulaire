@@ -807,8 +807,8 @@ def main_skills_hierarchy_add(request, pk, section):
             "target_index": len(dossier["main_skills"][section]) - 1,
             "endpoint_base": f"main_skills_{section}",
             "max_depth": 1,
-            "placeholder_root": "Compétence" if section == "bullet" else "Catégorie",
-            "placeholder_level1": "Détail" if section == "bullet" else "Outil/Langage",
+            "placeholder_root": "Domaine de Compétence" if section == "bullet" else "Catégorie",
+            "placeholder_level1": "Expertise" if section == "bullet" else "Outil/Langage",
         }
     )
 
@@ -855,8 +855,7 @@ def main_skills_hierarchy_add_child(request, pk, section):
                 "target_index": target_index,
                 "endpoint_base": f"main_skills_{section}",
                 "max_depth": 1,
-                "placeholder_level1": "Détail" if section == "bullet" else "Outil/Langage",
-                "placeholder_level2": "Sous-détail" if section == "bullet" else "",
+                "placeholder_level1": "Expertise" if section == "bullet" else "Outil/Langage",
             }
         )
     except (ValueError, KeyError) as e:
