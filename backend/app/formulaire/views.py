@@ -53,6 +53,7 @@ def _empty_dossier():
         },
         "formations": [],
         "certifications": [],
+        "langues": [],
         "xp_pro": [],
         "sections": []  # Pour compatibilité avec l'ancien système
     }
@@ -252,6 +253,45 @@ def certification_add(request, pk):
         dossier["certifications"].append(certification)
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
+
+    return redirect("formulaire:candidat_edit", pk=pk)
+
+
+@require_POST
+def langue_add(request, pk):
+    """Ajoute une langue."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    langue = {
+        "title": _clean_text(request.POST.get("title", "")),
+        "description": _clean_text(request.POST.get("description", "")),
+    }
+
+    if langue["title"]:
+        if "langues" not in dossier:
+            dossier["langues"] = []
+        dossier["langues"].append(langue)
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return redirect("formulaire:candidat_edit", pk=pk)
+
+
+@require_POST
+def langue_remove(request, pk, index):
+    """Supprime une langue."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        index = int(index)
+        if "langues" in dossier and 0 <= index < len(dossier["langues"]):
+            dossier["langues"].pop(index)
+            candidat.dossier = dossier
+            candidat.save(update_fields=["dossier"])
+    except (ValueError, IndexError):
+        pass
 
     return redirect("formulaire:candidat_edit", pk=pk)
 

@@ -107,6 +107,22 @@ class CertificationForm(forms.Form):
         widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: 2021"})
     )
 
+class LangueForm(forms.Form):
+    """Formulaire pour ajouter une langue."""
+
+    title = forms.CharField(
+        label="Langue",
+        help_text="Nom de la langue",
+        max_length=200,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: Anglais"})
+    )
+    description = forms.CharField(
+        label="Niveau/Détails",
+        help_text="Niveau de maîtrise ou certifications",
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "ex: Bilingue, TOEIC 925/990"})
+    )
+
 class ExperienceForm(forms.Form):
     """Formulaire pour ajouter une expérience professionnelle."""
 

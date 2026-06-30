@@ -24,6 +24,10 @@ urlpatterns = [
     path("candidat/<uuid:pk>/certification/ajouter/", views.certification_add, name="certification_add"),
     path("candidat/<uuid:pk>/certification/<int:index>/supprimer/", views.certification_remove, name="certification_remove"),
 
+    # Langues
+    path("candidat/<uuid:pk>/langue/ajouter/", views.langue_add, name="langue_add"),
+    path("candidat/<uuid:pk>/langue/<int:index>/supprimer/", views.langue_remove, name="langue_remove"),
+
     # Expériences professionnelles
     path("candidat/<uuid:pk>/experience/ajouter/", views.experience_add, name="experience_add"),
     path("candidat/<uuid:pk>/experience/<int:index>/supprimer/", views.experience_remove, name="experience_remove"),

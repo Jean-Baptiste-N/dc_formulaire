@@ -245,6 +245,58 @@
   </div>
 </div>
 
+<!-- Langues -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header">
+    <h2 class="h6 mb-0"><i class="bi bi-globe"></i> Langues</h2>
+  </div>
+  <div class="card-body">
+    <!-- Formulaire d'ajout -->
+    <form method="post" action="{% url 'formulaire:langue_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
+      {% csrf_token %}
+      <h5 class="mb-3"><i class="bi bi-plus-lg"></i> Ajouter une langue</h5>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Langue</label>
+          <input type="text" name="title" class="form-control" placeholder="ex: Anglais" required>
+          <small class="form-text text-muted">Nom de la langue</small>
+        </div>
+        <div class="col-md-12">
+          <label class="form-label">Niveau / Détails</label>
+          <textarea name="description" class="form-control" placeholder="ex: Bilingue, TOEIC 925/990" rows="2"></textarea>
+          <small class="form-text text-muted">Niveau de maîtrise et certifications éventuelles</small>
+        </div>
+        <div class="col-md-12">
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-lg"></i> Ajouter la langue
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Liste des langues -->
+    <div id="langues-list">
+      {% if candidat.dossier.langues %}
+        {% for langue in candidat.dossier.langues %}
+          <div class="alert alert-info mb-2">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>{{ langue.title }}</strong> <br>
+                {% if langue.description %}<small>{{ langue.description }}</small>{% endif %}
+              </div>
+              <a href="{% url 'formulaire:langue_remove' candidat.pk forloop.counter0 %}" class="btn btn-sm btn-danger">
+                <i class="bi bi-trash"></i>
+              </a>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted">Aucune langue ajoutée</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
 <!-- Expériences professionnelles -->
 <div class="card shadow-sm">
   <div class="card-header">
