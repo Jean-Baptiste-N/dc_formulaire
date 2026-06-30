@@ -1,4 +1,4 @@
-{# Template récursif pour afficher les réalisations hiérarchiques avec structure title/description #}
+{# Template récursif pour afficher les réalisations hiérarchiques (xp_pro) avec structure title/description #}
 <div id="item-{{ item.id }}"
      class="realization-item mb-2 {% if depth > 0 %}ms-4{% endif %}"
      data-item-id="{{ item.id }}">
@@ -18,7 +18,7 @@
     {# Bouton ajouter sous-item (seulement si depth < 3 pour max 3 niveaux de détails) #}
     {% if depth < 3 %}
     <button type="button"
-            class="btn btn-sm btn-outline-primary btn-add-child"
+            class="btn btn-sm btn-outline-primary btn-add-child-realization"
             data-item-id="{{ item.id }}"
             data-exp-index="{{ exp_index }}"
             data-depth="{{ depth }}"
@@ -29,7 +29,7 @@
 
     {# Bouton supprimer #}
     <button type="button"
-            class="btn btn-sm btn-outline-danger btn-delete-item"
+            class="btn btn-sm btn-outline-danger btn-delete-realization"
             data-item-id="{{ item.id }}"
             data-exp-index="{{ exp_index }}"
             title="Supprimer">

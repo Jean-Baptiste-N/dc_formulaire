@@ -92,5 +92,27 @@ urlpatterns = [
         name="realization_delete",
     ),
 
+    # Main Skills - Hierarchy Items (HTMX)
+    path(
+        "candidat/<uuid:pk>/main_skills/<str:section>/item/ajouter/",
+        views.main_skills_item_add,
+        name="main_skills_item_add",
+    ),
+    path(
+        "candidat/<uuid:pk>/main_skills/<str:section>/item/ajouter_enfant/",
+        views.main_skills_item_add_child,
+        name="main_skills_item_add_child",
+    ),
+    path(
+        "candidat/<uuid:pk>/main_skills/<str:section>/item/<str:item_id>/mettre-a-jour/",
+        views.main_skills_item_update,
+        name="main_skills_item_update",
+    ),
+    path(
+        "candidat/<uuid:pk>/main_skills/<str:section>/item/<str:item_id>/supprimer/",
+        views.main_skills_item_delete,
+        name="main_skills_item_delete",
+    ),
+
 ]
 

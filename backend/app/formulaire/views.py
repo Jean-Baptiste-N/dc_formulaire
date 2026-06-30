@@ -48,7 +48,8 @@ def _empty_dossier():
     return {
         "header": {},
         "main_skills": {
-            "bullet": []
+            "bullet": [],
+            "table": []
         },
         "formations": [],
         "certifications": [],
@@ -715,6 +716,158 @@ def realization_delete(request, pk, exp_index, item_id):
 
     except (ValueError, IndexError) as e:
         logger.error(f"Erreur realization_delete: {e}")
+        return HttpResponse(f"Erreur: {e}", status=400)
+
+
+# ---------------------------------------------------------------------------
+# Main Skills - Hierarchy Items (Bullets & Table)
+# ---------------------------------------------------------------------------
+
+def _find_hierarchy_parent_and_index(items, item_id):
+    """Cherche récursivement un item par ID et retourne (parent_list, index)."""
+    for idx, item in enumerate(items):
+        if item.get("id") == item_id:
+            return items, idx
+        if "description" in item and isinstance(item["description"], list):
+            result = _find_hierarchy_parent_and_index(item["description"], item_id)
+            if result[0] is not None:
+                return result
+    return None, None
+
+
+@require_POST
+def main_skills_item_add(request, pk, section):
+    """Ajoute un item racine à main_skills.bullet ou main_skills.table."""
+    # section: 'bullet' ou 'table'
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    if "main_skills" not in dossier:
+        dossier["main_skills"] = {"bullet": [], "table": []}
+    if section not in dossier["main_skills"]:
+        dossier["main_skills"][section] = []
+
+    new_item = {
+        "id": _new_id(),
+        "title": "",
+        "description": []
+    }
+
+    dossier["main_skills"][section].append(new_item)
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
+
+    # Retourner le template HTML du nouvel item
+    return render(
+        request,
+        "formulaire/partials/main_skills_hierarchy_item.html",
+        {
+            "item": new_item,
+            "depth": 0,
+            "target_index": len(dossier["main_skills"][section]) - 1,
+            "endpoint_base": f"main_skills_{section}",
+            "placeholder_root": "Compétence" if section == "bullet" else "Catégorie",
+            "placeholder_level1": "Détail" if section == "bullet" else "Outil/Langage",
+        }
+    )
+
+
+@require_POST
+def main_skills_item_add_child(request, pk, section):
+    """Ajoute un enfant à un item de main_skills."""
+    try:
+        candidat = get_object_or_404(Candidat, pk=pk)
+        dossier = candidat.dossier or _empty_dossier()
+        
+        parent_id = request.POST.get("parent_id", "")
+        depth = int(request.POST.get("depth", "0"))
+        target_index = request.POST.get("target_index", "")
+
+        if "main_skills" not in dossier or section not in dossier["main_skills"]:
+            return HttpResponse("Section introuvable", status=404)
+
+        if depth > 2:
+            return HttpResponse("⚠️ Limite de profondeur atteinte (3 niveaux maximum)", status=400)
+
+        # Trouver le parent
+        parent_list, parent_idx = _find_hierarchy_parent_and_index(dossier["main_skills"][section], parent_id)
+        if parent_list is None:
+            return HttpResponse("Parent introuvable", status=404)
+
+        parent = parent_list[parent_idx]
+        new_child = {
+            "id": _new_id(),
+            "title": "",
+            "description": []
+        }
+
+        parent["description"].append(new_child)
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+        return render(
+            request,
+            "formulaire/partials/main_skills_hierarchy_item.html",
+            {
+                "item": new_child,
+                "depth": depth + 1,
+                "target_index": target_index,
+                "endpoint_base": f"main_skills_{section}",
+                "placeholder_level1": "Détail" if section == "bullet" else "Outil/Langage",
+                "placeholder_level2": "Sous-détail" if section == "bullet" else "",
+            }
+        )
+    except (ValueError, KeyError) as e:
+        logger.error(f"Erreur main_skills_item_add_child: {e}")
+        return HttpResponse(f"Erreur: {e}", status=400)
+
+
+@require_POST
+def main_skills_item_update(request, pk, section, item_id):
+    """Met à jour le titre d'un item."""
+    try:
+        candidat = get_object_or_404(Candidat, pk=pk)
+        dossier = candidat.dossier or _empty_dossier()
+        title = _clean_text(request.POST.get("title", ""))
+
+        if "main_skills" not in dossier or section not in dossier["main_skills"]:
+            return HttpResponse("Section introuvable", status=404)
+
+        parent_list, idx = _find_hierarchy_parent_and_index(dossier["main_skills"][section], item_id)
+        if parent_list is None or idx is None:
+            return HttpResponse("Item introuvable", status=404)
+
+        parent_list[idx]["title"] = title
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+        return HttpResponse("OK")
+    except Exception as e:
+        logger.error(f"Erreur main_skills_item_update: {e}")
+        return HttpResponse(f"Erreur: {e}", status=400)
+
+
+@require_POST
+def main_skills_item_delete(request, pk, section, item_id):
+    """Supprime un item et ses enfants."""
+    try:
+        candidat = get_object_or_404(Candidat, pk=pk)
+        dossier = candidat.dossier or _empty_dossier()
+
+        if "main_skills" not in dossier or section not in dossier["main_skills"]:
+            return HttpResponse("Section introuvable", status=404)
+
+        parent_list, idx = _find_hierarchy_parent_and_index(dossier["main_skills"][section], item_id)
+        if parent_list is None or idx is None:
+            return HttpResponse("Item introuvable", status=404)
+
+        parent_list.pop(idx)
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+        return HttpResponse("OK")
+    except Exception as e:
+        logger.error(f"Erreur main_skills_item_delete: {e}")
         return HttpResponse(f"Erreur: {e}", status=400)
 
 

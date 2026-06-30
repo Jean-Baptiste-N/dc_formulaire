@@ -1,0 +1,52 @@
+{# Template générique pour afficher les items hiérarchiques (bullets, tables, réalisations, etc.) #}
+<div id="item-{{ item.id }}"
+     class="hierarchy-item mb-2 {% if depth > 0 %}ms-4{% endif %}"
+     data-item-id="{{ item.id }}">
+
+  <div class="hierarchy-row d-flex gap-2 align-items-start">
+
+    {# Champ de texte pour le titre #}
+    <input type="text"
+           class="form-control form-control-sm hierarchy-title"
+           value="{{ item.title }}"
+           placeholder="{% if depth == 0 %}{{ placeholder_root|default:'Item' }}{% elif depth == 1 %}{{ placeholder_level1|default:'Sous-item' }}{% elif depth == 2 %}{{ placeholder_level2|default:'Détail' }}{% else %}{{ placeholder_level3|default:'Sous-détail' }}{% endif %}"
+           data-item-id="{{ item.id }}"
+           data-target-index="{{ target_index }}"
+           data-endpoint-base="{{ endpoint_base }}"
+           name="title"
+           style="flex: 1;">
+
+    {# Bouton ajouter sous-item (seulement si depth < max_depth) #}
+    {% if depth < max_depth|default:3 %}
+    <button type="button"
+            class="btn btn-sm btn-outline-primary btn-add-child"
+            data-item-id="{{ item.id }}"
+            data-target-index="{{ target_index }}"
+            data-endpoint-base="{{ endpoint_base }}"
+            data-depth="{{ depth }}"
+            title="Ajouter un sous-item">
+      <i class="bi bi-plus-lg"></i>
+    </button>
+    {% endif %}
+
+    {# Bouton supprimer #}
+    <button type="button"
+            class="btn btn-sm btn-outline-danger btn-delete-hierarchy"
+            data-item-id="{{ item.id }}"
+            data-endpoint-base="{{ endpoint_base }}"
+            title="Supprimer">
+      <i class="bi bi-trash"></i>
+    </button>
+  </div>
+
+  {# Zone des enfants (récursion sur description array) #}
+  {% if item.description %}
+  <div id="description-{{ item.id }}" class="hierarchy-zone mt-2">
+    {% for child in item.description %}
+      {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=child depth=depth|add:1 %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div id="description-{{ item.id }}" class="hierarchy-zone mt-2"></div>
+  {% endif %}
+</div>
