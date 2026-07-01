@@ -53,40 +53,74 @@
   </div>
 </div>
 
-<!-- Compétences principales -->
+<!-- Compétences principales - Domaines & Expertises (Bullets) -->
 <div class="card shadow-sm mb-4">
   <div class="card-header">
-    <h2 class="h6 mb-0"><i class="bi bi-star"></i> Compétences principales</h2>
+    <h2 class="h6 mb-0"><i class="bi bi-star"></i> Compétences principales - Domaines & Expertises</h2>
   </div>
   <div class="card-body">
-    <form method="post" action="{% url 'formulaire:skills_add' candidat.pk %}" class="mb-3">
-      {% csrf_token %}
-      <div class="row g-2">
-        <div class="col-md-10">
-          <input type="text" name="skills" class="form-control" placeholder="Entrez les compétences séparées par des virgules (ex: Python, SQL, Git)">
-        </div>
-        <div class="col-md-2">
-          <button type="submit" class="btn btn-primary w-100">
-            <i class="bi bi-plus-lg"></i> Ajouter
-          </button>
-        </div>
-      </div>
-    </form>
+    <p class="text-muted small mb-3">Ajoutez des domaines de compétences et leurs expertises liées (ex: Ingénierie système > Configuration de logiciel > Vérification de la conformité aux spécifications internes)</p>
 
-    <div id="skills-list">
+    <button type="button" class="btn btn-success mb-3 btn-main-skills-hierarchy-add-root" data-section="bullet" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-plus-lg"></i> Ajouter un domaine de compétence
+    </button>
+
+    <div id="main_skills_bullet_list">
       {% if candidat.dossier.main_skills.bullet %}
-        <div class="d-flex flex-wrap gap-2">
-          {% for skill in candidat.dossier.main_skills.bullet %}
-            <span class="badge bg-primary">
-              {{ skill.title }}
-              <a href="{% url 'formulaire:skill_remove' candidat.pk skill.title %}" class="ms-1 text-white" style="cursor: pointer;">×</a>
-            </span>
-          {% endfor %}
-        </div>
+        {% for item in candidat.dossier.main_skills.bullet %}
+          {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_bullet" main_skills_placeholders=placeholders.main_skills.bullet max_depth=1 %}
+        {% endfor %}
       {% else %}
         <p class="text-muted">Aucune compétence ajoutée</p>
       {% endif %}
     </div>
+  </div>
+</div>
+
+<!-- Compétences principales - Outils & Langages (Table) -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header">
+    <h2 class="h6 mb-0"><i class="bi bi-tools"></i> Compétences principales - Outils & Langages</h2>
+  </div>
+  <div class="card-body">
+    <p class="text-muted small mb-3">Ajoutez des catégories d'outils et technologies maîtrisées (ex: Langages > Python, Bash)</p>
+
+    <button type="button" class="btn btn-success mb-3 btn-main-skills-hierarchy-add-root" data-section="table" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-plus-lg"></i> Ajouter une catégorie
+    </button>
+
+    <div id="main_skills_table_list">
+      {% if candidat.dossier.main_skills.table %}
+        {% for item in candidat.dossier.main_skills.table %}
+          {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_table" main_skills_placeholders=placeholders.main_skills.table max_depth=1 %}
+        {% endfor %}
+      {% else %}
+        <p class="text-muted">Aucune compétence ajoutée</p>
+      {% endif %}
+    </div>
+
+    <!-- Aperçu tableau -->
+    {% comment %} {% if candidat.dossier.main_skills.table %}
+    <div class="mt-4 pt-3 border-top">
+      <h5 class="mb-3">Aperçu du tableau</h5>
+      <table class="table table-sm table-bordered">
+        <tbody>
+          {% for category in candidat.dossier.main_skills.table %}
+          <tr>
+            <td class="fw-bold" style="width: 20%;">{{ category.title }}</td>
+            <td>
+              {% if category.description %}
+                {% for tool in category.description %}
+                  {{ tool.title }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %} {% endcomment %}
   </div>
 </div>
 
@@ -103,19 +137,23 @@
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Titre</label>
-          <input type="text" name="title" class="form-control" placeholder="Master en Informatique" required>
+          <input type="text" name="title" class="form-control" placeholder="{{ placeholders.formations.title }}" required>
+          <small class="form-text text-muted">Nom du diplôme ou de la formation</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">École/Université</label>
-          <input type="text" name="school" class="form-control" placeholder="Université de Technologie" required>
+          <input type="text" name="school" class="form-control" placeholder="{{ placeholders.formations.school }}" required>
+          <small class="form-text text-muted">Nom de l'établissement</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">Période</label>
-          <input type="text" name="date" class="form-control" placeholder="2018-2020" required>
+          <input type="text" name="date" class="form-control" placeholder="{{ placeholders.formations.date }}" required>
+          <small class="form-text text-muted">Format: YYYY-YYYY ou YYYY, MM/YYYY-MM/YYYY ou MM/YYYY</small>
         </div>
         <div class="col-md-12">
           <label class="form-label">Description</label>
-          <textarea name="description" class="form-control" placeholder="Spécialisation, détails..." rows="2"></textarea>
+          <textarea name="description" class="form-control" placeholder="{{ placeholders.formations.description }}" rows="2"></textarea>
+          <small class="form-text text-muted">Détails sur les contenus de la formation</small>
         </div>
         <div class="col-md-12">
           <button type="submit" class="btn btn-success">
@@ -162,15 +200,18 @@
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Titre</label>
-          <input type="text" name="title" class="form-control" placeholder="Certification Python" required>
+          <input type="text" name="title" class="form-control" placeholder="{{ placeholders.certifications.title }}" required>
+          <small class="form-text text-muted">Titre de la certification</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">Date</label>
-          <input type="text" name="date" class="form-control" placeholder="2021" required>
+          <input type="text" name="date" class="form-control" placeholder="{{ placeholders.certifications.date }}" required>
+          <small class="form-text text-muted">Format: YYYY ou YYYY-MM</small>
         </div>
         <div class="col-md-12">
           <label class="form-label">Description</label>
-          <textarea name="description" class="form-control" placeholder="Détails de la certification..." rows="2"></textarea>
+          <textarea name="description" class="form-control" placeholder="{{ placeholders.certifications.description }}" rows="2"></textarea>
+          <small class="form-text text-muted">Détails sur les contenus de la certification</small>
         </div>
         <div class="col-md-12">
           <button type="submit" class="btn btn-success">
@@ -204,6 +245,58 @@
   </div>
 </div>
 
+<!-- Langues -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header">
+    <h2 class="h6 mb-0"><i class="bi bi-globe"></i> Langues</h2>
+  </div>
+  <div class="card-body">
+    <!-- Formulaire d'ajout -->
+    <form method="post" action="{% url 'formulaire:langue_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
+      {% csrf_token %}
+      <h5 class="mb-3"><i class="bi bi-plus-lg"></i> Ajouter une langue</h5>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Langue</label>
+          <input type="text" name="title" class="form-control" placeholder="{{ placeholders.langues.title }}" required>
+          <small class="form-text text-muted">Nom de la langue</small>
+        </div>
+        <div class="col-md-12">
+          <label class="form-label">Niveau/Détails</label>
+          <textarea name="description" class="form-control" placeholder="{{ placeholders.langues.description }}" rows="2"></textarea>
+          <small class="form-text text-muted">Niveau de maîtrise et certifications éventuelles</small>
+        </div>
+        <div class="col-md-12">
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-lg"></i> Ajouter la langue
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Liste des langues -->
+    <div id="langues-list">
+      {% if candidat.dossier.langues %}
+        {% for langue in candidat.dossier.langues %}
+          <div class="alert alert-info mb-2">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>{{ langue.title }}</strong> <br>
+                {% if langue.description %}<small>{{ langue.description }}</small>{% endif %}
+              </div>
+              <a href="{% url 'formulaire:langue_remove' candidat.pk forloop.counter0 %}" class="btn btn-sm btn-danger">
+                <i class="bi bi-trash"></i>
+              </a>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted">Aucune langue ajoutée</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
 <!-- Expériences professionnelles -->
 <div class="card shadow-sm">
   <div class="card-header">
@@ -217,32 +310,37 @@
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Entreprise</label>
-          <input type="text" name="company" class="form-control" placeholder="Tech Solutions" required>
+          <input type="text" name="company" class="form-control" placeholder="{{ placeholders.experiences.company }}" required>
+          <small class="form-text text-muted">Nom de l'entreprise ou de l'organisation</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">Poste</label>
-          <input type="text" name="poste" class="form-control" placeholder="Développeur Python" required>
+          <input type="text" name="poste" class="form-control" placeholder="{{ placeholders.experiences.poste }}" required>
+          <small class="form-text text-muted">Titre du poste occupé</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">Période</label>
-          <input type="text" name="date" class="form-control" placeholder="2020-2023" required>
+          <input type="text" name="date" class="form-control" placeholder="{{ placeholders.experiences.date }}" required>
+          <small class="form-text text-muted">Format: YYYY-YYYY ou YYYY, MM/YYYY-MM/YYYY ou MM/YYYY</small>
         </div>
         <div class="col-md-6">
           <label class="form-label">Technologies</label>
-          <input type="text" name="technologies" class="form-control" placeholder="Django, Flask, FastAPI...">
+          <input type="text" name="technologies" class="form-control" placeholder="{{ placeholders.experiences.technologies }}">
+          <small class="form-text text-muted">Séparées par des virgules</small>
         </div>
         <div class="col-md-12">
           <label class="form-label">Contexte</label>
-          <textarea name="context" class="form-control" placeholder="Contexte du rôle..." rows="2"></textarea>
-        </div>
-        <div class="col-md-12">
-          <label class="form-label">Responsabilités/Réalisations</label>
-          <textarea name="description" class="form-control" placeholder="Décrivez vos responsabilités et réalisations principales" rows="3"></textarea>
+          <textarea name="context" class="form-control" placeholder="{{ placeholders.experiences.context }}" rows="2"></textarea>
+          <small class="form-text text-muted">Décrivez le contexte de votre rôle dans cette expérience</small>
         </div>
         <div class="col-md-12">
           <button type="submit" class="btn btn-success">
             <i class="bi bi-check-lg"></i> Ajouter l'expérience
           </button>
+          <small class="form-text text-muted d-block mt-2">
+            <i class="bi bi-info-circle"></i>
+            <strong>Workflow en 2 étapes :</strong> Créez l'expérience, puis ajoutez et organisez vos réalisations hiérarchiquement.
+          </small>
         </div>
       </div>
     </form>
@@ -251,18 +349,43 @@
     <div id="experiences-list">
       {% if candidat.dossier.xp_pro %}
         {% for exp in candidat.dossier.xp_pro %}
-          <div class="alert alert-warning mb-2">
-            <div class="d-flex justify-content-between">
+          <div class="alert alert-warning mb-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
               <div style="flex: 1;">
                 <strong>{{ exp.poste }}</strong> chez <strong>{{ exp.company }}</strong><br>
                 <small class="text-muted">{{ exp.date }}</small><br>
                 {% if exp.context %}<small><em>{{ exp.context }}</em></small><br>{% endif %}
-                {% if exp.description %}<small>{{ exp.description|truncatewords:20 }}</small>{% endif %}
               </div>
               <a href="{% url 'formulaire:experience_remove' candidat.pk forloop.counter0 %}" class="btn btn-sm btn-danger">
                 <i class="bi bi-trash"></i>
               </a>
             </div>
+
+            {# Section des réalisations hiérarchiques #}
+            {% if exp.description %}
+            <div class="mt-3 ps-3 border-start border-2">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <h6 class="mb-0">
+                  <i class="bi bi-diagram-3"></i> Réalisations
+                </h6>
+              </div>
+
+              {# Liste des réalisations existantes #}
+              <div id="realizations-{{ forloop.counter0 }}" class="mb-2">
+                {% for realization in exp.description %}
+                  {% include "formulaire/partials/xp_pro_realization_item.html" with item=realization exp_index=forloop.counter0 depth=0 candidat=candidat xp_pro_placeholders=placeholders.xp_pro %}
+                {% endfor %}
+              </div>
+
+              {# Bouton pour ajouter une réalisation #}
+              <button type="button"
+                      class="btn btn-sm btn-outline-success btn-xp-pro-hierarchy-add-root"
+                      data-exp-index="{{ forloop.counter0 }}"
+                      data-candidat-pk="{{ candidat.pk }}">
+                <i class="bi bi-plus-lg"></i> Ajouter une activité
+              </button>
+            </div>
+            {% endif %}
           </div>
         {% endfor %}
       {% else %}
@@ -273,3 +396,346 @@
 </div>
 {% endblock %}
 
+{% block extra_js %}
+<style>
+.main_skills_hierarchy-item, .xp_pro_realization-item {
+  padding: 8px;
+  border-left: 2px solid #dee2e6;
+}
+
+.main_skills_hierarchy-row, .xp_pro_realization-row {
+  gap: 0.5rem;
+}
+
+.main_skills_hierarchy-title, .xp_pro_realization-title {
+  font-size: 0.95rem;
+}
+
+.main_skills_hierarchy-title:focus, .xp_pro_realization-title:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.main_skills_hierarchy-zone, .xp_pro_realization-zone {
+  margin-left: 1rem;
+  padding-left: 0.5rem;
+  border-left: 1px dashed #dee2e6;
+}
+
+.main_skills_hierarchy-item.ms-4, .xp_pro_realization-item.ms-4 {
+  margin-left: 1rem;
+}
+</style>
+
+<script>
+const CANDIDAT_PK = '{{ candidat.pk }}';
+
+// ========================================================================
+// HANDLERS POUR MAIN_SKILLS (main_skills_hierarchy_item.html)
+// ========================================================================
+
+function initMainSkillsHierarchyHandlers() {
+  // Ajouter root item pour main_skills
+  document.querySelectorAll('.btn-main-skills-hierarchy-add-root').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', addMainSkillsHierarchyParentItem);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Ajouter sous-item pour main_skills
+  document.querySelectorAll('.btn-main-skills-hierarchy-add-child').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', addMainSkillsHierarchyChildItem);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Mettre à jour item main_skills
+  document.querySelectorAll('.main-skills-hierarchy-title').forEach(input => {
+    if (!input.hasAttribute('data-listener-initialized')) {
+      input.addEventListener('change', updateMainSkillsHierarchyItem);
+      input.addEventListener('blur', updateMainSkillsHierarchyItem);
+      input.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Supprimer item main_skills
+  document.querySelectorAll('.btn-main-skills-hierarchy-delete').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', deleteMainSkillsHierarchyItem);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+}
+
+// Ajouter un root item pour main_skills (bullet ou table)
+function addMainSkillsHierarchyParentItem(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-main-skills-hierarchy-add-root');
+  const section = btn.dataset.section; // 'bullet' ou 'table'
+  const candidatPk = btn.dataset.candidatPk;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/main_skills/${section}/item/ajouter/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => r.text())
+  .then(html => {
+    const listId = `main_skills_${section}_list`;
+    const listDiv = document.getElementById(listId);
+
+    // Supprimer le message "Aucun item" s'il existe
+    const emptyMsg = listDiv.querySelector('.text-muted');
+    if (emptyMsg && emptyMsg.textContent.includes('Aucune')) {
+      emptyMsg.remove();
+    }
+
+    listDiv.insertAdjacentHTML('beforeend', html);
+    initMainSkillsHierarchyHandlers();
+  })
+  .catch(err => console.error('Erreur addMainSkillsHierarchyParentItem:', err));
+}
+
+// Ajouter un sous-item pour main_skills
+function addMainSkillsHierarchyChildItem(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-main-skills-hierarchy-add-child');
+  const itemId = btn.dataset.itemId;
+  const endpointBase = btn.dataset.endpointBase; // 'main_skills_bullet' ou 'main_skills_table'
+  const depth = parseInt(btn.dataset.depth) || 0;
+  const childDepth = depth + 1;
+
+  const section = endpointBase.replace('main_skills_', ''); // 'bullet' ou 'table'
+
+  // Refuser si on dépasse la limite de profondeur (max 2 niveaux: 0, 1)
+  if (childDepth > 1) {
+    alert(`⚠️ Limite de profondeur atteinte (2 niveaux maximum)`);
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('parent_id', itemId);
+  formData.append('depth', childDepth);
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${CANDIDAT_PK}/main_skills/${section}/item/ajouter_enfant/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (!r.ok) return r.text().then(msg => Promise.reject(msg));
+    return r.text();
+  })
+  .then(html => {
+    document.getElementById(`description-${itemId}`).insertAdjacentHTML('beforeend', html);
+    initMainSkillsHierarchyHandlers();
+  })
+  .catch(err => {
+    console.error('Erreur addMainSkillsHierarchyChildItem:', err);
+    alert(`❌ Erreur: ${err}`);
+  });
+}
+
+// Mettre à jour un item main_skills
+function updateMainSkillsHierarchyItem(e) {
+  const input = e.target;
+  const itemId = input.dataset.itemId;
+  const endpointBase = input.dataset.endpointBase;
+
+  const section = endpointBase.replace('main_skills_', '');
+
+  const formData = new FormData();
+  formData.append('title', input.value);
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${CANDIDAT_PK}/main_skills/${section}/item/${itemId}/mettre-a-jour/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .catch(err => console.error('Erreur updateMainSkillsHierarchyItem:', err));
+}
+
+// Supprimer un item main_skills
+function deleteMainSkillsHierarchyItem(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-main-skills-hierarchy-delete');
+  const itemId = btn.dataset.itemId;
+  const endpointBase = btn.dataset.endpointBase;
+
+  if (confirm('Supprimer cet item et ses enfants ?')) {
+    const section = endpointBase.replace('main_skills_', '');
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    fetch(`/candidat/${CANDIDAT_PK}/main_skills/${section}/item/${itemId}/supprimer/`, {
+      method: 'POST',
+      body: formData,
+    })
+    .then(() => {
+      const itemDiv = document.getElementById(`item-${itemId}`);
+      if (itemDiv) itemDiv.remove();
+    })
+    .catch(err => console.error('Erreur deleteMainSkillsHierarchyItem:', err));
+  }
+}
+
+// ========================================================================
+// HANDLERS POUR XP_PRO RÉALISATIONS (xp_pro_realization_item.html)
+// ========================================================================
+
+function initXpProHierarchyHandlers() {
+  // Ajouter sous-item réalisation
+  document.querySelectorAll('.btn-xp-pro-hierarchy-add-child').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', addXpProHierarchyChildItem);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Mettre à jour réalisation
+  document.querySelectorAll('.xp-pro-hierarchy-title').forEach(input => {
+    if (!input.hasAttribute('data-listener-initialized')) {
+      input.addEventListener('change', updateXpProHierarchyItem);
+      input.addEventListener('blur', updateXpProHierarchyItem);
+      input.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Supprimer réalisation
+  document.querySelectorAll('.btn-xp-pro-hierarchy-delete').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', deleteXpProHierarchyItem);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Ajouter une réalisation racine
+  document.querySelectorAll('.btn-xp-pro-hierarchy-add-root').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', addXpProHierarchyParentItem);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+}
+
+// Ajouter une réalisation racine (xp_pro)
+function addXpProHierarchyParentItem(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-xp-pro-hierarchy-add-root');
+  const expIndex = btn.dataset.expIndex;
+  const candidatPk = btn.dataset.candidatPk;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/experience/${expIndex}/realization/ajouter/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => r.text())
+  .then(html => {
+    document.getElementById(`realizations-${expIndex}`).insertAdjacentHTML('beforeend', html);
+    initXpProHierarchyHandlers();
+  })
+  .catch(err => console.error('Erreur addXpProHierarchyParentItem:', err));
+}
+
+// Ajouter un sous-item réalisation
+function addXpProHierarchyChildItem(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-xp-pro-hierarchy-add-child');
+  const itemId = btn.dataset.itemId;
+  const expIndex = btn.dataset.targetIndex;
+  const parentDepth = parseInt(btn.dataset.depth) || 0;
+  const childDepth = parentDepth + 1;
+
+  // Refuser si on dépasse la limite de profondeur
+  if (childDepth > 3) {
+    alert('⚠️ Limite de profondeur atteinte (3 niveaux de détails maximum)');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('parent_id', itemId);
+  formData.append('depth', childDepth);
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${CANDIDAT_PK}/experience/${expIndex}/realization/ajouter/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (!r.ok) return r.text().then(msg => Promise.reject(msg));
+    return r.text();
+  })
+  .then(html => {
+    document.getElementById(`description-${itemId}`).insertAdjacentHTML('beforeend', html);
+    initXpProHierarchyHandlers();
+  })
+  .catch(err => {
+    console.error('Erreur addXpProHierarchyChildItem:', err);
+    alert(`❌ Erreur: ${err}`);
+  });
+}
+
+// Mettre à jour une réalisation
+function updateXpProHierarchyItem(e) {
+  const input = e.target;
+  const itemId = input.dataset.itemId;
+  const expIndex = input.dataset.targetIndex;
+
+  const formData = new FormData();
+  formData.append('title', input.value);
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${CANDIDAT_PK}/experience/${expIndex}/realization/${itemId}/mettre-a-jour/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .catch(err => console.error('Erreur updateXpProHierarchyItem:', err));
+}
+
+// Supprimer une réalisation
+function deleteXpProHierarchyItem(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-xp-pro-hierarchy-delete');
+  const itemId = btn.dataset.itemId;
+  const expIndex = btn.dataset.targetIndex;
+
+  if (confirm('Supprimer cette réalisation et ses enfants ?')) {
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    fetch(`/candidat/${CANDIDAT_PK}/experience/${expIndex}/realization/${itemId}/supprimer/`, {
+      method: 'POST',
+      body: formData,
+    })
+    .then(() => {
+      const itemDiv = document.getElementById(`item-${itemId}`);
+      if (itemDiv) itemDiv.remove();
+    })
+    .catch(err => console.error('Erreur deleteXpProHierarchyItem:', err));
+  }
+}
+
+// ========================================================================
+// Initialisation générale
+// ========================================================================
+
+// Initialiser au chargement
+document.addEventListener('DOMContentLoaded', () => {
+  initMainSkillsHierarchyHandlers();
+  initXpProHierarchyHandlers();
+});
+
+// Réinitialiser après chaque insertion HTMX
+document.addEventListener('htmx:afterSwap', () => {
+  initMainSkillsHierarchyHandlers();
+  initXpProHierarchyHandlers();
+});
+</script>
+{% endblock %}

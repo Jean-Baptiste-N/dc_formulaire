@@ -1,0 +1,56 @@
+{# Template pour afficher les items hiérarchiques main_skills (bullets et table) #}
+{% load custom_filters %}
+<div id="item-{{ item.id }}"
+     class="main-skills-hierarchy-item mb-2 {% if depth > 0 %}ms-4{% endif %}"
+     data-item-id="{{ item.id }}"
+     data-max-depth="{{ max_depth|default:3 }}">
+
+  <div class="main-skills-hierarchy-row d-flex gap-2 align-items-start">
+
+    {# Champ de texte pour le titre #}
+    <input type="text"
+           class="form-control form-control-sm main-skills-hierarchy-title"
+           value="{{ item.title }}"
+           placeholder="{{ main_skills_placeholders|get_placeholder:depth }}"
+           data-item-id="{{ item.id }}"
+           data-target-index="{{ target_index }}"
+           data-endpoint-base="{{ endpoint_base }}"
+           data-depth="{{ depth }}"
+           name="title"
+           style="flex: 1;">
+
+    {# Bouton ajouter sous-item (seulement si depth < max_depth) #}
+    {% if depth < max_depth|default:3 %}
+    <button type="button"
+            class="btn btn-sm btn-outline-primary btn-main-skills-hierarchy-add-child"
+            data-item-id="{{ item.id }}"
+            data-target-index="{{ target_index }}"
+            data-endpoint-base="{{ endpoint_base }}"
+            data-depth="{{ depth }}"
+            title="Ajouter un sous-item">
+      <i class="bi bi-plus-lg"></i>
+    </button>
+    {% endif %}
+
+    {# Bouton supprimer #}
+    <button type="button"
+            class="btn btn-sm btn-outline-danger btn-main-skills-hierarchy-delete"
+            data-item-id="{{ item.id }}"
+            data-target-index="{{ target_index }}"
+            data-endpoint-base="{{ endpoint_base }}"
+            title="Supprimer">
+      <i class="bi bi-trash"></i>
+    </button>
+  </div>
+
+  {# Zone des enfants (récursion sur description array) #}
+  {% if item.description %}
+  <div id="description-{{ item.id }}" class="main-skills-hierarchy-zone mt-2">
+    {% for child in item.description %}
+      {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=child depth=depth|add:1 target_index=target_index endpoint_base=endpoint_base max_depth=max_depth main_skills_placeholders=main_skills_placeholders %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div id="description-{{ item.id }}" class="main-skills-hierarchy-zone mt-2"></div>
+  {% endif %}
+</div>

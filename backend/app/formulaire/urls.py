@@ -24,6 +24,10 @@ urlpatterns = [
     path("candidat/<uuid:pk>/certification/ajouter/", views.certification_add, name="certification_add"),
     path("candidat/<uuid:pk>/certification/<int:index>/supprimer/", views.certification_remove, name="certification_remove"),
 
+    # Langues
+    path("candidat/<uuid:pk>/langue/ajouter/", views.langue_add, name="langue_add"),
+    path("candidat/<uuid:pk>/langue/<int:index>/supprimer/", views.langue_remove, name="langue_remove"),
+
     # Expériences professionnelles
     path("candidat/<uuid:pk>/experience/ajouter/", views.experience_add, name="experience_add"),
     path("candidat/<uuid:pk>/experience/<int:index>/supprimer/", views.experience_remove, name="experience_remove"),
@@ -74,5 +78,45 @@ urlpatterns = [
         views.sous_poste_delete,
         name="sous_poste_delete",
     ),
+
+    # Réalisations XP_PRO (HTMX)
+    path(
+        "candidat/<uuid:pk>/experience/<int:exp_index>/realization/ajouter/",
+        views.xp_pro_realization_add,
+        name="xp_pro_realization_add",
+    ),
+    path(
+        "candidat/<uuid:pk>/experience/<int:exp_index>/realization/<str:item_id>/mettre-a-jour/",
+        views.xp_pro_realization_update,
+        name="xp_pro_realization_update",
+    ),
+    path(
+        "candidat/<uuid:pk>/experience/<int:exp_index>/realization/<str:item_id>/supprimer/",
+        views.xp_pro_realization_delete,
+        name="xp_pro_realization_delete",
+    ),
+
+    # Main Skills - Hierarchy Items (HTMX)
+    path(
+        "candidat/<uuid:pk>/main_skills/<str:section>/item/ajouter/",
+        views.main_skills_hierarchy_add,
+        name="main_skills_hierarchy_add",
+    ),
+    path(
+        "candidat/<uuid:pk>/main_skills/<str:section>/item/ajouter_enfant/",
+        views.main_skills_hierarchy_add_child,
+        name="main_skills_hierarchy_add_child",
+    ),
+    path(
+        "candidat/<uuid:pk>/main_skills/<str:section>/item/<str:item_id>/mettre-a-jour/",
+        views.main_skills_hierarchy_update,
+        name="main_skills_hierarchy_update",
+    ),
+    path(
+        "candidat/<uuid:pk>/main_skills/<str:section>/item/<str:item_id>/supprimer/",
+        views.main_skills_hierarchy_delete,
+        name="main_skills_hierarchy_delete",
+    ),
+
 ]
 
