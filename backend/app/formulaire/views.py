@@ -30,6 +30,7 @@ def _empty_dossier():
     """Initialise la structure du dossier de competences."""
     return {
         "header": {},
+        "poste_cible": [],
         "main_skills": {
             "bullet": [],
             "table": []
@@ -37,8 +38,7 @@ def _empty_dossier():
         "formations": [],
         "certifications": [],
         "langues": [],
-        "xp_pro": [],
-        "poste_cible": []
+        "xp_pro": []
     }
 
 def _sync_header_and_defaults(candidat):

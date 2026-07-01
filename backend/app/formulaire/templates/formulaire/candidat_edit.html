@@ -1058,7 +1058,7 @@ async function saveData(section, showFeedback = false, element = null) {
 
     if (response.ok && showFeedback && btn) {
       const textSpan = btn.querySelector('.btn-save-text') || btn;
-      textSpan.innerHTML = '<i class="bi bi-check-circle"></i> Enregistré!';
+      textSpan.innerHTML = 'Enregistré ! <i class="bi bi-check-circle"></i>';
       btn.disabled = false;
       setTimeout(() => {
         if (section === 'xp_pro_realization') {
@@ -1201,7 +1201,7 @@ function saveXpProContext(e) {
   })
   .then(r => {
     if (r.ok && isClick && btn) {
-      btn.innerHTML = '<i class="bi bi-check-circle"></i> ✓ Enregistré';
+      btn.innerHTML = 'Enregistré ! <i class="bi bi-check-circle"></i>';
       btn.classList.remove('btn-outline-primary');
       btn.classList.add('btn-outline-success');
       setTimeout(() => {
