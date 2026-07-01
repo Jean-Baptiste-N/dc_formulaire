@@ -3,6 +3,10 @@
 {% block title %}{{ candidat }} – Modifier – DC Formulaire{% endblock %}
 
 {% block content %}
+<!-- ============================================================================
+     MARK: 1. HEADERS & INFORMATIONS DU CANDIDAT
+     ============================================================================ -->
+
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h3">
     <i class="bi bi-pencil-square"></i> {{ candidat }}
@@ -50,10 +54,18 @@
         </button>
       </div>
     </form>
+  </div>
+</div>
 
-    <!-- Postes cible (variantes) -->
-    <hr class="my-4">
-    <h5 class="mb-3"><i class="bi bi-briefcase"></i> Variantes de postes recherchés</h5>
+<!-- ============================================================================
+     MARK: 2. POSTES CIBLES - Variantes de postes recherchés
+     ============================================================================ -->
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header">
+    <h2 class="h6 mb-0"><i class="bi bi-briefcase"></i> Postes cibles – Variantes</h2>
+  </div>
+  <div class="card-body">
     <p class="text-muted small mb-3">Ajoutez des variantes du poste, qui seront utilisées lors de l'export du document</p>
 
     <div id="poste-cible-list" class="mb-3">
@@ -69,13 +81,19 @@
     <button type="button" class="btn btn-success btn-sm btn-poste-cible-add" data-candidat-pk="{{ candidat.pk }}">
       <i class="bi bi-plus"></i> Ajouter une variante
     </button>
+    <button type="button" class="btn btn-primary btn-sm btn-poste-cible-save ms-2" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-save"></i> <span class="btn-save-text">Enregistrer</span>
+    </button>
   </div>
 </div>
 
-<!-- Compétences principales - Domaines & Expertises (Bullets) -->
+<!-- ============================================================================
+     MARK: 3.1 MAIN-SKILLS DOMAINES DE COMPÉTENCES - Bullet Section
+     ============================================================================ -->
+
 <div class="card shadow-sm mb-4">
   <div class="card-header">
-    <h2 class="h6 mb-0"><i class="bi bi-star"></i> Compétences principales - Domaines & Expertises</h2>
+    <h2 class="h6 mb-0"><i class="bi bi-star"></i> Main Skills – Domaines de compétences</h2>
   </div>
   <div class="card-body">
     <p class="text-muted small mb-3">Ajoutez des domaines de compétences et leurs expertises liées (ex: Ingénierie système > Configuration de logiciel > Vérification de la conformité aux spécifications internes)</p>
@@ -93,13 +111,19 @@
         <p class="text-muted">Aucune compétence ajoutée</p>
       {% endif %}
     </div>
+    <button type="button" class="btn btn-primary btn-sm btn-main-skills-save mt-3" data-section="bullet" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-save"></i> <span class="btn-save-text">Enregistrer</span>
+    </button>
   </div>
 </div>
 
-<!-- Compétences principales - Outils & Langages (Table) -->
+<!-- ============================================================================
+     MARK: 3.2 MAIN-SKILLS OUTILS & LANGAGES - Table Section
+     ============================================================================ -->
+
 <div class="card shadow-sm mb-4">
   <div class="card-header">
-    <h2 class="h6 mb-0"><i class="bi bi-tools"></i> Compétences principales - Outils & Langages</h2>
+    <h2 class="h6 mb-0"><i class="bi bi-tools"></i> Main Skills – Outils & Langages</h2>
   </div>
   <div class="card-body">
     <p class="text-muted small mb-3">Ajoutez des catégories d'outils et technologies maîtrisées (ex: Langages > Python, Bash)</p>
@@ -117,6 +141,9 @@
         <p class="text-muted">Aucune compétence ajoutée</p>
       {% endif %}
     </div>
+    <button type="button" class="btn btn-primary btn-sm btn-main-skills-save mt-3" data-section="table" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-save"></i> <span class="btn-save-text">Enregistrer</span>
+    </button>
 
     <!-- Aperçu tableau -->
     {% comment %} {% if candidat.dossier.main_skills.table %}
@@ -143,7 +170,10 @@
   </div>
 </div>
 
-<!-- Formations -->
+<!-- ============================================================================
+     MARK: 4. FORMATIONS - Ajouter, Lister, Supprimer
+     ============================================================================ -->
+
 <div class="card shadow-sm mb-4">
   <div class="card-header">
     <h2 class="h6 mb-0"><i class="bi bi-book"></i> Formations</h2>
@@ -206,7 +236,10 @@
   </div>
 </div>
 
-<!-- Certifications -->
+<!-- ============================================================================
+     MARK: 5. CERTIFICATIONS - Ajouter, Lister, Supprimer
+     ============================================================================ -->
+
 <div class="card shadow-sm mb-4">
   <div class="card-header">
     <h2 class="h6 mb-0"><i class="bi bi-award"></i> Certifications</h2>
@@ -264,7 +297,10 @@
   </div>
 </div>
 
-<!-- Langues -->
+<!-- ============================================================================
+     MARK: 6. LANGUES - Ajouter, Lister, Supprimer
+     ============================================================================ -->
+
 <div class="card shadow-sm mb-4">
   <div class="card-header">
     <h2 class="h6 mb-0"><i class="bi bi-globe"></i> Langues</h2>
@@ -316,7 +352,10 @@
   </div>
 </div>
 
-<!-- Expériences professionnelles -->
+<!-- ============================================================================
+     MARK: 7.1 XP_PRO BLOCS - 1ère étape du workflow (Ajouter, Lister, Supprimer expériences)
+     ============================================================================ -->
+
 <div class="card shadow-sm">
   <div class="card-header">
     <h2 class="h6 mb-0"><i class="bi bi-briefcase"></i> Expériences professionnelles</h2>
@@ -380,6 +419,10 @@
               </a>
             </div>
 
+            <!-- ================================================================
+                 MARK: 7.2 XP_PRO BULLETS - 2e étape du workflow (Réalisations)
+                 ================================================================ -->
+
             {# Section des réalisations hiérarchiques #}
             {% if exp.description %}
             <div class="mt-3 ps-3 border-start border-2">
@@ -415,6 +458,10 @@
 </div>
 {% endblock %}
 
+<!--  ========================================================================
+      MARK: STYLES
+      ========================================================================-->
+
 {% block extra_js %}
 <style>
 .main_skills_hierarchy-item, .xp_pro_realization-item {
@@ -446,11 +493,148 @@
 }
 </style>
 
+<!--  ========================================================================
+      MARK: SCRIPTS
+      ========================================================================-->
+
 <script>
 const CANDIDAT_PK = '{{ candidat.pk }}';
 
 // ========================================================================
-// HANDLERS POUR MAIN_SKILLS (main_skills_hierarchy_item.html)
+// MARK: POSTE_CIBLE HANDLERS (poste_cible_item.html)
+// ========================================================================
+
+function initPostesCibleHandlers() {
+  // Bouton pour ajouter une variante
+  document.querySelectorAll('.btn-poste-cible-add').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', addPostesCible);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Radio pour activer une variante
+  document.querySelectorAll('.poste-cible-radio').forEach(input => {
+    if (!input.hasAttribute('data-listener-initialized')) {
+      input.addEventListener('change', activatePostesCible);
+      input.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Input pour modifier le titre
+  document.querySelectorAll('#poste-cible-list input[type="text"]').forEach(input => {
+    if (!input.hasAttribute('data-listener-initialized')) {
+      input.addEventListener('blur', updatePostesCible);
+      input.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Bouton pour supprimer une variante
+  document.querySelectorAll('.poste-cible-delete').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', deletePostesCible);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+}
+
+function addPostesCible(e) {
+  e.preventDefault();
+  const candidatPk = e.target.closest('.btn-poste-cible-add').dataset.candidatPk;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/poste-cible/ajouter/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => r.text())
+  .then(html => {
+    const listDiv = document.getElementById('poste-cible-list');
+    const emptyMsg = listDiv.querySelector('.text-muted.fst-italic');
+    if (emptyMsg) {
+      emptyMsg.remove();
+    }
+    listDiv.insertAdjacentHTML('beforeend', html);
+    initPostesCibleHandlers();
+  })
+  .catch(err => console.error('Erreur addPostesCible:', err));
+}
+
+function activatePostesCible(e) {
+  const radio = e.target;
+  const candidatPk = radio.dataset.candidatPk;
+  const posteCibleId = radio.dataset.posteCible;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/activer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .catch(err => console.error('Erreur activatePostesCible:', err));
+}
+
+function updatePostesCible(e) {
+  const input = e.target;
+  const candidatPk = input.dataset.candidatPk;
+  const posteCibleId = input.dataset.posteCible;
+  const title = input.value.trim();
+
+  // Ne faire la requête que si le titre a changé
+  if (title === input.dataset.originalTitle) {
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/mettre-a-jour/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(() => {
+    input.dataset.originalTitle = title;
+  })
+  .catch(err => console.error('Erreur updatePostesCible:', err));
+}
+
+function deletePostesCible(e) {
+  e.preventDefault();
+  if (!confirm('Supprimer cette variante de poste ?')) {
+    return;
+  }
+
+  const btn = e.target.closest('.poste-cible-delete');
+  const candidatPk = btn.dataset.candidatPk;
+  const posteCibleId = btn.dataset.posteCible;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(() => {
+    const itemDiv = document.getElementById(`poste-cible-${posteCibleId}`);
+    if (itemDiv) {
+      itemDiv.remove();
+    }
+    // Vérifier si la liste est vide et afficher le message
+    const listDiv = document.getElementById('poste-cible-list');
+    if (listDiv.children.length === 0) {
+      listDiv.innerHTML = '<p class="text-muted fst-italic">Aucune variante ajoutée</p>';
+    }
+  })
+  .catch(err => console.error('Erreur deletePostesCible:', err));
+}
+
+// ========================================================================
+// MARK: MAIN_SKILLS HANDLERS (main_skills_hierarchy_item.html)
 // ========================================================================
 
 function initMainSkillsHierarchyHandlers() {
@@ -603,7 +787,7 @@ function deleteMainSkillsHierarchyItem(e) {
 }
 
 // ========================================================================
-// HANDLERS POUR XP_PRO RÉALISATIONS (xp_pro_realization_item.html)
+// MARK: XP_PRO HANDLERS (xp_pro_realization_item.html)
 // ========================================================================
 
 function initXpProHierarchyHandlers() {
@@ -742,140 +926,154 @@ function deleteXpProHierarchyItem(e) {
 }
 
 // ========================================================================
-// HANDLERS POUR POSTE_CIBLE (poste_cible_item.html)
+// MARK: AUTO-SAVE & CLICK-SAVE (5s auto-save + button feedback)
 // ========================================================================
 
-function initPostesCibleHandlers() {
-  // Bouton pour ajouter une variante
-  document.querySelectorAll('.btn-poste-cible-add').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', addPostesCible);
-      btn.setAttribute('data-listener-initialized', 'true');
+// Tracking des sections modifiées (dirty state)
+const dirtyState = {
+  poste_cible: false,
+  main_skills_bullet: false,
+  main_skills_table: false,
+};
+
+// Marquer une section comme dirty (modifiée non encore enregistrée)
+function markSectionDirty(section) {
+  dirtyState[section] = true;
+}
+
+// Sauvegarder une section (silencieux pour auto-save, avec feedback pour click-save)
+async function saveSection(section, showFeedback = false) {
+  let items = [];
+  let endpoint = '';
+  
+  if (section === 'poste_cible') {
+    items = Array.from(document.querySelectorAll('#poste-cible-list input[type="text"]')).map(input => ({
+      id: input.dataset.posteCible,
+      title: input.value.trim(),
+    }));
+    endpoint = `/candidat/${CANDIDAT_PK}/poste-cible/bulk-update/`;
+  } else if (section.startsWith('main_skills_')) {
+    const sectionType = section.replace('main_skills_', '');
+    items = Array.from(document.querySelectorAll(`#main_skills_${sectionType}_list .main-skills-hierarchy-item`))
+      .map(item => ({
+        id: item.dataset.itemId,
+        title: item.querySelector('.main-skills-hierarchy-title').value.trim(),
+      }));
+    endpoint = `/candidat/${CANDIDAT_PK}/main_skills/${sectionType}/bulk-update/`;
+  }
+
+  if (items.length === 0) {
+    return; // Rien à sauvegarder
+  }
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+  formData.append('items', JSON.stringify(items));
+
+  try {
+    // Montrer le feedback si c'est un click-save
+    if (showFeedback) {
+      const btn = document.querySelector(`[data-section="${section.replace('main_skills_', '')}"][data-candidat-pk="${CANDIDAT_PK}"].btn-main-skills-save`) 
+                || document.querySelector(`[data-candidat-pk="${CANDIDAT_PK}"].btn-poste-cible-save`);
+      if (btn) {
+        const textSpan = btn.querySelector('.btn-save-text');
+        textSpan.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
+        btn.disabled = true;
+      }
+    }
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (showFeedback) {
+      const btn = document.querySelector(`[data-section="${section.replace('main_skills_', '')}"][data-candidat-pk="${CANDIDAT_PK}"].btn-main-skills-save`) 
+                || document.querySelector(`[data-candidat-pk="${CANDIDAT_PK}"].btn-poste-cible-save`);
+      if (btn) {
+        const textSpan = btn.querySelector('.btn-save-text');
+        textSpan.innerHTML = '<i class="bi bi-check-circle"></i> Enregistré!';
+        btn.disabled = false;
+        
+        // Revenir au texte normal après 2s
+        setTimeout(() => {
+          textSpan.innerHTML = 'Enregistrer';
+        }, 2000);
+      }
+    }
+
+    dirtyState[section] = false;
+  } catch (err) {
+    console.error(`Erreur saveSection ${section}:`, err);
+    if (showFeedback) {
+      const btn = document.querySelector(`[data-section="${section.replace('main_skills_', '')}"][data-candidat-pk="${CANDIDAT_PK}"].btn-main-skills-save`) 
+                || document.querySelector(`[data-candidat-pk="${CANDIDAT_PK}"].btn-poste-cible-save`);
+      if (btn) {
+        const textSpan = btn.querySelector('.btn-save-text');
+        textSpan.innerHTML = '<i class="bi bi-exclamation-circle"></i> Erreur!';
+        btn.disabled = false;
+      }
+    }
+  }
+}
+
+// Handlers pour les boutons "Enregistrer"
+function initSaveButtonHandlers() {
+  // Bouton Enregistrer Postes cibles
+  document.querySelectorAll('.btn-poste-cible-save').forEach(btn => {
+    if (!btn.hasAttribute('data-save-listener-initialized')) {
+      btn.addEventListener('click', () => saveSection('poste_cible', true));
+      btn.setAttribute('data-save-listener-initialized', 'true');
     }
   });
 
-  // Radio pour activer une variante
-  document.querySelectorAll('.poste-cible-radio').forEach(input => {
-    if (!input.hasAttribute('data-listener-initialized')) {
-      input.addEventListener('change', activatePostesCible);
-      input.setAttribute('data-listener-initialized', 'true');
+  // Boutons Enregistrer Main-skills
+  document.querySelectorAll('.btn-main-skills-save').forEach(btn => {
+    if (!btn.hasAttribute('data-save-listener-initialized')) {
+      btn.addEventListener('click', function() {
+        const section = `main_skills_${this.dataset.section}`;
+        saveSection(section, true);
+      });
+      btn.setAttribute('data-save-listener-initialized', 'true');
     }
   });
+}
 
-  // Input pour modifier le titre
+// Marquer Postes cibles comme dirty au changement
+function initPostesCibleDirtyTracking() {
   document.querySelectorAll('#poste-cible-list input[type="text"]').forEach(input => {
-    if (!input.hasAttribute('data-listener-initialized')) {
-      input.addEventListener('blur', updatePostesCible);
-      input.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Bouton pour supprimer une variante
-  document.querySelectorAll('.poste-cible-delete').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', deletePostesCible);
-      btn.setAttribute('data-listener-initialized', 'true');
+    if (!input.hasAttribute('data-dirty-listener-initialized')) {
+      input.addEventListener('change', () => markSectionDirty('poste_cible'));
+      input.setAttribute('data-dirty-listener-initialized', 'true');
     }
   });
 }
 
-function addPostesCible(e) {
-  e.preventDefault();
-  const candidatPk = e.target.closest('.btn-poste-cible-add').dataset.candidatPk;
-
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/poste-cible/ajouter/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(r => r.text())
-  .then(html => {
-    const listDiv = document.getElementById('poste-cible-list');
-    const emptyMsg = listDiv.querySelector('.text-muted.fst-italic');
-    if (emptyMsg) {
-      emptyMsg.remove();
+// Marquer Main-skills comme dirty au changement
+function initMainSkillsDirtyTracking() {
+  document.querySelectorAll('.main-skills-hierarchy-title').forEach(input => {
+    if (!input.hasAttribute('data-dirty-listener-initialized')) {
+      input.addEventListener('change', () => {
+        const endpointBase = input.dataset.endpointBase;
+        const section = `main_skills_${endpointBase.replace('main_skills_', '')}`;
+        markSectionDirty(section);
+      });
+      input.setAttribute('data-dirty-listener-initialized', 'true');
     }
-    listDiv.insertAdjacentHTML('beforeend', html);
-    initPostesCibleHandlers();
-  })
-  .catch(err => console.error('Erreur addPostesCible:', err));
+  });
 }
 
-function activatePostesCible(e) {
-  const radio = e.target;
-  const candidatPk = radio.dataset.candidatPk;
-  const posteCibleId = radio.dataset.posteCible;
-
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/activer/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .catch(err => console.error('Erreur activatePostesCible:', err));
-}
-
-function updatePostesCible(e) {
-  const input = e.target;
-  const candidatPk = input.dataset.candidatPk;
-  const posteCibleId = input.dataset.posteCible;
-  const title = input.value.trim();
-
-  // Ne faire la requête que si le titre a changé
-  if (title === input.dataset.originalTitle) {
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append('title', title);
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/mettre-a-jour/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(() => {
-    input.dataset.originalTitle = title;
-  })
-  .catch(err => console.error('Erreur updatePostesCible:', err));
-}
-
-function deletePostesCible(e) {
-  e.preventDefault();
-  if (!confirm('Supprimer cette variante de poste ?')) {
-    return;
-  }
-
-  const btn = e.target.closest('.poste-cible-delete');
-  const candidatPk = btn.dataset.candidatPk;
-  const posteCibleId = btn.dataset.posteCible;
-
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/supprimer/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(() => {
-    const itemDiv = document.getElementById(`poste-cible-${posteCibleId}`);
-    if (itemDiv) {
-      itemDiv.remove();
+// Auto-save toutes les 5s (silencieux)
+setInterval(() => {
+  Object.keys(dirtyState).forEach(section => {
+    if (dirtyState[section]) {
+      saveSection(section, false); // false = pas de feedback
     }
-    // Vérifier si la liste est vide et afficher le message
-    const listDiv = document.getElementById('poste-cible-list');
-    if (listDiv.children.length === 0) {
-      listDiv.innerHTML = '<p class="text-muted fst-italic">Aucune variante ajoutée</p>';
-    }
-  })
-  .catch(err => console.error('Erreur deletePostesCible:', err));
-}
+  });
+}, 5000); // 5 secondes
 
 // ========================================================================
-// Initialisation générale
+// MARK: Initialisation générale
 // ========================================================================
 
 // Initialiser au chargement
@@ -883,6 +1081,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initMainSkillsHierarchyHandlers();
   initXpProHierarchyHandlers();
   initPostesCibleHandlers();
+  initSaveButtonHandlers();
+  initPostesCibleDirtyTracking();
+  initMainSkillsDirtyTracking();
 });
 
 // Réinitialiser après chaque insertion HTMX
@@ -890,6 +1091,9 @@ document.addEventListener('htmx:afterSwap', () => {
   initMainSkillsHierarchyHandlers();
   initXpProHierarchyHandlers();
   initPostesCibleHandlers();
+  initSaveButtonHandlers();
+  initPostesCibleDirtyTracking();
+  initMainSkillsDirtyTracking();
 });
 </script>
 {% endblock %}
