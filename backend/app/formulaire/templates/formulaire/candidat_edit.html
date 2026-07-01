@@ -372,19 +372,14 @@
           <small class="form-text text-muted">Nom de l'entreprise ou de l'organisation</small>
         </div>
         <div class="col-md-6">
-          <label class="form-label">Poste</label>
-          <input type="text" name="poste" class="form-control" placeholder="{{ placeholders.experiences.poste }}" required>
-          <small class="form-text text-muted">Titre du poste occupé</small>
-        </div>
-        <div class="col-md-6">
           <label class="form-label">Période</label>
           <input type="text" name="date" class="form-control" placeholder="{{ placeholders.experiences.date }}" required>
           <small class="form-text text-muted">Format: YYYY-YYYY ou YYYY, MM/YYYY-MM/YYYY ou MM/YYYY</small>
         </div>
         <div class="col-md-6">
-          <label class="form-label">Technologies</label>
-          <input type="text" name="technologies" class="form-control" placeholder="{{ placeholders.experiences.technologies }}">
-          <small class="form-text text-muted">Séparées par des virgules</small>
+          <label class="form-label">Poste</label>
+          <input type="text" name="poste" class="form-control" placeholder="{{ placeholders.experiences.poste }}" required>
+          <small class="form-text text-muted">Titre du poste occupé</small>
         </div>
         <div class="col-md-12">
           <button type="submit" class="btn btn-success">
@@ -423,7 +418,9 @@
 
               <!-- Sous-section 1: Contexte -->
               <div class="mb-4">
-                <label class="form-label small fw-semibold">Contexte de l'expérience</label>
+                <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
+                  <span><i class="bi bi-list-check"></i> Contexte de l'expérience</span>
+                </label>
                 <textarea class="form-control xp-pro-step2-context"
                           placeholder="{{ placeholders.experiences.context }}"
                           rows="3">{{ exp.context }}</textarea>
@@ -431,9 +428,11 @@
 
               <!-- Sous-section 2: Technologies utilisées -->
               <div class="mb-4">
-                <label class="form-label small fw-semibold">Technologies utilisées</label>
+                <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
+                  <span><i class="bi bi-list-check"></i> Technologies utilisées</span>
+                </label>
                 <div class="input-group input-group-sm mb-2">
-                  <input type="text" 
+                  <input type="text"
                          class="form-control xp-pro-step2-tech-input"
                          placeholder="ex: Python, Django, PostgreSQL... (séparées par des virgules)"
                          data-separator=",">
@@ -446,7 +445,7 @@
                     {% for tech in exp.env_tech %}
                       <span class="badge bg-info text-dark me-2 mb-2">
                         {{ tech }}
-                        <button type="button" class="btn-xp-pro-step2-tech-remove" data-tech="{{ tech }}" style="border: none; background: none; color: inherit; cursor: pointer; margin-left: 5px;">×</button>
+                        <button type="button" class="btn-xp-pro-step2-tech-remove" data-tech="{{ tech }}">×</button>
                       </span>
                     {% endfor %}
                   {% else %}
@@ -479,7 +478,6 @@
                         data-candidat-pk="{{ candidat.pk }}">
                   <i class="bi bi-check-lg"></i> Enregistrer
                 </button>
-                <small class="text-muted">Auto-save toutes les 5 secondes</small>
               </div>
             </div>
           </div>
@@ -1009,7 +1007,7 @@ async function saveData(section, showFeedback = false, element = null) {
     // Montrer le feedback si c'est un click-save
     let btn = null;
     if (showFeedback && section !== 'xp_pro_realization') {
-      btn = document.querySelector(`[data-section="${section.replace('main_skills_', '')}"][data-candidat-pk="${CANDIDAT_PK}"].btn-main-skills-save`) 
+      btn = document.querySelector(`[data-section="${section.replace('main_skills_', '')}"][data-candidat-pk="${CANDIDAT_PK}"].btn-main-skills-save`)
          || document.querySelector(`[data-candidat-pk="${CANDIDAT_PK}"].btn-poste-cible-save`);
       if (btn) {
         const textSpan = btn.querySelector('.btn-save-text');
@@ -1200,14 +1198,14 @@ function initXpProStep2Handlers() {
 function markXpProStep2Dirty(element) {
   const container = element.closest('.xp-pro-step2-container');
   if (!container) return;
-  
+
   const expIndex = container.dataset.expIndex;
   if (!xpProStep2DirtyState[expIndex]) {
     xpProStep2DirtyState[expIndex] = { dirty: false, timeout: null };
   }
-  
+
   xpProStep2DirtyState[expIndex].dirty = true;
-  
+
   // Schedule auto-save in 5 seconds
   clearTimeout(xpProStep2DirtyState[expIndex].timeout);
   xpProStep2DirtyState[expIndex].timeout = setTimeout(() => {
@@ -1221,21 +1219,21 @@ function addXpProStep2Technology(e) {
   const container = btn.closest('.xp-pro-step2-container');
   const input = container.querySelector('.xp-pro-step2-tech-input');
   const badgesDiv = container.querySelector('.xp-pro-step2-tech-badges');
-  
+
   const techs = input.value.split(',').map(t => t.trim()).filter(t => t);
   if (techs.length === 0) return;
-  
+
   techs.forEach(tech => {
     const badge = document.createElement('span');
     badge.className = 'badge bg-info text-dark me-2 mb-2';
     badge.innerHTML = `${tech} <button type="button" class="btn-xp-pro-step2-tech-remove" data-tech="${tech}" style="border: none; background: none; color: inherit; cursor: pointer; margin-left: 5px;">×</button>`;
-    
+
     const removeBtn = badge.querySelector('.btn-xp-pro-step2-tech-remove');
     removeBtn.addEventListener('click', removeXpProStep2Technology);
-    
+
     badgesDiv.appendChild(badge);
   });
-  
+
   input.value = '';
   markXpProStep2Dirty(input);
 }
@@ -1255,10 +1253,10 @@ function addXpProStep2Realization(e) {
   const container = btn.closest('.xp-pro-step2-container');
   const expIndex = container.dataset.expIndex;
   const candidatPk = container.dataset.candidatPk;
-  
+
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-  
+
   fetch(`/candidat/${candidatPk}/experience/${expIndex}/realization/ajouter/`, {
     method: 'POST',
     body: formData,
@@ -1279,42 +1277,42 @@ function saveXpProStep2(e, isSilent = true, containerOverride = null) {
     const btn = e.target.closest('.btn-xp-pro-step2-save');
     container = btn?.closest('.xp-pro-step2-container');
   }
-  
+
   if (!container) return;
-  
+
   const expIndex = container.dataset.expIndex;
   const candidatPk = container.dataset.candidatPk;
   const btn = container.querySelector('.btn-xp-pro-step2-save');
-  
+
   // Check if dirty
   if (!xpProStep2DirtyState[expIndex]?.dirty) return;
-  
+
   // Collect data from 3 subsections
   const context = container.querySelector('.xp-pro-step2-context').value.trim();
-  
+
   // Get technologies from badges
   const techBadges = container.querySelectorAll('.badge');
   const envTech = Array.from(techBadges)
     .map(badge => badge.textContent.replace('×', '').trim())
     .filter(t => t);
-  
+
   // Build realization tree
   const realizationsDiv = container.querySelector('.xp-pro-step2-realizations');
   const realizations = buildXpProStep2RealizationTree(realizationsDiv);
-  
+
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
   formData.append('context', context);
   formData.append('env_tech', JSON.stringify(envTech));
   formData.append('realizations', JSON.stringify(realizations));
-  
+
   // Show feedback if explicit click (not auto-save)
   const originalText = btn?.innerHTML;
   if (!isSilent && btn) {
     btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
     btn.disabled = true;
   }
-  
+
   fetch(`/candidat/${candidatPk}/experience/${expIndex}/step2-update/`, {
     method: 'POST',
     body: formData,
@@ -1323,7 +1321,7 @@ function saveXpProStep2(e, isSilent = true, containerOverride = null) {
   .then(data => {
     if (data.status === 'ok') {
       xpProStep2DirtyState[expIndex].dirty = false;
-      
+
       if (!isSilent && btn) {
         btn.innerHTML = '<i class="bi bi-check-lg"></i> Enregistré !';
         btn.classList.remove('btn-outline-primary');
@@ -1368,23 +1366,23 @@ function buildXpProStep2RealizationTree(container) {
 function buildXpProStep2SingleItem(itemDiv) {
   const idAttr = itemDiv.id;
   if (!idAttr || !idAttr.startsWith('item-')) return null;
-  
+
   const id = idAttr.replace('item-', '');
   const titleInput = itemDiv.querySelector('.xp-pro-hierarchy-title');
   const title = titleInput ? titleInput.value : '';
-  
+
   const children = [];
   // Les enfants sont dans la div avec id="description-xxx"
   const descriptionId = `description-${id}`;
   const childrenContainer = itemDiv.querySelector(`#${descriptionId}`);
-  
+
   if (childrenContainer) {
     childrenContainer.querySelectorAll(':scope > .xp-pro-hierarchy-item').forEach(childDiv => {
       const child = buildXpProStep2SingleItem(childDiv);
       if (child) children.push(child);
     });
   }
-  
+
   return {
     id,
     title,
