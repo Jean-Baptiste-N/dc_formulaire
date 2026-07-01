@@ -60,10 +60,9 @@ urlpatterns = [
     # ========================================================================
     # 9. XP_PRO BULLETS - 2e étape du workflow (Add, Update, Delete)
     # ========================================================================
+    path("candidat/<uuid:pk>/experience/<int:exp_index>/step2-update/",views.xp_pro_step2_update,name="xp_pro_step2_update",),
+    path("candidat/<uuid:pk>/experience/<int:exp_index>/step2-bulk-update/",views.xp_pro_step2_bulk_update,name="xp_pro_step2_bulk_update",),
     path("candidat/<uuid:pk>/experience/<int:exp_index>/realization/ajouter/",views.xp_pro_realization_add,name="xp_pro_realization_add",),
-    path("candidat/<uuid:pk>/experience/<int:exp_index>/realization/<str:item_id>/mettre-a-jour/",views.xp_pro_realization_update,name="xp_pro_realization_update",),
     path("candidat/<uuid:pk>/experience/<int:exp_index>/realization/<str:item_id>/supprimer/",views.xp_pro_realization_delete,name="xp_pro_realization_delete",),
-    path("candidat/<uuid:pk>/experience/<int:exp_index>/realization/bulk-update/",views.xp_pro_realization_bulk_update,name="xp_pro_realization_bulk_update",),
-    path("candidat/<uuid:pk>/experience/<int:exp_index>/contexte/mettre-a-jour/",views.xp_pro_context_update,name="xp_pro_context_update",),
 ]
 

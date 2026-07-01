@@ -836,37 +836,6 @@ def xp_pro_realization_add(request, pk, exp_index):
         return HttpResponse(f"Erreur: {e}", status=400)
 
 @require_POST
-def xp_pro_realization_update(request, pk, exp_index, item_id):
-    """Met à jour le titre d'une réalisation xp_pro."""
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-
-    try:
-        exp_index = int(exp_index)
-        if "xp_pro" not in dossier or exp_index >= len(dossier["xp_pro"]):
-            return HttpResponse("Expérience introuvable", status=404)
-
-        experience = dossier["xp_pro"][exp_index]
-        if "description" not in experience or not isinstance(experience["description"], list):
-            return HttpResponse("Description introuvable", status=404)
-
-        item = _find_xp_pro_item_recursive(experience["description"], item_id)
-        if not item:
-            return HttpResponse("Item introuvable", status=404)
-
-        # Mettre à jour le titre
-        item["title"] = _clean_text(request.POST.get("title", ""))
-
-        candidat.dossier = dossier
-        candidat.save(update_fields=["dossier"])
-
-        return HttpResponse("OK")
-
-    except (ValueError, IndexError) as e:
-        logger.error(f"Erreur xp_pro_realization_update: {e}")
-        return HttpResponse(f"Erreur: {e}", status=400)
-
-@require_POST
 def xp_pro_realization_delete(request, pk, exp_index, item_id):
     """Supprime une réalisation xp_pro et ses enfants."""
     candidat = get_object_or_404(Candidat, pk=pk)
@@ -898,64 +867,82 @@ def xp_pro_realization_delete(request, pk, exp_index, item_id):
         return HttpResponse(f"Erreur: {e}", status=400)
 
 @require_POST
-def xp_pro_realization_bulk_update(request, pk, exp_index):
-    """Met à jour les titres de plusieurs réalisations xp_pro (bulk update)."""
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-
-    try:
-        items = json.loads(request.POST.get("items", "[]"))
-        exp_index = int(exp_index)
-    except (json.JSONDecodeError, ValueError):
-        return JsonResponse({"error": "Invalid JSON or index"}, status=400)
-
-    if "xp_pro" not in dossier or exp_index >= len(dossier["xp_pro"]):
-        return JsonResponse({"error": "Experience not found"}, status=404)
-
-    experience = dossier["xp_pro"][exp_index]
-    if "description" not in experience or not isinstance(experience["description"], list):
-        return JsonResponse({"error": "Description not found"}, status=404)
-
-    # Fonction interne pour mettre à jour récursivement
-    def update_items_recursive(items_list, items_to_update):
-        for item in items_list:
-            for update_item in items_to_update:
-                if item.get("id") == update_item.get("id"):
-                    item["title"] = _clean_text(update_item.get("title", ""))
-                    break
-            # Récursion sur les enfants
-            if "description" in item and isinstance(item["description"], list):
-                update_items_recursive(item["description"], items_to_update)
-
-    update_items_recursive(experience["description"], items)
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-
-    return JsonResponse({"status": "ok"})
-
 @require_POST
-def xp_pro_context_update(request, pk, exp_index):
-    """Met à jour le contexte d'une expérience xp_pro."""
+def xp_pro_step2_update(request, pk, exp_index):
+    """
+    Met à jour les 3 sections de la 2e étape du workflow xp_pro:
+    - Contexte de l'expérience
+    - Technologies utilisées (env_tech)
+    - Réalisations (description)
+    """
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
     try:
         exp_index = int(exp_index)
         if "xp_pro" not in dossier or exp_index >= len(dossier["xp_pro"]):
-            return HttpResponse("Expérience introuvable", status=404)
+            return JsonResponse({"error": "Experience not found"}, status=404)
 
         experience = dossier["xp_pro"][exp_index]
-        # Mettre à jour le contexte
-        experience["context"] = _clean_text(request.POST.get("context", ""))
+        if "description" not in experience or not isinstance(experience["description"], list):
+            return JsonResponse({"error": "Description not found"}, status=404)
 
+        # 1. Mettre à jour le contexte
+        context = request.POST.get("context", "").strip()
+        experience["context"] = _clean_text(context)
+
+        # 2. Mettre à jour les technologies (env_tech)
+        env_tech_raw = request.POST.get("env_tech", "")
+        try:
+            # Essayer de parser comme JSON (array)
+            if env_tech_raw.startswith("["):
+                env_tech_list = json.loads(env_tech_raw)
+            else:
+                # Sinon, parser comme chaîne comma-separated
+                env_tech_list = [_clean_text(tech.strip()) for tech in env_tech_raw.split(",") if tech.strip()]
+        except json.JSONDecodeError:
+            env_tech_list = [_clean_text(tech.strip()) for tech in env_tech_raw.split(",") if tech.strip()]
+        
+        experience["env_tech"] = env_tech_list
+
+        # 3. Mettre à jour les réalisations (description)
+        realization_items = request.POST.get("realizations", "[]")
+        try:
+            realization_list = json.loads(realization_items) if realization_items else []
+        except json.JSONDecodeError:
+            realization_list = []
+
+        # Fonction pour nettoyer et reconstruire l'arborescence
+        def clean_realization_tree(items):
+            cleaned = []
+            for item in items:
+                cleaned_item = {
+                    "id": item.get("id", _new_id()),
+                    "title": _clean_text(item.get("title", "")),
+                }
+                if "description" in item and isinstance(item["description"], list):
+                    cleaned_item["description"] = clean_realization_tree(item["description"])
+                else:
+                    cleaned_item["description"] = []
+                cleaned.append(cleaned_item)
+            return cleaned
+
+        experience["description"] = clean_realization_tree(realization_list)
+
+        # Sauvegarder les modifications
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
-        return HttpResponse("OK")
+        return JsonResponse({"status": "ok"})
 
     except (ValueError, IndexError) as e:
-        logger.error(f"Erreur xp_pro_context_update: {e}")
-        return HttpResponse(f"Erreur: {e}", status=400)
+        logger.error(f"Erreur xp_pro_step2_update: {e}")
+        return JsonResponse({"error": str(e)}, status=400)
+
+@require_POST
+def xp_pro_step2_bulk_update(request, pk, exp_index):
+    """Unified bulk update for xp_pro step2 (contexte + env_tech + realizations)."""
+    return xp_pro_step2_update(request, pk, exp_index)
 
 # ============================================================================
 # MARK: 10. DOCX EXPORT
