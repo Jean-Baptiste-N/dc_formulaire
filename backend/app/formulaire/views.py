@@ -580,6 +580,9 @@ def formation_remove(request, pk, index):
             dossier["formations"].pop(index)
             candidat.dossier = dossier
             candidat.save(update_fields=["dossier"])
+            # Return JSON for AJAX requests
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.method == "POST":
+                return JsonResponse({"success": True})
     except (ValueError, IndexError):
         pass
 
@@ -622,6 +625,9 @@ def certification_remove(request, pk, index):
             dossier["certifications"].pop(index)
             candidat.dossier = dossier
             candidat.save(update_fields=["dossier"])
+            # Return JSON for AJAX requests
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.method == "POST":
+                return JsonResponse({"success": True})
     except (ValueError, IndexError):
         pass
 
@@ -663,6 +669,9 @@ def langue_remove(request, pk, index):
             dossier["langues"].pop(index)
             candidat.dossier = dossier
             candidat.save(update_fields=["dossier"])
+            # Return JSON for AJAX requests
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.method == "POST":
+                return JsonResponse({"success": True})
     except (ValueError, IndexError):
         pass
 
@@ -710,6 +719,8 @@ def experience_add(request, pk):
 @require_POST
 def experience_remove(request, pk, index):
     """Supprime une expérience."""
+    from django.http import JsonResponse
+    
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
@@ -719,6 +730,9 @@ def experience_remove(request, pk, index):
             dossier["xp_pro"].pop(index)
             candidat.dossier = dossier
             candidat.save(update_fields=["dossier"])
+            # Return JSON for AJAX requests
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.method == "POST":
+                return JsonResponse({"success": True})
     except (ValueError, IndexError):
         pass
 

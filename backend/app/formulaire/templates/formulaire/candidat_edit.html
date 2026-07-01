@@ -223,9 +223,11 @@
                 <small class="text-muted">{{ formation.school }} ({{ formation.date }})</small><br>
                 {% if formation.description %}<small>{{ formation.description }}</small>{% endif %}
               </div>
-              <a href="{% url 'formulaire:formation_remove' candidat.pk forloop.counter0 %}" class="btn btn-sm btn-danger">
+              <button type="button" class="btn btn-sm btn-danger btn-formation-remove" 
+                      data-candidat-pk="{{ candidat.pk }}" 
+                      data-formation-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
-              </a>
+              </button>
             </div>
           </div>
         {% endfor %}
@@ -284,9 +286,11 @@
                 <small class="text-muted">{{ cert.date }}</small><br>
                 {% if cert.description %}<small>{{ cert.description }}</small>{% endif %}
               </div>
-              <a href="{% url 'formulaire:certification_remove' candidat.pk forloop.counter0 %}" class="btn btn-sm btn-danger">
+              <button type="button" class="btn btn-sm btn-danger btn-certification-remove" 
+                      data-candidat-pk="{{ candidat.pk }}" 
+                      data-certification-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
-              </a>
+              </button>
             </div>
           </div>
         {% endfor %}
@@ -339,9 +343,11 @@
                 <strong>{{ langue.title }}</strong> <br>
                 {% if langue.description %}<small>{{ langue.description }}</small>{% endif %}
               </div>
-              <a href="{% url 'formulaire:langue_remove' candidat.pk forloop.counter0 %}" class="btn btn-sm btn-danger">
+              <button type="button" class="btn btn-sm btn-danger btn-langue-remove" 
+                      data-candidat-pk="{{ candidat.pk }}" 
+                      data-langue-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
-              </a>
+              </button>
             </div>
           </div>
         {% endfor %}
@@ -404,9 +410,11 @@
                 <small class="text-muted">{{ exp.date }}</small><br>
                 {% if exp.context %}<small><em>{{ exp.context }}</em></small><br>{% endif %}
               </div>
-              <a href="{% url 'formulaire:experience_remove' candidat.pk forloop.counter0 %}" class="btn btn-sm btn-danger">
+              <button type="button" class="btn btn-sm btn-danger btn-experience-remove" 
+                      data-candidat-pk="{{ candidat.pk }}" 
+                      data-exp-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
-              </a>
+              </button>
             </div>
 
             <!-- ================================================================
@@ -494,7 +502,7 @@
       MARK: SCRIPTS
       ========================================================================-->
 
-{% block scripts %}
+{% block extra_js %}
 
 <script>
 const CANDIDAT_PK = '{{ candidat.pk }}';
@@ -767,8 +775,15 @@ function deleteMainSkillsHierarchyItem(e) {
   const btn = e.target.closest('.btn-main-skills-hierarchy-delete');
   const itemId = btn.dataset.itemId;
   const endpointBase = btn.dataset.endpointBase;
+  const depth = parseInt(btn.dataset.depth || '0');
+  const item = document.getElementById(`item-${itemId}`);
+  const title = item?.querySelector('.main-skills-hierarchy-title')?.value || 'cet élément';
+  
+  const message = depth === 0 
+    ? `Supprimer le domaine de compétences: ${title} ?\n\nCela supprimera aussi tous les sous-domaines et est irréversible.`
+    : `Supprimer: ${title} et ses enfants ?\n\nCette action est irréversible.`;
 
-  if (confirm('Supprimer cet item et ses enfants ?')) {
+  if (confirm(message)) {
     const section = endpointBase.replace('main_skills_', '');
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
@@ -901,8 +916,15 @@ function deleteXpProHierarchyItem(e) {
   const btn = e.target.closest('.btn-xp-pro-hierarchy-delete');
   const itemId = btn.dataset.itemId;
   const expIndex = btn.dataset.targetIndex;
+  const depth = parseInt(btn.dataset.depth || '0');
+  const item = document.getElementById(`item-${itemId}`);
+  const title = item?.querySelector('.xp-pro-hierarchy-title')?.value || 'cet élément';
+  
+  const message = depth === 0
+    ? `Supprimer la réalisation: ${title} ?\n\nCela supprimera aussi toutes les sous-tâches et est irréversible.`
+    : `Supprimer: ${title} et ses enfants ?\n\nCette action est irréversible.`;
 
-  if (confirm('Supprimer cette réalisation et ses enfants ?')) {
+  if (confirm(message)) {
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
@@ -919,226 +941,171 @@ function deleteXpProHierarchyItem(e) {
 }
 
 // ========================================================================
-// MARK: AUTO-SAVE & CLICK-SAVE (5s auto-save + button feedback)
+// MARK: XP_PRO EXPERIENCE HANDLERS - Add, Remove
 // ========================================================================
 
-// Configuration centralisée pour l'auto-save
-const autosaveConfig = {
-  poste_cible: {
-    dirtyKey: 'poste_cible',
-    getItems: () => Array.from(document.querySelectorAll('#poste-cible-list input[type="text"]')).map(input => ({
-      id: input.dataset.posteCible,
-      title: input.value.trim(),
-    })),
-    endpoint: () => `/candidat/${CANDIDAT_PK}/poste-cible/bulk-update/`,
-    type: 'bulk'
-  },
-  main_skills_bullet: {
-    dirtyKey: 'main_skills_bullet',
-    getItems: () => Array.from(document.querySelectorAll('#main_skills_bullet_list .main-skills-hierarchy-item')).map(item => ({
-      id: item.dataset.itemId,
-      title: item.querySelector('.main-skills-hierarchy-title').value.trim(),
-    })),
-    endpoint: () => `/candidat/${CANDIDAT_PK}/main_skills/bullet/bulk-update/`,
-    type: 'bulk'
-  },
-  main_skills_table: {
-    dirtyKey: 'main_skills_table',
-    getItems: () => Array.from(document.querySelectorAll('#main_skills_table_list .main-skills-hierarchy-item')).map(item => ({
-      id: item.dataset.itemId,
-      title: item.querySelector('.main-skills-hierarchy-title').value.trim(),
-    })),
-    endpoint: () => `/candidat/${CANDIDAT_PK}/main_skills/table/bulk-update/`,
-    type: 'bulk'
-  },
-  xp_pro_realization: {
-    dirtyKey: 'xp_pro_realization',
-    getItems: (expIndex) => Array.from(document.querySelectorAll(`#realizations-${expIndex} .xp-pro-hierarchy-item`)).map(item => ({
-      id: item.dataset.itemId,
-      title: item.querySelector('.xp-pro-hierarchy-title').value.trim(),
-    })),
-    endpoint: (expIndex) => `/candidat/${CANDIDAT_PK}/experience/${expIndex}/realization/bulk-update/`,
-    type: 'bulk-per-exp'
-  },
-  xp_pro_context: {
-    dirtyKey: 'xp_pro_context',
-    type: 'single'
-  }
-};
+function initExperienceHandlers() {
+  document.querySelectorAll('.btn-experience-remove').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', removeExperience);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+}
 
-// Tracking des sections modifiées (dirty state)
-const dirtyState = {
-  poste_cible: false,
-  main_skills_bullet: false,
-  main_skills_table: false,
-  xp_pro_realization: {}, // Keyed by expIndex
-  xp_pro_context: {}       // Keyed by expIndex
-};
-
-// Fonction unifiée pour sauvegarder les données
-async function saveData(section, showFeedback = false, element = null) {
-  const config = autosaveConfig[section];
-  if (!config) return;
-
-  let items = [];
-  let endpoint = '';
-
-  if (section === 'xp_pro_realization' && element) {
-    const expIndex = element.dataset.targetIndex || element.dataset.expIndex;
-    items = config.getItems(expIndex);
-    endpoint = config.endpoint(expIndex);
-    if (items.length === 0) return;
-  } else if (section === 'xp_pro_context' && element) {
-    // xp_pro_context est géré différemment (voir plus bas)
+function removeExperience(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-experience-remove');
+  const card = btn.closest('.alert');
+  const poste = card?.querySelector('strong:first-of-type')?.textContent || 'cette expérience';
+  const company = card?.querySelector('strong:nth-of-type(2)')?.textContent || '';
+  const subtitle = company ? ` chez ${company}` : '';
+  if (!confirm(`Supprimer l'expérience: ${poste}${subtitle} ?\n\nCette action supprimera aussi toutes les réalisations associées et est irréversible.`)) {
     return;
-  } else if (config.type === 'bulk') {
-    items = config.getItems();
-    endpoint = config.endpoint();
-    if (items.length === 0) return;
   }
+  const candidatPk = btn.dataset.candidatPk;
+  const expIndex = btn.dataset.expIndex;
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-  if (config.type.startsWith('bulk')) {
-    formData.append('items', JSON.stringify(items));
-  }
 
-  try {
-    // Montrer le feedback si c'est un click-save
-    let btn = null;
-    if (showFeedback && section !== 'xp_pro_realization') {
-      btn = document.querySelector(`[data-section="${section.replace('main_skills_', '')}"][data-candidat-pk="${CANDIDAT_PK}"].btn-main-skills-save`)
-         || document.querySelector(`[data-candidat-pk="${CANDIDAT_PK}"].btn-poste-cible-save`);
-      if (btn) {
-        const textSpan = btn.querySelector('.btn-save-text');
-        textSpan.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
-        btn.disabled = true;
+  fetch(`/candidat/${candidatPk}/experience/${expIndex}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      // Remove the experience card from the DOM
+      const expDiv = btn.closest('.alert.alert-warning');
+      if (expDiv) {
+        expDiv.remove();
       }
-    } else if (showFeedback && section === 'xp_pro_realization' && element) {
-      btn = element.closest('.xp-pro-section')?.querySelector('.btn-xp-pro-realization-save');
-      if (btn) {
-        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
-        btn.disabled = true;
-      }
-    }
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (response.ok && showFeedback && btn) {
-      const textSpan = btn.querySelector('.btn-save-text') || btn;
-      textSpan.innerHTML = 'Enregistré ! <i class="bi bi-check-circle"></i>';
-      btn.disabled = false;
-      setTimeout(() => {
-        if (section === 'xp_pro_realization') {
-          btn.innerHTML = 'Enregistrer réalisations';
-        } else {
-          textSpan.innerHTML = 'Enregistrer';
-        }
-      }, 2000);
-    }
-
-    // Marquer comme clean
-    if (section === 'xp_pro_realization' && element) {
-      const expIndex = element.dataset.targetIndex || element.dataset.expIndex;
-      dirtyState[section][expIndex] = false;
     } else {
-      dirtyState[section] = false;
+      console.error('Erreur suppression expérience:', r.status);
     }
-  } catch (err) {
-    console.error(`Erreur saveData ${section}:`, err);
-    if (showFeedback && btn) {
-      btn.innerHTML = '<i class="bi bi-exclamation-circle"></i> Erreur!';
-      btn.disabled = false;
+  })
+  .catch(err => console.error('Erreur removeExperience:', err));
+}
+
+// ========================================================================
+// MARK: FORMATION/CERTIFICATION/LANGUE HANDLERS - Delete buttons
+// ========================================================================
+
+function initFormationCertificationLangueHandlers() {
+  // Formation delete
+  document.querySelectorAll('.btn-formation-remove').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', removeFormation);
+      btn.setAttribute('data-listener-initialized', 'true');
     }
+  });
+  
+  // Certification delete
+  document.querySelectorAll('.btn-certification-remove').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', removeCertification);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+  
+  // Langue delete
+  document.querySelectorAll('.btn-langue-remove').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', removeLangue);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+}
+
+function removeFormation(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-formation-remove');
+  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette formation';
+  if (!confirm(`Supprimer la formation: ${title} ?\n\nCette action est irréversible.`)) {
+    return;
   }
-}
+  const candidatPk = btn.dataset.candidatPk;
+  const formationIndex = btn.dataset.formationIndex;
 
-// Fonction unifiée d'initialisation des handlers
-function initAutosaveHandlers() {
-  // Boutons pour bulk sections
-  document.querySelectorAll('.btn-poste-cible-save, .btn-main-skills-save').forEach(btn => {
-    if (!btn.hasAttribute('data-autosave-initialized')) {
-      btn.addEventListener('click', function() {
-        const section = this.className.includes('poste-cible') ? 'poste_cible' : `main_skills_${this.dataset.section}`;
-        saveData(section, true);
-      });
-      btn.setAttribute('data-autosave-initialized', 'true');
-    }
-  });
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
-  // Bouton pour xp_pro_realization
-  document.querySelectorAll('.btn-xp-pro-realization-save').forEach(btn => {
-    if (!btn.hasAttribute('data-autosave-initialized')) {
-      btn.addEventListener('click', function() {
-        const expIndex = this.dataset.expIndex;
-        const section = document.getElementById(`realizations-${expIndex}`);
-        saveData('xp_pro_realization', true, section);
-      });
-      btn.setAttribute('data-autosave-initialized', 'true');
-    }
-  });
-
-  // Dirty tracking pour bulk sections
-  document.querySelectorAll('#poste-cible-list input[type="text"], .main-skills-hierarchy-title, .xp-pro-hierarchy-title').forEach(input => {
-    if (!input.hasAttribute('data-autosave-initialized')) {
-      input.addEventListener('change', function() {
-        if (this.classList.contains('xp-pro-hierarchy-title')) {
-          const expIndex = this.dataset.targetIndex;
-          if (!dirtyState.xp_pro_realization[expIndex]) {
-            dirtyState.xp_pro_realization[expIndex] = true;
-          }
-        } else if (this.id?.includes('poste')) {
-          dirtyState.poste_cible = true;
-        } else {
-          const section = this.dataset.endpointBase === 'bullet' ? 'main_skills_bullet' : 'main_skills_table';
-          dirtyState[section] = true;
-        }
-      });
-      input.setAttribute('data-autosave-initialized', 'true');
-    }
-  });
-
-  // Auto-save 5s timer pour xp_pro_context (handler distinct pour textarea)
-  document.querySelectorAll('.xp-pro-context').forEach(textarea => {
-    if (!textarea.hasAttribute('data-autosave-initialized')) {
-      textarea.addEventListener('input', function() {
-        const expIndex = this.dataset.expIndex;
-        clearTimeout(this.autosaveTimer);
-        this.autosaveTimer = setTimeout(() => saveXpProContext(this), 5000);
-      });
-      textarea.setAttribute('data-autosave-initialized', 'true');
-    }
-  });
-
-  // Boutons pour xp_pro_context
-  document.querySelectorAll('.btn-xp-pro-context-save').forEach(btn => {
-    if (!btn.hasAttribute('data-autosave-initialized')) {
-      btn.addEventListener('click', saveXpProContext);
-      btn.setAttribute('data-autosave-initialized', 'true');
-    }
-  });
-}
-
-// Auto-save toutes les 5s (silencieux) pour bulk sections
-setInterval(() => {
-  ['poste_cible', 'main_skills_bullet', 'main_skills_table'].forEach(section => {
-    if (dirtyState[section]) {
-      saveData(section, false);
-    }
-  });
-  // Pour xp_pro_realization (par expérience)
-  Object.entries(dirtyState.xp_pro_realization).forEach(([expIndex, isDirty]) => {
-    if (isDirty) {
-      const section = document.getElementById(`realizations-${expIndex}`);
-      if (section) {
-        saveData('xp_pro_realization', false, section);
+  fetch(`/candidat/${candidatPk}/formation/${formationIndex}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      const formationDiv = btn.closest('.alert.alert-info');
+      if (formationDiv) {
+        formationDiv.remove();
       }
+    } else {
+      console.error('Erreur suppression formation:', r.status);
     }
-  });
-}, 5000);
+  })
+  .catch(err => console.error('Erreur removeFormation:', err));
+}
+
+function removeCertification(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-certification-remove');
+  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette certification';
+  if (!confirm(`Supprimer la certification: ${title} ?\n\nCette action est irréversible.`)) {
+    return;
+  }
+  const candidatPk = btn.dataset.candidatPk;
+  const certificationIndex = btn.dataset.certificationIndex;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/certification/${certificationIndex}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      const certDiv = btn.closest('.alert.alert-success');
+      if (certDiv) {
+        certDiv.remove();
+      }
+    } else {
+      console.error('Erreur suppression certification:', r.status);
+    }
+  })
+  .catch(err => console.error('Erreur removeCertification:', err));
+}
+
+function removeLangue(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-langue-remove');
+  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette langue';
+  if (!confirm(`Supprimer la langue: ${title} ?\n\nCette action est irréversible.`)) {
+    return;
+  }
+  const candidatPk = btn.dataset.candidatPk;
+  const langueIndex = btn.dataset.langueIndex;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/langue/${langueIndex}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      const langueDiv = btn.closest('.alert.alert-info');
+      if (langueDiv) {
+        langueDiv.remove();
+      }
+    } else {
+      console.error('Erreur suppression langue:', r.status);
+    }
+  })
+  .catch(err => console.error('Erreur removeLangue:', err));
+}
 
 // ========================================================================
 // MARK: XP_PRO STEP 2 HANDLERS - Unified handler for contexte + technologies + realizations
@@ -1391,6 +1358,228 @@ function buildXpProStep2SingleItem(itemDiv) {
 }
 
 // ========================================================================
+// MARK: AUTO-SAVE & CLICK-SAVE (5s auto-save + button feedback)
+// ========================================================================
+
+// Configuration centralisée pour l'auto-save
+const autosaveConfig = {
+  poste_cible: {
+    dirtyKey: 'poste_cible',
+    getItems: () => Array.from(document.querySelectorAll('#poste-cible-list input[type="text"]')).map(input => ({
+      id: input.dataset.posteCible,
+      title: input.value.trim(),
+    })),
+    endpoint: () => `/candidat/${CANDIDAT_PK}/poste-cible/bulk-update/`,
+    type: 'bulk'
+  },
+  main_skills_bullet: {
+    dirtyKey: 'main_skills_bullet',
+    getItems: () => Array.from(document.querySelectorAll('#main_skills_bullet_list .main-skills-hierarchy-item')).map(item => ({
+      id: item.dataset.itemId,
+      title: item.querySelector('.main-skills-hierarchy-title').value.trim(),
+    })),
+    endpoint: () => `/candidat/${CANDIDAT_PK}/main_skills/bullet/bulk-update/`,
+    type: 'bulk'
+  },
+  main_skills_table: {
+    dirtyKey: 'main_skills_table',
+    getItems: () => Array.from(document.querySelectorAll('#main_skills_table_list .main-skills-hierarchy-item')).map(item => ({
+      id: item.dataset.itemId,
+      title: item.querySelector('.main-skills-hierarchy-title').value.trim(),
+    })),
+    endpoint: () => `/candidat/${CANDIDAT_PK}/main_skills/table/bulk-update/`,
+    type: 'bulk'
+  },
+  xp_pro_realization: {
+    dirtyKey: 'xp_pro_realization',
+    getItems: (expIndex) => Array.from(document.querySelectorAll(`#realizations-${expIndex} .xp-pro-hierarchy-item`)).map(item => ({
+      id: item.dataset.itemId,
+      title: item.querySelector('.xp-pro-hierarchy-title').value.trim(),
+    })),
+    endpoint: (expIndex) => `/candidat/${CANDIDAT_PK}/experience/${expIndex}/realization/bulk-update/`,
+    type: 'bulk-per-exp'
+  },
+  xp_pro_context: {
+    dirtyKey: 'xp_pro_context',
+    type: 'single'
+  }
+};
+
+// Tracking des sections modifiées (dirty state)
+const dirtyState = {
+  poste_cible: false,
+  main_skills_bullet: false,
+  main_skills_table: false,
+  xp_pro_realization: {}, // Keyed by expIndex
+  xp_pro_context: {}       // Keyed by expIndex
+};
+
+// Fonction unifiée pour sauvegarder les données
+async function saveData(section, showFeedback = false, element = null) {
+  const config = autosaveConfig[section];
+  if (!config) return;
+
+  let items = [];
+  let endpoint = '';
+
+  if (section === 'xp_pro_realization' && element) {
+    const expIndex = element.dataset.targetIndex || element.dataset.expIndex;
+    items = config.getItems(expIndex);
+    endpoint = config.endpoint(expIndex);
+    if (items.length === 0) return;
+  } else if (section === 'xp_pro_context' && element) {
+    // xp_pro_context est géré différemment (voir plus bas)
+    return;
+  } else if (config.type === 'bulk') {
+    items = config.getItems();
+    endpoint = config.endpoint();
+    if (items.length === 0) return;
+  }
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+  if (config.type.startsWith('bulk')) {
+    formData.append('items', JSON.stringify(items));
+  }
+
+  try {
+    // Montrer le feedback si c'est un click-save
+    let btn = null;
+    if (showFeedback && section !== 'xp_pro_realization') {
+      btn = document.querySelector(`[data-section="${section.replace('main_skills_', '')}"][data-candidat-pk="${CANDIDAT_PK}"].btn-main-skills-save`)
+         || document.querySelector(`[data-candidat-pk="${CANDIDAT_PK}"].btn-poste-cible-save`);
+      if (btn) {
+        const textSpan = btn.querySelector('.btn-save-text');
+        textSpan.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
+        btn.disabled = true;
+      }
+    } else if (showFeedback && section === 'xp_pro_realization' && element) {
+      btn = element.closest('.xp-pro-section')?.querySelector('.btn-xp-pro-realization-save');
+      if (btn) {
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
+        btn.disabled = true;
+      }
+    }
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (response.ok && showFeedback && btn) {
+      const textSpan = btn.querySelector('.btn-save-text') || btn;
+      textSpan.innerHTML = '<i class="bi bi-check-lg"></i> Enregistré !';
+      btn.disabled = false;
+      setTimeout(() => {
+        if (section === 'xp_pro_realization') {
+          btn.innerHTML = 'Enregistrer réalisations';
+        } else {
+          textSpan.innerHTML = 'Enregistrer';
+        }
+      }, 2000);
+    }
+
+    // Marquer comme clean
+    if (section === 'xp_pro_realization' && element) {
+      const expIndex = element.dataset.targetIndex || element.dataset.expIndex;
+      dirtyState[section][expIndex] = false;
+    } else {
+      dirtyState[section] = false;
+    }
+  } catch (err) {
+    console.error(`Erreur saveData ${section}:`, err);
+    if (showFeedback && btn) {
+      btn.innerHTML = '<i class="bi bi-exclamation-circle"></i> Erreur!';
+      btn.disabled = false;
+    }
+  }
+}
+
+// Fonction unifiée d'initialisation des handlers
+function initAutosaveHandlers() {
+  // Boutons pour bulk sections
+  document.querySelectorAll('.btn-poste-cible-save, .btn-main-skills-save').forEach(btn => {
+    if (!btn.hasAttribute('data-autosave-initialized')) {
+      btn.addEventListener('click', function() {
+        const section = this.className.includes('poste-cible') ? 'poste_cible' : `main_skills_${this.dataset.section}`;
+        saveData(section, true);
+      });
+      btn.setAttribute('data-autosave-initialized', 'true');
+    }
+  });
+
+  // Bouton pour xp_pro_realization
+  document.querySelectorAll('.btn-xp-pro-realization-save').forEach(btn => {
+    if (!btn.hasAttribute('data-autosave-initialized')) {
+      btn.addEventListener('click', function() {
+        const expIndex = this.dataset.expIndex;
+        const section = document.getElementById(`realizations-${expIndex}`);
+        saveData('xp_pro_realization', true, section);
+      });
+      btn.setAttribute('data-autosave-initialized', 'true');
+    }
+  });
+
+  // Dirty tracking pour bulk sections
+  document.querySelectorAll('#poste-cible-list input[type="text"], .main-skills-hierarchy-title, .xp-pro-hierarchy-title').forEach(input => {
+    if (!input.hasAttribute('data-autosave-initialized')) {
+      input.addEventListener('change', function() {
+        if (this.classList.contains('xp-pro-hierarchy-title')) {
+          const expIndex = this.dataset.targetIndex;
+          if (!dirtyState.xp_pro_realization[expIndex]) {
+            dirtyState.xp_pro_realization[expIndex] = true;
+          }
+        } else if (this.id?.includes('poste')) {
+          dirtyState.poste_cible = true;
+        } else {
+          const section = this.dataset.endpointBase === 'bullet' ? 'main_skills_bullet' : 'main_skills_table';
+          dirtyState[section] = true;
+        }
+      });
+      input.setAttribute('data-autosave-initialized', 'true');
+    }
+  });
+
+  // Auto-save 5s timer pour xp_pro_context (handler distinct pour textarea)
+  document.querySelectorAll('.xp-pro-context').forEach(textarea => {
+    if (!textarea.hasAttribute('data-autosave-initialized')) {
+      textarea.addEventListener('input', function() {
+        const expIndex = this.dataset.expIndex;
+        clearTimeout(this.autosaveTimer);
+        this.autosaveTimer = setTimeout(() => saveXpProContext(this), 5000);
+      });
+      textarea.setAttribute('data-autosave-initialized', 'true');
+    }
+  });
+
+  // Boutons pour xp_pro_context
+  document.querySelectorAll('.btn-xp-pro-context-save').forEach(btn => {
+    if (!btn.hasAttribute('data-autosave-initialized')) {
+      btn.addEventListener('click', saveXpProContext);
+      btn.setAttribute('data-autosave-initialized', 'true');
+    }
+  });
+}
+
+// Auto-save toutes les 5s (silencieux) pour bulk sections
+setInterval(() => {
+  ['poste_cible', 'main_skills_bullet', 'main_skills_table'].forEach(section => {
+    if (dirtyState[section]) {
+      saveData(section, false);
+    }
+  });
+  // Pour xp_pro_realization (par expérience)
+  Object.entries(dirtyState.xp_pro_realization).forEach(([expIndex, isDirty]) => {
+    if (isDirty) {
+      const section = document.getElementById(`realizations-${expIndex}`);
+      if (section) {
+        saveData('xp_pro_realization', false, section);
+      }
+    }
+  });
+}, 5000);
+
+// ========================================================================
 // MARK: Initialisation générale
 // ========================================================================
 
@@ -1398,6 +1587,8 @@ function buildXpProStep2SingleItem(itemDiv) {
 document.addEventListener('DOMContentLoaded', () => {
   initPostesCibleHandlers();
   initMainSkillsHierarchyHandlers();
+  initFormationCertificationLangueHandlers();
+  initExperienceHandlers();
   initXpProHierarchyHandlers();
   initXpProStep2Handlers();
   initAutosaveHandlers(); // Unique handler pour auto-save (remplace l'ancien: initSaveButtonHandlers, initPostesCibleDirtyTracking, initMainSkillsDirtyTracking, initXpProContextHandlers)
@@ -1407,6 +1598,8 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('htmx:afterSwap', () => {
   initPostesCibleHandlers();
   initMainSkillsHierarchyHandlers();
+  initFormationCertificationLangueHandlers();
+  initExperienceHandlers();
   initXpProHierarchyHandlers();
   initXpProStep2Handlers();
   initAutosaveHandlers(); // Unique handler pour auto-save
