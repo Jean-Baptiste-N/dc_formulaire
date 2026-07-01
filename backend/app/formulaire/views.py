@@ -863,6 +863,42 @@ def xp_pro_realization_delete(request, pk, exp_index, item_id):
         return HttpResponse(f"Erreur: {e}", status=400)
 
 @require_POST
+def xp_pro_realization_bulk_update(request, pk, exp_index):
+    """Met à jour les titres de plusieurs réalisations xp_pro (bulk update)."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        items = json.loads(request.POST.get("items", "[]"))
+        exp_index = int(exp_index)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON or index"}, status=400)
+
+    if "xp_pro" not in dossier or exp_index >= len(dossier["xp_pro"]):
+        return JsonResponse({"error": "Experience not found"}, status=404)
+
+    experience = dossier["xp_pro"][exp_index]
+    if "description" not in experience or not isinstance(experience["description"], list):
+        return JsonResponse({"error": "Description not found"}, status=404)
+
+    # Fonction interne pour mettre à jour récursivement
+    def update_items_recursive(items_list, items_to_update):
+        for item in items_list:
+            for update_item in items_to_update:
+                if item.get("id") == update_item.get("id"):
+                    item["title"] = _clean_text(update_item.get("title", ""))
+                    break
+            # Récursion sur les enfants
+            if "description" in item and isinstance(item["description"], list):
+                update_items_recursive(item["description"], items_to_update)
+
+    update_items_recursive(experience["description"], items)
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
+
+    return JsonResponse({"status": "ok"})
+
+@require_POST
 def xp_pro_context_update(request, pk, exp_index):
     """Met à jour le contexte d'une expérience xp_pro."""
     candidat = get_object_or_404(Candidat, pk=pk)

@@ -95,5 +95,15 @@ urlpatterns = [
         views.xp_pro_realization_delete,
         name="xp_pro_realization_delete",
     ),
+    path(
+        "candidat/<uuid:pk>/experience/<int:exp_index>/realization/bulk-update/",
+        views.xp_pro_realization_bulk_update,
+        name="xp_pro_realization_bulk_update",
+    ),
+    path(
+        "candidat/<uuid:pk>/experience/<int:exp_index>/contexte/mettre-a-jour/",
+        views.xp_pro_context_update,
+        name="xp_pro_context_update",
+    ),
 ]
 
