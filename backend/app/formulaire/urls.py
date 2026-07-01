@@ -27,31 +27,11 @@ urlpatterns = [
     # 3. MAIN-SKILLS DOMAINES DE COMPÉTENCES - Bullet Section
     # 4. MAIN-SKILLS OUTILS & LANGAGES - Table Section
     # ========================================================================
-    path(
-        "candidat/<uuid:pk>/main_skills/<str:section>/item/ajouter/",
-        views.main_skills_hierarchy_add,
-        name="main_skills_hierarchy_add",
-    ),
-    path(
-        "candidat/<uuid:pk>/main_skills/<str:section>/item/ajouter_enfant/",
-        views.main_skills_hierarchy_add_child,
-        name="main_skills_hierarchy_add_child",
-    ),
-    path(
-        "candidat/<uuid:pk>/main_skills/<str:section>/item/<str:item_id>/mettre-a-jour/",
-        views.main_skills_hierarchy_update,
-        name="main_skills_hierarchy_update",
-    ),
-    path(
-        "candidat/<uuid:pk>/main_skills/<str:section>/item/<str:item_id>/supprimer/",
-        views.main_skills_hierarchy_delete,
-        name="main_skills_hierarchy_delete",
-    ),
-    path(
-        "candidat/<uuid:pk>/main_skills/<str:section>/bulk-update/",
-        views.main_skills_hierarchy_bulk_update,
-        name="main_skills_hierarchy_bulk_update",
-    ),
+    path("candidat/<uuid:pk>/main_skills/<str:section>/item/ajouter/",views.main_skills_hierarchy_add,name="main_skills_hierarchy_add",),
+    path("candidat/<uuid:pk>/main_skills/<str:section>/item/ajouter_enfant/",views.main_skills_hierarchy_add_child,name="main_skills_hierarchy_add_child",),
+    path("candidat/<uuid:pk>/main_skills/<str:section>/item/<str:item_id>/mettre-a-jour/",views.main_skills_hierarchy_update,name="main_skills_hierarchy_update",),
+    path("candidat/<uuid:pk>/main_skills/<str:section>/item/<str:item_id>/supprimer/",views.main_skills_hierarchy_delete,name="main_skills_hierarchy_delete",),
+    path("candidat/<uuid:pk>/main_skills/<str:section>/bulk-update/",views.main_skills_hierarchy_bulk_update,name="main_skills_hierarchy_bulk_update",),
 
     # ========================================================================
     # 5. FORMATIONS - Add, Remove
@@ -80,30 +60,10 @@ urlpatterns = [
     # ========================================================================
     # 9. XP_PRO BULLETS - 2e étape du workflow (Add, Update, Delete)
     # ========================================================================
-    path(
-        "candidat/<uuid:pk>/experience/<int:exp_index>/realization/ajouter/",
-        views.xp_pro_realization_add,
-        name="xp_pro_realization_add",
-    ),
-    path(
-        "candidat/<uuid:pk>/experience/<int:exp_index>/realization/<str:item_id>/mettre-a-jour/",
-        views.xp_pro_realization_update,
-        name="xp_pro_realization_update",
-    ),
-    path(
-        "candidat/<uuid:pk>/experience/<int:exp_index>/realization/<str:item_id>/supprimer/",
-        views.xp_pro_realization_delete,
-        name="xp_pro_realization_delete",
-    ),
-    path(
-        "candidat/<uuid:pk>/experience/<int:exp_index>/realization/bulk-update/",
-        views.xp_pro_realization_bulk_update,
-        name="xp_pro_realization_bulk_update",
-    ),
-    path(
-        "candidat/<uuid:pk>/experience/<int:exp_index>/contexte/mettre-a-jour/",
-        views.xp_pro_context_update,
-        name="xp_pro_context_update",
-    ),
+    path("candidat/<uuid:pk>/experience/<int:exp_index>/realization/ajouter/",views.xp_pro_realization_add,name="xp_pro_realization_add",),
+    path("candidat/<uuid:pk>/experience/<int:exp_index>/realization/<str:item_id>/mettre-a-jour/",views.xp_pro_realization_update,name="xp_pro_realization_update",),
+    path("candidat/<uuid:pk>/experience/<int:exp_index>/realization/<str:item_id>/supprimer/",views.xp_pro_realization_delete,name="xp_pro_realization_delete",),
+    path("candidat/<uuid:pk>/experience/<int:exp_index>/realization/bulk-update/",views.xp_pro_realization_bulk_update,name="xp_pro_realization_bulk_update",),
+    path("candidat/<uuid:pk>/experience/<int:exp_index>/contexte/mettre-a-jour/",views.xp_pro_context_update,name="xp_pro_context_update",),
 ]
 
