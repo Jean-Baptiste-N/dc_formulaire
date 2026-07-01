@@ -41,6 +41,49 @@ def _empty_dossier():
         "poste_cible": []
     }
 
+def _sync_header_and_defaults(candidat):
+    """
+    Synchro le header du dossier avec les infos du candidat.
+    Initialise aussi poste_cible par défaut s'il n'existe pas.
+
+    Retourne True si des changements ont été faits (pour décider si sauvegarder).
+    """
+    dossier = candidat.dossier or _empty_dossier()
+    needs_save = False
+
+    # Synchro du header
+    current_header = dossier.get('header', {})
+    new_header = {
+        'nom': candidat.nom,
+        'prenom': candidat.prenom,
+        'email': candidat.email,
+        'trigramme': candidat.trigramme,
+        'poste': candidat.poste,
+        'xp_duration': candidat.xp_duration,
+    }
+
+    if current_header != new_header:
+        dossier['header'] = new_header
+        needs_save = True
+
+    # Initialiser poste_cible par défaut s'il n'existe pas/est vide
+    if not dossier.get('poste_cible'):
+        dossier['poste_cible'] = []
+        if candidat.poste:
+            dossier['poste_cible'].append({
+                'id': _new_id(),
+                'title': candidat.poste,
+                'active': True
+            })
+        needs_save = True
+
+    # Sauvegarder si nécessaire
+    if needs_save:
+        candidat.dossier = dossier
+        candidat.save(update_fields=['dossier'])
+
+    return needs_save
+
 def _get_placeholders():
     """Centralize tous les placeholders pour l'UI."""
     return {
@@ -155,6 +198,10 @@ def candidat_create(request):
 def candidat_edit(request, pk):
     candidat = get_object_or_404(Candidat, pk=pk)
 
+    # Synchro du header et initialisation des defaults (poste_cible)
+    # À faire en premier, avant toute autre logique
+    _sync_header_and_defaults(candidat)
+
     # Enrichir les réalisations et hiérarchies avec des IDs si nécessaire et sauvegarder
     ids_added = False
     if candidat.dossier:
@@ -184,17 +231,8 @@ def candidat_edit(request, pk):
             form.save()
 
             # Synchroniser les infos dans le dossier['header']
-            dossier = candidat.dossier or _empty_dossier()
-            dossier['header'] = {
-                'nom': candidat.nom,
-                'prenom': candidat.prenom,
-                'email': candidat.email,
-                'trigramme': candidat.trigramme,
-                'poste': candidat.poste,
-                'xp_duration': candidat.xp_duration,
-            }
-            candidat.dossier = dossier
-            candidat.save(update_fields=['dossier'])
+            # (le formulaire a mis à jour candidat, on synchro dans le dossier)
+            _sync_header_and_defaults(candidat)
     else:
         form = CandidatInfoForm(instance=candidat)
 
