@@ -1201,17 +1201,17 @@ function saveXpProContext(e) {
 
 // Initialiser au chargement
 document.addEventListener('DOMContentLoaded', () => {
+  initPostesCibleHandlers();
   initMainSkillsHierarchyHandlers();
   initXpProHierarchyHandlers();
-  initPostesCibleHandlers();
   initAutosaveHandlers(); // Unique handler pour auto-save (remplace l'ancien: initSaveButtonHandlers, initPostesCibleDirtyTracking, initMainSkillsDirtyTracking, initXpProContextHandlers)
 });
 
 // Réinitialiser après chaque insertion HTMX
 document.addEventListener('htmx:afterSwap', () => {
+  initPostesCibleHandlers();
   initMainSkillsHierarchyHandlers();
   initXpProHierarchyHandlers();
-  initPostesCibleHandlers();
   initAutosaveHandlers(); // Unique handler pour auto-save
 });
 </script>
