@@ -3,6 +3,10 @@
 {% block title %}{{ candidat }} – Modifier – DC Formulaire{% endblock %}
 
 {% block content %}
+<!-- ============================================================================
+     MARK: 1. HEADERS & INFORMATIONS DU CANDIDAT
+     ============================================================================ -->
+
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h3">
     <i class="bi bi-pencil-square"></i> {{ candidat }}
@@ -46,17 +50,50 @@
       </div>
       <div class="mt-3 text-end">
         <button type="submit" class="btn btn-primary btn-sm">
-          <i class="bi bi-save"></i> Sauvegarder les infos
+          <i class="bi bi-save"></i> Mettre à jour les infos
         </button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- Compétences principales - Domaines & Expertises (Bullets) -->
+<!-- ============================================================================
+     MARK: 2. POSTES CIBLES - Variantes de postes recherchés
+     ============================================================================ -->
+
 <div class="card shadow-sm mb-4">
   <div class="card-header">
-    <h2 class="h6 mb-0"><i class="bi bi-star"></i> Compétences principales - Domaines & Expertises</h2>
+    <h2 class="h6 mb-0"><i class="bi bi-briefcase"></i> Postes cibles – Variantes</h2>
+  </div>
+  <div class="card-body">
+    <p class="text-muted small mb-3">Ajoutez des variantes du poste, qui seront utilisées lors de l'export du document</p>
+
+    <div id="poste-cible-list" class="mb-3">
+      {% if candidat.dossier.poste_cible %}
+        {% for poste_cible in candidat.dossier.poste_cible %}
+          {% include "formulaire/partials/poste_cible_item.html" with poste_cible=poste_cible candidat=candidat %}
+        {% endfor %}
+      {% else %}
+        <p class="text-muted fst-italic">Aucune variante ajoutée</p>
+      {% endif %}
+    </div>
+
+    <button type="button" class="btn btn-success btn-sm btn-poste-cible-add" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-plus"></i> Ajouter une variante
+    </button>
+    <button type="button" class="btn btn-primary btn-sm btn-poste-cible-save ms-2" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-save"></i> <span class="btn-save-text">Enregistrer</span>
+    </button>
+  </div>
+</div>
+
+<!-- ============================================================================
+     MARK: 3.1 MAIN-SKILLS DOMAINES DE COMPÉTENCES - Bullet Section
+     ============================================================================ -->
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header">
+    <h2 class="h6 mb-0"><i class="bi bi-star"></i> Main Skills – Domaines de compétences</h2>
   </div>
   <div class="card-body">
     <p class="text-muted small mb-3">Ajoutez des domaines de compétences et leurs expertises liées (ex: Ingénierie système > Configuration de logiciel > Vérification de la conformité aux spécifications internes)</p>
@@ -74,13 +111,19 @@
         <p class="text-muted">Aucune compétence ajoutée</p>
       {% endif %}
     </div>
+    <button type="button" class="btn btn-primary btn-sm btn-main-skills-save mt-3" data-section="bullet" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-save"></i> <span class="btn-save-text">Enregistrer</span>
+    </button>
   </div>
 </div>
 
-<!-- Compétences principales - Outils & Langages (Table) -->
+<!-- ============================================================================
+     MARK: 3.2 MAIN-SKILLS OUTILS & LANGAGES - Table Section
+     ============================================================================ -->
+
 <div class="card shadow-sm mb-4">
   <div class="card-header">
-    <h2 class="h6 mb-0"><i class="bi bi-tools"></i> Compétences principales - Outils & Langages</h2>
+    <h2 class="h6 mb-0"><i class="bi bi-tools"></i> Main Skills – Outils & Langages</h2>
   </div>
   <div class="card-body">
     <p class="text-muted small mb-3">Ajoutez des catégories d'outils et technologies maîtrisées (ex: Langages > Python, Bash)</p>
@@ -98,6 +141,9 @@
         <p class="text-muted">Aucune compétence ajoutée</p>
       {% endif %}
     </div>
+    <button type="button" class="btn btn-primary btn-sm btn-main-skills-save mt-3" data-section="table" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-save"></i> <span class="btn-save-text">Enregistrer</span>
+    </button>
 
     <!-- Aperçu tableau -->
     {% comment %} {% if candidat.dossier.main_skills.table %}
@@ -124,7 +170,10 @@
   </div>
 </div>
 
-<!-- Formations -->
+<!-- ============================================================================
+     MARK: 4. FORMATIONS - Ajouter, Lister, Supprimer
+     ============================================================================ -->
+
 <div class="card shadow-sm mb-4">
   <div class="card-header">
     <h2 class="h6 mb-0"><i class="bi bi-book"></i> Formations</h2>
@@ -187,7 +236,10 @@
   </div>
 </div>
 
-<!-- Certifications -->
+<!-- ============================================================================
+     MARK: 5. CERTIFICATIONS - Ajouter, Lister, Supprimer
+     ============================================================================ -->
+
 <div class="card shadow-sm mb-4">
   <div class="card-header">
     <h2 class="h6 mb-0"><i class="bi bi-award"></i> Certifications</h2>
@@ -245,7 +297,10 @@
   </div>
 </div>
 
-<!-- Langues -->
+<!-- ============================================================================
+     MARK: 6. LANGUES - Ajouter, Lister, Supprimer
+     ============================================================================ -->
+
 <div class="card shadow-sm mb-4">
   <div class="card-header">
     <h2 class="h6 mb-0"><i class="bi bi-globe"></i> Langues</h2>
@@ -297,7 +352,10 @@
   </div>
 </div>
 
-<!-- Expériences professionnelles -->
+<!-- ============================================================================
+     MARK: 7.1 XP_PRO BLOCS - 1ère étape du workflow (Ajouter, Lister, Supprimer expériences)
+     ============================================================================ -->
+
 <div class="card shadow-sm">
   <div class="card-header">
     <h2 class="h6 mb-0"><i class="bi bi-briefcase"></i> Expériences professionnelles</h2>
@@ -329,11 +387,6 @@
           <small class="form-text text-muted">Séparées par des virgules</small>
         </div>
         <div class="col-md-12">
-          <label class="form-label">Contexte</label>
-          <textarea name="context" class="form-control" placeholder="{{ placeholders.experiences.context }}" rows="2"></textarea>
-          <small class="form-text text-muted">Décrivez le contexte de votre rôle dans cette expérience</small>
-        </div>
-        <div class="col-md-12">
           <button type="submit" class="btn btn-success">
             <i class="bi bi-check-lg"></i> Ajouter l'expérience
           </button>
@@ -361,6 +414,10 @@
               </a>
             </div>
 
+            <!-- ================================================================
+                 MARK: 7.2 XP_PRO BULLETS - 2e étape du workflow (Réalisations)
+                 ================================================================ -->
+
             {# Section des réalisations hiérarchiques #}
             {% if exp.description %}
             <div class="mt-3 ps-3 border-start border-2">
@@ -370,20 +427,53 @@
                 </h6>
               </div>
 
+              {# Champ Contexte pour cette expérience #}
+              <div class="mb-3">
+                <label class="form-label small">Contexte de l'expérience</label>
+                <div class="input-group input-group-sm">
+                  <textarea name="context"
+                            class="form-control xp-pro-context"
+                            placeholder="{{ placeholders.experiences.context }}"
+                            data-exp-index="{{ forloop.counter0 }}"
+                            data-candidat-pk="{{ candidat.pk }}"
+                            rows="2">{{ exp.context }}</textarea>
+                </div>
+                <div class="d-flex gap-2 mt-2">
+                  <button type="button"
+                          class="btn btn-sm btn-outline-primary btn-xp-pro-context-save"
+                          data-exp-index="{{ forloop.counter0 }}"
+                          data-candidat-pk="{{ candidat.pk }}">
+                    <i class="bi bi-save"></i> Enregistrer
+                  </button>
+                  <small class="form-text text-muted align-self-center">
+                    Auto-save toutes les 5 secondes
+                  </small>
+                </div>
+              </div>
+
               {# Liste des réalisations existantes #}
               <div id="realizations-{{ forloop.counter0 }}" class="mb-2">
                 {% for realization in exp.description %}
-                  {% include "formulaire/partials/xp_pro_realization_item.html" with item=realization exp_index=forloop.counter0 depth=0 candidat=candidat xp_pro_placeholders=placeholders.xp_pro %}
+                  {% include "formulaire/partials/xp_pro_hierarchy_item.html" with item=realization exp_index=forloop.counter0 depth=0 candidat=candidat xp_pro_placeholders=placeholders.xp_pro %}
                 {% endfor %}
               </div>
 
               {# Bouton pour ajouter une réalisation #}
-              <button type="button"
-                      class="btn btn-sm btn-outline-success btn-xp-pro-hierarchy-add-root"
-                      data-exp-index="{{ forloop.counter0 }}"
-                      data-candidat-pk="{{ candidat.pk }}">
-                <i class="bi bi-plus-lg"></i> Ajouter une activité
-              </button>
+              <div class="d-flex gap-2">
+                <button type="button"
+                        class="btn btn-sm btn-outline-success btn-xp-pro-hierarchy-add-root"
+                        data-exp-index="{{ forloop.counter0 }}"
+                        data-candidat-pk="{{ candidat.pk }}">
+                  <i class="bi bi-plus-lg"></i> Ajouter une activité
+                </button>
+                <button type="button"
+                        class="btn btn-sm btn-outline-primary btn-xp-pro-realization-save"
+                        data-exp-index="{{ forloop.counter0 }}"
+                        data-candidat-pk="{{ candidat.pk }}"
+                        title="Enregistrer les modifications des réalisations">
+                  <i class="bi bi-check-lg"></i> Enregistrer réalisations
+                </button>
+              </div>
             </div>
             {% endif %}
           </div>
@@ -396,42 +486,150 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<style>
-.main_skills_hierarchy-item, .xp_pro_realization-item {
-  padding: 8px;
-  border-left: 2px solid #dee2e6;
-}
+<!--  ========================================================================
+      MARK: SCRIPTS
+      ========================================================================-->
 
-.main_skills_hierarchy-row, .xp_pro_realization-row {
-  gap: 0.5rem;
-}
-
-.main_skills_hierarchy-title, .xp_pro_realization-title {
-  font-size: 0.95rem;
-}
-
-.main_skills_hierarchy-title:focus, .xp_pro_realization-title:focus {
-  border-color: #0d6efd;
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-}
-
-.main_skills_hierarchy-zone, .xp_pro_realization-zone {
-  margin-left: 1rem;
-  padding-left: 0.5rem;
-  border-left: 1px dashed #dee2e6;
-}
-
-.main_skills_hierarchy-item.ms-4, .xp_pro_realization-item.ms-4 {
-  margin-left: 1rem;
-}
-</style>
+{% block scripts %}
 
 <script>
 const CANDIDAT_PK = '{{ candidat.pk }}';
 
 // ========================================================================
-// HANDLERS POUR MAIN_SKILLS (main_skills_hierarchy_item.html)
+// MARK: POSTE_CIBLE HANDLERS (poste_cible_item.html)
+// ========================================================================
+
+function initPostesCibleHandlers() {
+  // Bouton pour ajouter une variante
+  document.querySelectorAll('.btn-poste-cible-add').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', addPostesCible);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Radio pour activer une variante
+  document.querySelectorAll('.poste-cible-radio').forEach(input => {
+    if (!input.hasAttribute('data-listener-initialized')) {
+      input.addEventListener('change', activatePostesCible);
+      input.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Input pour modifier le titre
+  document.querySelectorAll('#poste-cible-list input[type="text"]').forEach(input => {
+    if (!input.hasAttribute('data-listener-initialized')) {
+      input.addEventListener('blur', updatePostesCible);
+      input.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Bouton pour supprimer une variante
+  document.querySelectorAll('.poste-cible-delete').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', deletePostesCible);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+}
+
+function addPostesCible(e) {
+  e.preventDefault();
+  const candidatPk = e.target.closest('.btn-poste-cible-add').dataset.candidatPk;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/poste-cible/ajouter/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => r.text())
+  .then(html => {
+    const listDiv = document.getElementById('poste-cible-list');
+    const emptyMsg = listDiv.querySelector('.text-muted.fst-italic');
+    if (emptyMsg) {
+      emptyMsg.remove();
+    }
+    listDiv.insertAdjacentHTML('beforeend', html);
+    initPostesCibleHandlers();
+  })
+  .catch(err => console.error('Erreur addPostesCible:', err));
+}
+
+function activatePostesCible(e) {
+  const radio = e.target;
+  const candidatPk = radio.dataset.candidatPk;
+  const posteCibleId = radio.dataset.posteCible;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/activer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .catch(err => console.error('Erreur activatePostesCible:', err));
+}
+
+function updatePostesCible(e) {
+  const input = e.target;
+  const candidatPk = input.dataset.candidatPk;
+  const posteCibleId = input.dataset.posteCible;
+  const title = input.value.trim();
+
+  // Ne faire la requête que si le titre a changé
+  if (title === input.dataset.originalTitle) {
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/mettre-a-jour/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(() => {
+    input.dataset.originalTitle = title;
+  })
+  .catch(err => console.error('Erreur updatePostesCible:', err));
+}
+
+function deletePostesCible(e) {
+  e.preventDefault();
+  if (!confirm('Supprimer cette variante de poste ?')) {
+    return;
+  }
+
+  const btn = e.target.closest('.poste-cible-delete');
+  const candidatPk = btn.dataset.candidatPk;
+  const posteCibleId = btn.dataset.posteCible;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(() => {
+    const itemDiv = document.getElementById(`poste-cible-${posteCibleId}`);
+    if (itemDiv) {
+      itemDiv.remove();
+    }
+    // Vérifier si la liste est vide et afficher le message
+    const listDiv = document.getElementById('poste-cible-list');
+    if (listDiv.children.length === 0) {
+      listDiv.innerHTML = '<p class="text-muted fst-italic">Aucune variante ajoutée</p>';
+    }
+  })
+  .catch(err => console.error('Erreur deletePostesCible:', err));
+}
+
+// ========================================================================
+// MARK: MAIN_SKILLS HANDLERS (main_skills_hierarchy_item.html)
 // ========================================================================
 
 function initMainSkillsHierarchyHandlers() {
@@ -584,7 +782,7 @@ function deleteMainSkillsHierarchyItem(e) {
 }
 
 // ========================================================================
-// HANDLERS POUR XP_PRO RÉALISATIONS (xp_pro_realization_item.html)
+// MARK: XP_PRO HANDLERS (xp_pro_hierarchy_item.html)
 // ========================================================================
 
 function initXpProHierarchyHandlers() {
@@ -682,21 +880,15 @@ function addXpProHierarchyChildItem(e) {
   });
 }
 
-// Mettre à jour une réalisation
+// Mettre à jour une réalisation (marquer dirty, auto-save dans 5s)
 function updateXpProHierarchyItem(e) {
   const input = e.target;
-  const itemId = input.dataset.itemId;
   const expIndex = input.dataset.targetIndex;
 
-  const formData = new FormData();
-  formData.append('title', input.value);
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${CANDIDAT_PK}/experience/${expIndex}/realization/${itemId}/mettre-a-jour/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .catch(err => console.error('Erreur updateXpProHierarchyItem:', err));
+  // Marquer comme dirty pour auto-save 5s
+  if (!dirtyState.xp_pro_realization[expIndex]) {
+    dirtyState.xp_pro_realization[expIndex] = true;
+  }
 }
 
 // Supprimer une réalisation
@@ -723,19 +915,304 @@ function deleteXpProHierarchyItem(e) {
 }
 
 // ========================================================================
-// Initialisation générale
+// MARK: AUTO-SAVE & CLICK-SAVE (5s auto-save + button feedback)
+// ========================================================================
+
+// Configuration centralisée pour l'auto-save
+const autosaveConfig = {
+  poste_cible: {
+    dirtyKey: 'poste_cible',
+    getItems: () => Array.from(document.querySelectorAll('#poste-cible-list input[type="text"]')).map(input => ({
+      id: input.dataset.posteCible,
+      title: input.value.trim(),
+    })),
+    endpoint: () => `/candidat/${CANDIDAT_PK}/poste-cible/bulk-update/`,
+    type: 'bulk'
+  },
+  main_skills_bullet: {
+    dirtyKey: 'main_skills_bullet',
+    getItems: () => Array.from(document.querySelectorAll('#main_skills_bullet_list .main-skills-hierarchy-item')).map(item => ({
+      id: item.dataset.itemId,
+      title: item.querySelector('.main-skills-hierarchy-title').value.trim(),
+    })),
+    endpoint: () => `/candidat/${CANDIDAT_PK}/main_skills/bullet/bulk-update/`,
+    type: 'bulk'
+  },
+  main_skills_table: {
+    dirtyKey: 'main_skills_table',
+    getItems: () => Array.from(document.querySelectorAll('#main_skills_table_list .main-skills-hierarchy-item')).map(item => ({
+      id: item.dataset.itemId,
+      title: item.querySelector('.main-skills-hierarchy-title').value.trim(),
+    })),
+    endpoint: () => `/candidat/${CANDIDAT_PK}/main_skills/table/bulk-update/`,
+    type: 'bulk'
+  },
+  xp_pro_realization: {
+    dirtyKey: 'xp_pro_realization',
+    getItems: (expIndex) => Array.from(document.querySelectorAll(`#realizations-${expIndex} .xp-pro-hierarchy-item`)).map(item => ({
+      id: item.dataset.itemId,
+      title: item.querySelector('.xp-pro-hierarchy-title').value.trim(),
+    })),
+    endpoint: (expIndex) => `/candidat/${CANDIDAT_PK}/experience/${expIndex}/realization/bulk-update/`,
+    type: 'bulk-per-exp'
+  },
+  xp_pro_context: {
+    dirtyKey: 'xp_pro_context',
+    type: 'single'
+  }
+};
+
+// Tracking des sections modifiées (dirty state)
+const dirtyState = {
+  poste_cible: false,
+  main_skills_bullet: false,
+  main_skills_table: false,
+  xp_pro_realization: {}, // Keyed by expIndex
+  xp_pro_context: {}       // Keyed by expIndex
+};
+
+// Fonction unifiée pour sauvegarder les données
+async function saveData(section, showFeedback = false, element = null) {
+  const config = autosaveConfig[section];
+  if (!config) return;
+
+  let items = [];
+  let endpoint = '';
+
+  if (section === 'xp_pro_realization' && element) {
+    const expIndex = element.dataset.targetIndex || element.dataset.expIndex;
+    items = config.getItems(expIndex);
+    endpoint = config.endpoint(expIndex);
+    if (items.length === 0) return;
+  } else if (section === 'xp_pro_context' && element) {
+    // xp_pro_context est géré différemment (voir plus bas)
+    return;
+  } else if (config.type === 'bulk') {
+    items = config.getItems();
+    endpoint = config.endpoint();
+    if (items.length === 0) return;
+  }
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+  if (config.type.startsWith('bulk')) {
+    formData.append('items', JSON.stringify(items));
+  }
+
+  try {
+    // Montrer le feedback si c'est un click-save
+    let btn = null;
+    if (showFeedback && section !== 'xp_pro_realization') {
+      btn = document.querySelector(`[data-section="${section.replace('main_skills_', '')}"][data-candidat-pk="${CANDIDAT_PK}"].btn-main-skills-save`) 
+         || document.querySelector(`[data-candidat-pk="${CANDIDAT_PK}"].btn-poste-cible-save`);
+      if (btn) {
+        const textSpan = btn.querySelector('.btn-save-text');
+        textSpan.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
+        btn.disabled = true;
+      }
+    } else if (showFeedback && section === 'xp_pro_realization' && element) {
+      btn = element.closest('.xp-pro-section')?.querySelector('.btn-xp-pro-realization-save');
+      if (btn) {
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
+        btn.disabled = true;
+      }
+    }
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (response.ok && showFeedback && btn) {
+      const textSpan = btn.querySelector('.btn-save-text') || btn;
+      textSpan.innerHTML = 'Enregistré ! <i class="bi bi-check-circle"></i>';
+      btn.disabled = false;
+      setTimeout(() => {
+        if (section === 'xp_pro_realization') {
+          btn.innerHTML = 'Enregistrer réalisations';
+        } else {
+          textSpan.innerHTML = 'Enregistrer';
+        }
+      }, 2000);
+    }
+
+    // Marquer comme clean
+    if (section === 'xp_pro_realization' && element) {
+      const expIndex = element.dataset.targetIndex || element.dataset.expIndex;
+      dirtyState[section][expIndex] = false;
+    } else {
+      dirtyState[section] = false;
+    }
+  } catch (err) {
+    console.error(`Erreur saveData ${section}:`, err);
+    if (showFeedback && btn) {
+      btn.innerHTML = '<i class="bi bi-exclamation-circle"></i> Erreur!';
+      btn.disabled = false;
+    }
+  }
+}
+
+// Fonction unifiée d'initialisation des handlers
+function initAutosaveHandlers() {
+  // Boutons pour bulk sections
+  document.querySelectorAll('.btn-poste-cible-save, .btn-main-skills-save').forEach(btn => {
+    if (!btn.hasAttribute('data-autosave-initialized')) {
+      btn.addEventListener('click', function() {
+        const section = this.className.includes('poste-cible') ? 'poste_cible' : `main_skills_${this.dataset.section}`;
+        saveData(section, true);
+      });
+      btn.setAttribute('data-autosave-initialized', 'true');
+    }
+  });
+
+  // Bouton pour xp_pro_realization
+  document.querySelectorAll('.btn-xp-pro-realization-save').forEach(btn => {
+    if (!btn.hasAttribute('data-autosave-initialized')) {
+      btn.addEventListener('click', function() {
+        const expIndex = this.dataset.expIndex;
+        const section = document.getElementById(`realizations-${expIndex}`);
+        saveData('xp_pro_realization', true, section);
+      });
+      btn.setAttribute('data-autosave-initialized', 'true');
+    }
+  });
+
+  // Dirty tracking pour bulk sections
+  document.querySelectorAll('#poste-cible-list input[type="text"], .main-skills-hierarchy-title, .xp-pro-hierarchy-title').forEach(input => {
+    if (!input.hasAttribute('data-autosave-initialized')) {
+      input.addEventListener('change', function() {
+        if (this.classList.contains('xp-pro-hierarchy-title')) {
+          const expIndex = this.dataset.targetIndex;
+          if (!dirtyState.xp_pro_realization[expIndex]) {
+            dirtyState.xp_pro_realization[expIndex] = true;
+          }
+        } else if (this.id?.includes('poste')) {
+          dirtyState.poste_cible = true;
+        } else {
+          const section = this.dataset.endpointBase === 'bullet' ? 'main_skills_bullet' : 'main_skills_table';
+          dirtyState[section] = true;
+        }
+      });
+      input.setAttribute('data-autosave-initialized', 'true');
+    }
+  });
+
+  // Auto-save 5s timer pour xp_pro_context (handler distinct pour textarea)
+  document.querySelectorAll('.xp-pro-context').forEach(textarea => {
+    if (!textarea.hasAttribute('data-autosave-initialized')) {
+      textarea.addEventListener('input', function() {
+        const expIndex = this.dataset.expIndex;
+        clearTimeout(this.autosaveTimer);
+        this.autosaveTimer = setTimeout(() => saveXpProContext(this), 5000);
+      });
+      textarea.setAttribute('data-autosave-initialized', 'true');
+    }
+  });
+
+  // Boutons pour xp_pro_context
+  document.querySelectorAll('.btn-xp-pro-context-save').forEach(btn => {
+    if (!btn.hasAttribute('data-autosave-initialized')) {
+      btn.addEventListener('click', saveXpProContext);
+      btn.setAttribute('data-autosave-initialized', 'true');
+    }
+  });
+}
+
+// Auto-save toutes les 5s (silencieux) pour bulk sections
+setInterval(() => {
+  ['poste_cible', 'main_skills_bullet', 'main_skills_table'].forEach(section => {
+    if (dirtyState[section]) {
+      saveData(section, false);
+    }
+  });
+  // Pour xp_pro_realization (par expérience)
+  Object.entries(dirtyState.xp_pro_realization).forEach(([expIndex, isDirty]) => {
+    if (isDirty) {
+      const section = document.getElementById(`realizations-${expIndex}`);
+      if (section) {
+        saveData('xp_pro_realization', false, section);
+      }
+    }
+  });
+}, 5000);
+
+// ========================================================================
+// XP_PRO CONTEXT: Handlers spécifiques (textarea auto-save 5s)
+// ========================================================================
+
+function saveXpProContext(e) {
+  e?.preventDefault();
+  const textarea = e?.target?.closest('.btn-xp-pro-context-save')?.parentElement?.querySelector('.xp-pro-context') || e;
+  if (!textarea) return;
+
+  const btn = textarea.nextElementSibling;
+  const expIndex = textarea.dataset.expIndex;
+  const candidatPk = textarea.dataset.candidatPk;
+
+  const formData = new FormData();
+  formData.append('context', textarea.value);
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  // Ajouter feedback visuel si click (pas pour auto-save)
+  const isClick = e instanceof Event && e.type === 'click';
+  const originalText = btn?.innerHTML;
+
+  if (isClick && btn) {
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
+    btn.disabled = true;
+  }
+
+  fetch(`/candidat/${candidatPk}/experience/${expIndex}/contexte/mettre-a-jour/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok && isClick && btn) {
+      btn.innerHTML = 'Enregistré ! <i class="bi bi-check-circle"></i>';
+      btn.classList.remove('btn-outline-primary');
+      btn.classList.add('btn-outline-success');
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove('btn-outline-success');
+        btn.classList.add('btn-outline-primary');
+        btn.disabled = false;
+      }, 2000);
+    }
+  })
+  .catch(err => {
+    console.error('Erreur saveXpProContext:', err);
+    if (isClick && btn) {
+      btn.innerHTML = '<i class="bi bi-exclamation-circle"></i> ✗ Erreur';
+      btn.classList.remove('btn-outline-primary');
+      btn.classList.add('btn-outline-danger');
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove('btn-outline-danger');
+        btn.classList.add('btn-outline-primary');
+        btn.disabled = false;
+      }, 2000);
+    }
+  });
+}
+
+// ========================================================================
+// MARK: Initialisation générale
 // ========================================================================
 
 // Initialiser au chargement
 document.addEventListener('DOMContentLoaded', () => {
   initMainSkillsHierarchyHandlers();
   initXpProHierarchyHandlers();
+  initPostesCibleHandlers();
+  initAutosaveHandlers(); // Unique handler pour auto-save (remplace l'ancien: initSaveButtonHandlers, initPostesCibleDirtyTracking, initMainSkillsDirtyTracking, initXpProContextHandlers)
 });
 
 // Réinitialiser après chaque insertion HTMX
 document.addEventListener('htmx:afterSwap', () => {
   initMainSkillsHierarchyHandlers();
   initXpProHierarchyHandlers();
+  initPostesCibleHandlers();
+  initAutosaveHandlers(); // Unique handler pour auto-save
 });
 </script>
 {% endblock %}

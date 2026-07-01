@@ -4,6 +4,10 @@ from django.forms import ModelForm
 from .models import Candidat
 from .utils import clean_text
 
+# ============================================================================
+# MARK: 1. HEADERS & INFOS DU CANDIDAT
+# ============================================================================
+
 class CandidatInfoForm(ModelForm):
     """Formulaire pour les informations de base du candidat."""
 
@@ -33,7 +37,7 @@ class CandidatInfoForm(ModelForm):
             "prenom": "Votre prénom",
             "email": "Adresse email professionnelle",
             "trigramme": "3 lettres (ex: JDT pour Jean DUPONT)",
-            "poste": "Titre du poste actuel ou ciblé",
+            "poste": "Titre du poste principal",
             "xp_duration": "Nombre total d'années d'expérience sur le poste",
         }
 
@@ -48,14 +52,9 @@ class CandidatInfoForm(ModelForm):
 
         return cleaned_data
 
-class SkillsForm(forms.Form):
-    """Formulaire pour ajouter les compétences clés."""
-
-    skills = forms.CharField(
-        label="Compétences principales",
-        help_text="Entrez les compétences séparées par des virgules (ex: Python, SQL, Git)",
-        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3, "placeholder": "Python, SQL, Git"})
-    )
+# ============================================================================
+# MARK: 4. FORMATIONS
+# ============================================================================
 
 class FormationForm(forms.Form):
     """Formulaire pour ajouter une formation."""
@@ -85,6 +84,10 @@ class FormationForm(forms.Form):
         widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: 2015-2020"})
     )
 
+# ============================================================================
+# MARK: 5. CERTIFICATIONS
+# ============================================================================
+
 class CertificationForm(forms.Form):
     """Formulaire pour ajouter une certification."""
 
@@ -107,6 +110,10 @@ class CertificationForm(forms.Form):
         widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: 2021"})
     )
 
+# ============================================================================
+# MARK: 6. LANGUES
+# ============================================================================
+
 class LangueForm(forms.Form):
     """Formulaire pour ajouter une langue."""
 
@@ -122,6 +129,10 @@ class LangueForm(forms.Form):
         required=False,
         widget=forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "ex: Bilingue, TOEIC 925/990"})
     )
+
+# ============================================================================
+# MARK: 7.1 XP_PRO BLOCS - 1ère étape du workflow
+# ============================================================================
 
 class ExperienceForm(forms.Form):
     """Formulaire pour ajouter une expérience professionnelle."""

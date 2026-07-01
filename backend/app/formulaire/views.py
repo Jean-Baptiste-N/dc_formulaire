@@ -1,9 +1,10 @@
+import json
 import logging
 import uuid
 from pathlib import Path
 
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
@@ -14,52 +15,22 @@ from .utils import clean_text
 
 logger = logging.getLogger(__name__)
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+# ============================================================================
+# MARK: 0. HELPERS - Utility functions
+# ============================================================================
 
 def _new_id():
     return str(uuid.uuid4())
-
 
 def _clean_text(text):
     """Wrapper pour compatibilité avec le code existant."""
     return clean_text(text)
 
-
-def _ensure_realization_ids(description):
-    """Ajoute des IDs aux réalisations qui n'en ont pas (migration)."""
-    if not isinstance(description, list):
-        return description
-
-    for item in description:
-        if "id" not in item:
-            item["id"] = _new_id()
-        if "description" in item and isinstance(item["description"], list):
-            _ensure_realization_ids(item["description"])
-
-    return description
-
-
-def _ensure_hierarchy_ids(items):
-    """Ajoute des IDs aux items main_skills qui n'en ont pas (migration)."""
-    if not isinstance(items, list):
-        return items
-
-    for item in items:
-        if "id" not in item:
-            item["id"] = _new_id()
-        if "description" in item and isinstance(item["description"], list):
-            _ensure_hierarchy_ids(item["description"])
-
-    return items
-
-
 def _empty_dossier():
     """Initialise la structure du dossier de competences."""
     return {
         "header": {},
+        "poste_cible": [],
         "main_skills": {
             "bullet": [],
             "table": []
@@ -67,10 +38,51 @@ def _empty_dossier():
         "formations": [],
         "certifications": [],
         "langues": [],
-        "xp_pro": [],
-        "sections": []  # Pour compatibilité avec l'ancien système
+        "xp_pro": []
     }
 
+def _sync_header_and_defaults(candidat):
+    """
+    Synchro le header du dossier avec les infos du candidat.
+    Initialise aussi poste_cible par défaut s'il n'existe pas.
+
+    Retourne True si des changements ont été faits (pour décider si sauvegarder).
+    """
+    dossier = candidat.dossier or _empty_dossier()
+    needs_save = False
+
+    # Synchro du header
+    current_header = dossier.get('header', {})
+    new_header = {
+        'nom': candidat.nom,
+        'prenom': candidat.prenom,
+        'email': candidat.email,
+        'trigramme': candidat.trigramme,
+        'poste': candidat.poste,
+        'xp_duration': candidat.xp_duration,
+    }
+
+    if current_header != new_header:
+        dossier['header'] = new_header
+        needs_save = True
+
+    # Initialiser poste_cible par défaut s'il n'existe pas/est vide
+    if not dossier.get('poste_cible'):
+        dossier['poste_cible'] = []
+        if candidat.poste:
+            dossier['poste_cible'].append({
+                'id': _new_id(),
+                'title': candidat.poste,
+                'active': True
+            })
+        needs_save = True
+
+    # Sauvegarder si nécessaire
+    if needs_save:
+        candidat.dossier = dossier
+        candidat.save(update_fields=['dossier'])
+
+    return needs_save
 
 def _get_placeholders():
     """Centralize tous les placeholders pour l'UI."""
@@ -115,25 +127,45 @@ def _get_placeholders():
         ],
     }
 
-
 def _get_main_skills_placeholders(section):
     """Retourne les placeholders pour une section main_skills (bullet ou table)."""
     placeholders_dict = _get_placeholders()
-    main_skills_placeholders = placeholders_dict["main_skills"][section]
-    return {
-        "placeholder_root": main_skills_placeholders.get(0, "Item"),
-        "placeholder_level1": main_skills_placeholders.get(1, "Sous-item"),
-    }
+    # Retourner directement le dict avec les indices numériques pour que le filtre get_placeholder:depth fonctionne
+    return placeholders_dict["main_skills"][section]
 
+def _ensure_realization_ids(description):
+    """Ajoute des IDs aux réalisations qui n'en ont pas (migration)."""
+    if not isinstance(description, list):
+        return description
 
-# ---------------------------------------------------------------------------
-# Candidat list / create
-# ---------------------------------------------------------------------------
+    for item in description:
+        if "id" not in item:
+            item["id"] = _new_id()
+        if "description" in item and isinstance(item["description"], list):
+            _ensure_realization_ids(item["description"])
+
+    return description
+
+def _ensure_hierarchy_ids(items):
+    """Ajoute des IDs aux items main_skills qui n'en ont pas (migration)."""
+    if not isinstance(items, list):
+        return items
+
+    for item in items:
+        if "id" not in item:
+            item["id"] = _new_id()
+        if "description" in item and isinstance(item["description"], list):
+            _ensure_hierarchy_ids(item["description"])
+
+    return items
+
+# ============================================================================
+# MARK: 1. HEADERS & INFOS DU CANDIDAT - List, Create, Edit, Detail
+# ============================================================================
 
 def candidat_list(request):
     candidats = Candidat.objects.all()
     return render(request, "formulaire/candidat_list.html", {"candidats": candidats})
-
 
 def candidat_create(request):
     if request.method == "POST":
@@ -141,12 +173,20 @@ def candidat_create(request):
         if form.is_valid():
             candidat = form.save(commit=False)
             candidat.dossier = _empty_dossier()
+
+            # Ajouter une première variante de poste cible avec le poste principal
+            if candidat.poste:
+                candidat.dossier["poste_cible"].append({
+                    "id": _new_id(),
+                    "title": candidat.poste,
+                    "active": True
+                })
+
             candidat.save()
             return redirect("formulaire:candidat_edit", pk=candidat.pk)
     else:
         form = CandidatInfoForm()
     return render(request, "formulaire/candidat_create.html", {"form": form})
-
 
 # ---------------------------------------------------------------------------
 # Candidat edit (main form)
@@ -154,6 +194,10 @@ def candidat_create(request):
 
 def candidat_edit(request, pk):
     candidat = get_object_or_404(Candidat, pk=pk)
+
+    # Synchro du header et initialisation des defaults (poste_cible)
+    # À faire en premier, avant toute autre logique
+    _sync_header_and_defaults(candidat)
 
     # Enrichir les réalisations et hiérarchies avec des IDs si nécessaire et sauvegarder
     ids_added = False
@@ -184,17 +228,8 @@ def candidat_edit(request, pk):
             form.save()
 
             # Synchroniser les infos dans le dossier['header']
-            dossier = candidat.dossier or _empty_dossier()
-            dossier['header'] = {
-                'nom': candidat.nom,
-                'prenom': candidat.prenom,
-                'email': candidat.email,
-                'trigramme': candidat.trigramme,
-                'poste': candidat.poste,
-                'xp_duration': candidat.xp_duration,
-            }
-            candidat.dossier = dossier
-            candidat.save(update_fields=['dossier'])
+            # (le formulaire a mis à jour candidat, on synchro dans le dossier)
+            _sync_header_and_defaults(candidat)
     else:
         form = CandidatInfoForm(instance=candidat)
 
@@ -212,70 +247,304 @@ def candidat_edit(request, pk):
         context,
     )
 
+# ---------------------------------------------------------------------------
+# Candidat detail (visualisation)
+# ---------------------------------------------------------------------------
 
 def candidat_detail(request, pk):
     candidat = get_object_or_404(Candidat, pk=pk)
     return render(request, "formulaire/candidat_detail.html", {"candidat": candidat})
 
-
-# ---------------------------------------------------------------------------
-# Compétences (Skills)
-# ---------------------------------------------------------------------------
+# ============================================================================
+# MARK: 2. POSTES CIBLES - Add, Delete, Activate, Update
+# ============================================================================
 
 @require_POST
-def skills_add(request, pk):
-    """Ajoute les competences du candidat dans main_skills.bullet."""
+def poste_cible_add(request, pk):
+    """Ajoute une variante de poste cible."""
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
-    skills_input = request.POST.get("skills", "").strip()
-    if skills_input:
-        # Parse les competences separees par des virgules
-        new_skills = [clean_text(s) for s in skills_input.split(",") if s.strip()]
+    if "poste_cible" not in dossier:
+        dossier["poste_cible"] = []
 
-        # Initialiser main_skills si necessaire
-        if "main_skills" not in dossier:
-            dossier["main_skills"] = {"bullet": []}
-        if "bullet" not in dossier["main_skills"]:
-            dossier["main_skills"]["bullet"] = []
+    # Créer une nouvelle variante
+    new_poste_cible = {
+        "id": _new_id(),
+        "title": "",
+        "active": False,
+    }
 
-        # Recuperer les skills existants
-        existing_skills = {item["title"] for item in dossier["main_skills"]["bullet"]}
+    dossier["poste_cible"].append(new_poste_cible)
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
 
-        # Ajoute les nouvelles competences (evite les doublons)
-        for skill in new_skills:
-            if skill not in existing_skills:
-                dossier["main_skills"]["bullet"].append({
-                    "title": skill,
-                    "description": []
-                })
-
-        candidat.dossier = dossier
-        candidat.save(update_fields=["dossier"])
-
-    return redirect("formulaire:candidat_edit", pk=pk)
-
+    return render(
+        request,
+        "formulaire/partials/poste_cible_item.html",
+        {"poste_cible": new_poste_cible, "candidat": candidat},
+    )
 
 @require_POST
-def skill_remove(request, pk, skill):
-    """Supprime une competence de main_skills.bullet."""
+def poste_cible_delete(request, pk, poste_cible_id):
+    """Supprime une variante de poste cible."""
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
-    if "main_skills" in dossier and "bullet" in dossier["main_skills"]:
-        # Supprimer la competence avec le titre correspondant
-        dossier["main_skills"]["bullet"] = [
-            item for item in dossier["main_skills"]["bullet"] if item.get("title") != skill
+    if "poste_cible" in dossier:
+        dossier["poste_cible"] = [
+            pc for pc in dossier["poste_cible"] if pc["id"] != poste_cible_id
         ]
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
-    return redirect("formulaire:candidat_edit", pk=pk)
+    return HttpResponse("")
 
+@require_POST
+def poste_cible_activate(request, pk, poste_cible_id):
+    """Active une variante de poste cible (déplie les autres)."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
 
-# ---------------------------------------------------------------------------
-# Formations
-# ---------------------------------------------------------------------------
+    if "poste_cible" in dossier:
+        for pc in dossier["poste_cible"]:
+            pc["active"] = (pc["id"] == poste_cible_id)
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return HttpResponse("")
+
+@require_POST
+def poste_cible_update(request, pk, poste_cible_id):
+    """Met à jour le titre d'une variante de poste cible."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    title = _clean_text(request.POST.get("title", ""))
+
+    if "poste_cible" in dossier:
+        for pc in dossier["poste_cible"]:
+            if pc["id"] == poste_cible_id:
+                pc["title"] = title
+                break
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return HttpResponse("")
+
+@require_POST
+def poste_cible_bulk_update(request, pk):
+    """Met à jour les titres de plusieurs variantes de poste cible (bulk update)."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        items = json.loads(request.POST.get("items", "[]"))
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    if "poste_cible" in dossier:
+        for item in items:
+            for pc in dossier["poste_cible"]:
+                if pc["id"] == item.get("id"):
+                    pc["title"] = _clean_text(item.get("title", ""))
+                    break
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return JsonResponse({"status": "ok"})
+
+# ============================================================================
+# MARK: 3.1 MAIN-SKILLS DOMAINES DE COMPÉTENCES - Bullet Section
+# ============================================================================
+
+@require_POST
+def main_skills_hierarchy_add(request, pk, section):
+    """Ajoute un item racine à main_skills.bullet ou main_skills.table."""
+    # section: 'bullet' ou 'table'
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    if "main_skills" not in dossier:
+        dossier["main_skills"] = {"bullet": [], "table": []}
+    if section not in dossier["main_skills"]:
+        dossier["main_skills"][section] = []
+
+    new_item = {
+        "id": _new_id(),
+        "title": "",
+        "description": []
+    }
+
+    dossier["main_skills"][section].append(new_item)
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
+
+    # Retourner le template HTML du nouvel item
+    placeholders = _get_main_skills_placeholders(section)
+    return render(
+        request,
+        "formulaire/partials/main_skills_hierarchy_item.html",
+        {
+            "item": new_item,
+            "depth": 0,
+            "target_index": len(dossier["main_skills"][section]) - 1,
+            "endpoint_base": f"main_skills_{section}",
+            "max_depth": 1,
+            "main_skills_placeholders": placeholders,
+        }
+    )
+
+@require_POST
+def main_skills_hierarchy_add_child(request, pk, section):
+    """Ajoute un enfant à un item de main_skills."""
+    try:
+        candidat = get_object_or_404(Candidat, pk=pk)
+        dossier = candidat.dossier or _empty_dossier()
+
+        parent_id = request.POST.get("parent_id", "")
+        depth = int(request.POST.get("depth", "0"))
+        target_index = request.POST.get("target_index", "")
+
+        if "main_skills" not in dossier or section not in dossier["main_skills"]:
+            return HttpResponse("Section introuvable", status=404)
+
+        if depth > 1:
+            return HttpResponse("⚠️ Limite de profondeur atteinte (2 niveaux maximum)", status=400)
+
+        # Trouver le parent
+        parent_list, parent_idx = _find_main_skills_hierarchy_parent_and_index(dossier["main_skills"][section], parent_id)
+        if parent_list is None:
+            return HttpResponse("Parent introuvable", status=404)
+
+        parent = parent_list[parent_idx]
+        new_child = {
+            "id": _new_id(),
+            "title": "",
+            "description": []
+        }
+
+        parent["description"].append(new_child)
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+        # Récupérer les placeholders
+        placeholders = _get_main_skills_placeholders(section)
+
+        return render(
+            request,
+            "formulaire/partials/main_skills_hierarchy_item.html",
+            {
+                "item": new_child,
+                "depth": depth + 1,
+                "target_index": target_index,
+                "endpoint_base": f"main_skills_{section}",
+                "max_depth": 1,
+                "main_skills_placeholders": placeholders,
+            }
+        )
+    except (ValueError, KeyError) as e:
+        logger.error(f"Erreur main_skills_hierarchy_add_child: {e}")
+        return HttpResponse(f"Erreur: {e}", status=400)
+
+@require_POST
+def main_skills_hierarchy_update(request, pk, section, item_id):
+    """Met à jour le titre d'un item main_skills."""
+    try:
+        candidat = get_object_or_404(Candidat, pk=pk)
+        dossier = candidat.dossier or _empty_dossier()
+        title = _clean_text(request.POST.get("title", ""))
+
+        if "main_skills" not in dossier or section not in dossier["main_skills"]:
+            return HttpResponse("Section introuvable", status=404)
+
+        parent_list, idx = _find_main_skills_hierarchy_parent_and_index(dossier["main_skills"][section], item_id)
+        if parent_list is None or idx is None:
+            return HttpResponse("Item introuvable", status=404)
+
+        parent_list[idx]["title"] = title
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+        return HttpResponse("OK")
+    except Exception as e:
+        logger.error(f"Erreur main_skills_hierarchy_update: {e}")
+        return HttpResponse(f"Erreur: {e}", status=400)
+
+@require_POST
+def main_skills_hierarchy_delete(request, pk, section, item_id):
+    """Supprime un item main_skills et ses enfants."""
+    try:
+        candidat = get_object_or_404(Candidat, pk=pk)
+        dossier = candidat.dossier or _empty_dossier()
+
+        if "main_skills" not in dossier or section not in dossier["main_skills"]:
+            return HttpResponse("Section introuvable", status=404)
+
+        parent_list, idx = _find_main_skills_hierarchy_parent_and_index(dossier["main_skills"][section], item_id)
+        if parent_list is None or idx is None:
+            return HttpResponse("Item introuvable", status=404)
+
+        parent_list.pop(idx)
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+        return HttpResponse("OK")
+    except Exception as e:
+        logger.error(f"Erreur main_skills_hierarchy_delete: {e}")
+        return HttpResponse(f"Erreur: {e}", status=400)
+
+def _find_main_skills_hierarchy_parent_and_index(items, item_id):
+    """Cherche récursivement un item main_skills par ID et retourne (parent_list, index)."""
+    for idx, item in enumerate(items):
+        if item.get("id") == item_id:
+            return items, idx
+        if "description" in item and isinstance(item["description"], list):
+            result = _find_main_skills_hierarchy_parent_and_index(item["description"], item_id)
+            if result[0] is not None:
+                return result
+    return None, None
+
+@require_POST
+def main_skills_hierarchy_bulk_update(request, pk, section):
+    """Met à jour les titres de plusieurs items main_skills (bulk update)."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        items = json.loads(request.POST.get("items", "[]"))
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    if "main_skills" not in dossier or section not in dossier["main_skills"]:
+        return JsonResponse({"error": "Section not found"}, status=404)
+
+    # Fonction interne pour mettre à jour récursivement
+    def update_items_recursive(items_list, items_to_update):
+        for item in items_list:
+            for update_item in items_to_update:
+                if item.get("id") == update_item.get("id"):
+                    item["title"] = _clean_text(update_item.get("title", ""))
+                    break
+            # Récursion sur les enfants
+            if "description" in item and isinstance(item["description"], list):
+                update_items_recursive(item["description"], items_to_update)
+
+    update_items_recursive(dossier["main_skills"][section], items)
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
+
+    return JsonResponse({"status": "ok"})
+
+# ============================================================================
+# MARK: 3.2 MAIN-SKILLS OUTILS & LANGAGES - Table Section
+# ============================================================================
+# Note: Les fonctions pour la table sont les mêmes que pour bullet (main_skills_hierarchy_*)
+# La différence réside dans le paramètre 'section' passé aux URLs
+
+# ============================================================================
+# MARK: 4. FORMATIONS - Add, Remove
+# ============================================================================
 
 @require_POST
 def formation_add(request, pk):
@@ -299,7 +568,6 @@ def formation_add(request, pk):
 
     return redirect("formulaire:candidat_edit", pk=pk)
 
-
 @require_POST
 def formation_remove(request, pk, index):
     """Supprime une formation."""
@@ -317,10 +585,9 @@ def formation_remove(request, pk, index):
 
     return redirect("formulaire:candidat_edit", pk=pk)
 
-
-# ---------------------------------------------------------------------------
-# Certifications
-# ---------------------------------------------------------------------------
+# ============================================================================
+# MARK: 5. CERTIFICATIONS - Add, Remove
+# ============================================================================
 
 @require_POST
 def certification_add(request, pk):
@@ -343,6 +610,26 @@ def certification_add(request, pk):
 
     return redirect("formulaire:candidat_edit", pk=pk)
 
+@require_POST
+def certification_remove(request, pk, index):
+    """Supprime une certification."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        index = int(index)
+        if "certifications" in dossier and 0 <= index < len(dossier["certifications"]):
+            dossier["certifications"].pop(index)
+            candidat.dossier = dossier
+            candidat.save(update_fields=["dossier"])
+    except (ValueError, IndexError):
+        pass
+
+    return redirect("formulaire:candidat_edit", pk=pk)
+
+# ============================================================================
+# MARK: 6. LANGUES - Add, Remove
+# ============================================================================
 
 @require_POST
 def langue_add(request, pk):
@@ -364,7 +651,6 @@ def langue_add(request, pk):
 
     return redirect("formulaire:candidat_edit", pk=pk)
 
-
 @require_POST
 def langue_remove(request, pk, index):
     """Supprime une langue."""
@@ -382,28 +668,9 @@ def langue_remove(request, pk, index):
 
     return redirect("formulaire:candidat_edit", pk=pk)
 
-
-@require_POST
-def certification_remove(request, pk, index):
-    """Supprime une certification."""
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-
-    try:
-        index = int(index)
-        if "certifications" in dossier and 0 <= index < len(dossier["certifications"]):
-            dossier["certifications"].pop(index)
-            candidat.dossier = dossier
-            candidat.save(update_fields=["dossier"])
-    except (ValueError, IndexError):
-        pass
-
-    return redirect("formulaire:candidat_edit", pk=pk)
-
-
-# ---------------------------------------------------------------------------
-# Expériences professionnelles
-# ---------------------------------------------------------------------------
+# ============================================================================
+# MARK: 7.1 XP_PRO BLOCS - 1ère étape du workflow (Add, Remove)
+# ============================================================================
 
 @require_POST
 def experience_add(request, pk):
@@ -440,7 +707,6 @@ def experience_add(request, pk):
 
     return redirect("formulaire:candidat_edit", pk=pk)
 
-
 @require_POST
 def experience_remove(request, pk, index):
     """Supprime une expérience."""
@@ -458,221 +724,6 @@ def experience_remove(request, pk, index):
 
     return redirect("formulaire:candidat_edit", pk=pk)
 
-
-# ---------------------------------------------------------------------------
-# Section CRUD (Ancien système - compatibilité)
-# ---------------------------------------------------------------------------
-
-@require_POST
-def section_add(request, pk):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    new_section = {"id": _new_id(), "titre": "", "postes": []}
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    dossier["sections"].append(new_section)
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    return render(
-        request,
-        "formulaire/partials/section_item.html",
-        {"section": new_section, "candidat": candidat},
-    )
-
-
-@require_POST
-def section_save(request, pk, section_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    titre = _clean_text(request.POST.get("titre", ""))
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            section["titre"] = titre
-            break
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    return render(
-        request,
-        "formulaire/partials/section_item.html",
-        {"section": next(s for s in dossier["sections"] if s["id"] == section_id), "candidat": candidat},
-    )
-
-
-@require_POST
-def section_delete(request, pk, section_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    dossier["sections"] = [s for s in dossier["sections"] if s["id"] != section_id]
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    return HttpResponse("")
-
-
-# ---------------------------------------------------------------------------
-# Item CRUD (Ancien système - compatibilité)
-# ---------------------------------------------------------------------------
-
-@require_POST
-def poste_add(request, pk, section_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    new_poste = {"id": _new_id(), "texte": "", "sous_postes": []}
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            section["postes"].append(new_poste)
-            break
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    return render(
-        request,
-        "formulaire/partials/poste_row.html",
-        {"poste": new_poste, "section_id": section_id, "candidat": candidat},
-    )
-
-
-@require_POST
-def poste_save(request, pk, section_id, poste_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    texte = request.POST.get("texte", "").strip()
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            for poste in section["postes"]:
-                if poste["id"] == poste_id:
-                    poste["texte"] = texte
-                    break
-            break
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            for poste in section["postes"]:
-                if poste["id"] == poste_id:
-                    return render(
-                        request,
-                        "formulaire/partials/poste_row.html",
-                        {"poste": poste, "section_id": section_id, "candidat": candidat},
-                    )
-    return HttpResponse("")
-
-
-@require_POST
-def poste_delete(request, pk, section_id, poste_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            section["postes"] = [p for p in section["postes"] if p["id"] != poste_id]
-            break
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    return HttpResponse("")
-
-
-# ---------------------------------------------------------------------------
-# Sous-item CRUD (Ancien système - compatibilité)
-# ---------------------------------------------------------------------------
-
-@require_POST
-def sous_poste_add(request, pk, section_id, poste_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    new_sous_poste = {"id": _new_id(), "texte": ""}
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            for poste in section["postes"]:
-                if poste["id"] == poste_id:
-                    poste["sous_postes"].append(new_sous_poste)
-                    break
-            break
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    return render(
-        request,
-        "formulaire/partials/sous_poste_row.html",
-        {
-            "sous_poste": new_sous_poste,
-            "poste_id": poste_id,
-            "section_id": section_id,
-            "candidat": candidat,
-        },
-    )
-
-
-@require_POST
-def sous_poste_save(request, pk, section_id, poste_id, sous_poste_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    texte = _clean_text(request.POST.get("texte", ""))
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            for poste in section["postes"]:
-                if poste["id"] == poste_id:
-                    for sous_poste in poste["sous_postes"]:
-                        if sous_poste["id"] == sous_poste_id:
-                            sous_poste["texte"] = texte
-                            break
-                    break
-            break
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            for poste in section["postes"]:
-                if poste["id"] == poste_id:
-                    for sous_poste in poste["sous_postes"]:
-                        if sous_poste["id"] == sous_poste_id:
-                            return render(
-                                request,
-                                "formulaire/partials/sous_poste_row.html",
-                                {
-                                    "sous_poste": sous_poste,
-                                    "poste_id": poste_id,
-                                    "section_id": section_id,
-                                    "candidat": candidat,
-                                },
-                            )
-    return HttpResponse("")
-
-
-@require_POST
-def sous_poste_delete(request, pk, section_id, poste_id, sous_poste_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            for poste in section["postes"]:
-                if poste["id"] == poste_id:
-                    poste["sous_postes"] = [
-                        sp for sp in poste["sous_postes"] if sp["id"] != sous_poste_id
-                    ]
-                    break
-            break
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    return HttpResponse("")
-
-
-# ---------------------------------------------------------------------------
-# Réalisations (Hiérarchie dans expériences)
-# ---------------------------------------------------------------------------
-
 def _calculate_xp_pro_depth(items, item_id, current_depth=0):
     """Calcule la profondeur d'un item xp_pro dans la hiérarchie (pour validation)."""
     for item in items:
@@ -683,7 +734,6 @@ def _calculate_xp_pro_depth(items, item_id, current_depth=0):
             if result is not None:
                 return result
     return None
-
 
 def _find_xp_pro_item_recursive(items, item_id):
     """Cherche un item xp_pro par son ID dans la structure récursive (description)."""
@@ -696,7 +746,6 @@ def _find_xp_pro_item_recursive(items, item_id):
                 return found
     return None
 
-
 def _find_xp_pro_parent_and_index(items, item_id):
     """Cherche le parent et l'index d'un item xp_pro dans la structure récursive."""
     for i, item in enumerate(items):
@@ -708,6 +757,9 @@ def _find_xp_pro_parent_and_index(items, item_id):
                 return parent, idx
     return None, None
 
+# ============================================================================
+# MARK: 7.2 XP_PRO BULLETS - 2e étape du workflow (Add, Update, Delete)
+# ============================================================================
 
 @require_POST
 def xp_pro_realization_add(request, pk, exp_index):
@@ -769,7 +821,7 @@ def xp_pro_realization_add(request, pk, exp_index):
         current_depth = requested_depth if requested_depth else 0
         xp_pro_placeholders = _get_placeholders()["xp_pro"]
         html = render_to_string(
-            "formulaire/partials/xp_pro_realization_item.html",
+            "formulaire/partials/xp_pro_hierarchy_item.html",
             {
                 "item": new_item,
                 "exp_index": exp_index,
@@ -782,7 +834,6 @@ def xp_pro_realization_add(request, pk, exp_index):
     except (ValueError, IndexError) as e:
         logger.error(f"Erreur xp_pro_realization_add: {e}")
         return HttpResponse(f"Erreur: {e}", status=400)
-
 
 @require_POST
 def xp_pro_realization_update(request, pk, exp_index, item_id):
@@ -815,7 +866,6 @@ def xp_pro_realization_update(request, pk, exp_index, item_id):
         logger.error(f"Erreur xp_pro_realization_update: {e}")
         return HttpResponse(f"Erreur: {e}", status=400)
 
-
 @require_POST
 def xp_pro_realization_delete(request, pk, exp_index, item_id):
     """Supprime une réalisation xp_pro et ses enfants."""
@@ -847,166 +897,69 @@ def xp_pro_realization_delete(request, pk, exp_index, item_id):
         logger.error(f"Erreur xp_pro_realization_delete: {e}")
         return HttpResponse(f"Erreur: {e}", status=400)
 
-
-# ---------------------------------------------------------------------------
-# Main Skills - Hierarchy Items (Bullets & Table)
-# ---------------------------------------------------------------------------
-
-def _find_main_skills_hierarchy_parent_and_index(items, item_id):
-    """Cherche récursivement un item main_skills par ID et retourne (parent_list, index)."""
-    for idx, item in enumerate(items):
-        if item.get("id") == item_id:
-            return items, idx
-        if "description" in item and isinstance(item["description"], list):
-            result = _find_main_skills_hierarchy_parent_and_index(item["description"], item_id)
-            if result[0] is not None:
-                return result
-    return None, None
-
-
 @require_POST
-def main_skills_hierarchy_add(request, pk, section):
-    """Ajoute un item racine à main_skills.bullet ou main_skills.table."""
-    # section: 'bullet' ou 'table'
+def xp_pro_realization_bulk_update(request, pk, exp_index):
+    """Met à jour les titres de plusieurs réalisations xp_pro (bulk update)."""
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
-    if "main_skills" not in dossier:
-        dossier["main_skills"] = {"bullet": [], "table": []}
-    if section not in dossier["main_skills"]:
-        dossier["main_skills"][section] = []
+    try:
+        items = json.loads(request.POST.get("items", "[]"))
+        exp_index = int(exp_index)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON or index"}, status=400)
 
-    new_item = {
-        "id": _new_id(),
-        "title": "",
-        "description": []
-    }
+    if "xp_pro" not in dossier or exp_index >= len(dossier["xp_pro"]):
+        return JsonResponse({"error": "Experience not found"}, status=404)
 
-    dossier["main_skills"][section].append(new_item)
+    experience = dossier["xp_pro"][exp_index]
+    if "description" not in experience or not isinstance(experience["description"], list):
+        return JsonResponse({"error": "Description not found"}, status=404)
+
+    # Fonction interne pour mettre à jour récursivement
+    def update_items_recursive(items_list, items_to_update):
+        for item in items_list:
+            for update_item in items_to_update:
+                if item.get("id") == update_item.get("id"):
+                    item["title"] = _clean_text(update_item.get("title", ""))
+                    break
+            # Récursion sur les enfants
+            if "description" in item and isinstance(item["description"], list):
+                update_items_recursive(item["description"], items_to_update)
+
+    update_items_recursive(experience["description"], items)
     candidat.dossier = dossier
     candidat.save(update_fields=["dossier"])
 
-    # Retourner le template HTML du nouvel item
-    placeholders = _get_main_skills_placeholders(section)
-    return render(
-        request,
-        "formulaire/partials/main_skills_hierarchy_item.html",
-        {
-            "item": new_item,
-            "depth": 0,
-            "target_index": len(dossier["main_skills"][section]) - 1,
-            "endpoint_base": f"main_skills_{section}",
-            "max_depth": 1,
-            "main_skills_placeholders": placeholders,
-        }
-    )
-
+    return JsonResponse({"status": "ok"})
 
 @require_POST
-def main_skills_hierarchy_add_child(request, pk, section):
-    """Ajoute un enfant à un item de main_skills."""
+def xp_pro_context_update(request, pk, exp_index):
+    """Met à jour le contexte d'une expérience xp_pro."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
     try:
-        candidat = get_object_or_404(Candidat, pk=pk)
-        dossier = candidat.dossier or _empty_dossier()
+        exp_index = int(exp_index)
+        if "xp_pro" not in dossier or exp_index >= len(dossier["xp_pro"]):
+            return HttpResponse("Expérience introuvable", status=404)
 
-        parent_id = request.POST.get("parent_id", "")
-        depth = int(request.POST.get("depth", "0"))
-        target_index = request.POST.get("target_index", "")
+        experience = dossier["xp_pro"][exp_index]
+        # Mettre à jour le contexte
+        experience["context"] = _clean_text(request.POST.get("context", ""))
 
-        if "main_skills" not in dossier or section not in dossier["main_skills"]:
-            return HttpResponse("Section introuvable", status=404)
-
-        if depth > 1:
-            return HttpResponse("⚠️ Limite de profondeur atteinte (2 niveaux maximum)", status=400)
-
-        # Trouver le parent
-        parent_list, parent_idx = _find_main_skills_hierarchy_parent_and_index(dossier["main_skills"][section], parent_id)
-        if parent_list is None:
-            return HttpResponse("Parent introuvable", status=404)
-
-        parent = parent_list[parent_idx]
-        new_child = {
-            "id": _new_id(),
-            "title": "",
-            "description": []
-        }
-
-        parent["description"].append(new_child)
-        candidat.dossier = dossier
-        candidat.save(update_fields=["dossier"])
-
-        # Récupérer les placeholders
-        placeholders = _get_main_skills_placeholders(section)
-
-        return render(
-            request,
-            "formulaire/partials/main_skills_hierarchy_item.html",
-            {
-                "item": new_child,
-                "depth": depth + 1,
-                "target_index": target_index,
-                "endpoint_base": f"main_skills_{section}",
-                "max_depth": 1,
-                "main_skills_placeholders": placeholders,
-            }
-        )
-    except (ValueError, KeyError) as e:
-        logger.error(f"Erreur main_skills_hierarchy_add_child: {e}")
-        return HttpResponse(f"Erreur: {e}", status=400)
-
-
-@require_POST
-def main_skills_hierarchy_update(request, pk, section, item_id):
-    """Met à jour le titre d'un item main_skills."""
-    try:
-        candidat = get_object_or_404(Candidat, pk=pk)
-        dossier = candidat.dossier or _empty_dossier()
-        title = _clean_text(request.POST.get("title", ""))
-
-        if "main_skills" not in dossier or section not in dossier["main_skills"]:
-            return HttpResponse("Section introuvable", status=404)
-
-        parent_list, idx = _find_main_skills_hierarchy_parent_and_index(dossier["main_skills"][section], item_id)
-        if parent_list is None or idx is None:
-            return HttpResponse("Item introuvable", status=404)
-
-        parent_list[idx]["title"] = title
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
         return HttpResponse("OK")
-    except Exception as e:
-        logger.error(f"Erreur main_skills_hierarchy_update: {e}")
+
+    except (ValueError, IndexError) as e:
+        logger.error(f"Erreur xp_pro_context_update: {e}")
         return HttpResponse(f"Erreur: {e}", status=400)
 
-
-@require_POST
-def main_skills_hierarchy_delete(request, pk, section, item_id):
-    """Supprime un item main_skills et ses enfants."""
-    try:
-        candidat = get_object_or_404(Candidat, pk=pk)
-        dossier = candidat.dossier or _empty_dossier()
-
-        if "main_skills" not in dossier or section not in dossier["main_skills"]:
-            return HttpResponse("Section introuvable", status=404)
-
-        parent_list, idx = _find_main_skills_hierarchy_parent_and_index(dossier["main_skills"][section], item_id)
-        if parent_list is None or idx is None:
-            return HttpResponse("Item introuvable", status=404)
-
-        parent_list.pop(idx)
-        candidat.dossier = dossier
-        candidat.save(update_fields=["dossier"])
-
-        return HttpResponse("OK")
-    except Exception as e:
-        logger.error(f"Erreur main_skills_hierarchy_delete: {e}")
-        return HttpResponse(f"Erreur: {e}", status=400)
-
-
-# ---------------------------------------------------------------------------
-# DOCX export
-# ---------------------------------------------------------------------------
+# ============================================================================
+# MARK: 10. DOCX EXPORT
+# ============================================================================
 
 def candidat_export_docx(request, pk):
     candidat = get_object_or_404(Candidat, pk=pk)
