@@ -66,7 +66,7 @@
     <h2 class="h6 mb-0"><i class="bi bi-briefcase"></i> Postes cibles – Variantes</h2>
   </div>
   <div class="card-body">
-    <p class="text-muted small mb-3">Ajoutez des variantes du poste, qui seront utilisées lors de l'export du document</p>
+    <p class="text-muted small mb-3">Ajoutez des variantes du poste, qui seront utilisées lors de l'export du document. Sélectionnez le poste pour lequel le DC sera généré.</p>
 
     <div id="poste-cible-list" class="mb-3">
       {% if candidat.dossier.poste_cible %}
@@ -223,9 +223,11 @@
                 <small class="text-muted">{{ formation.school }} ({{ formation.date }})</small><br>
                 {% if formation.description %}<small>{{ formation.description }}</small>{% endif %}
               </div>
-              <a href="{% url 'formulaire:formation_remove' candidat.pk forloop.counter0 %}" class="btn btn-sm btn-danger">
+              <button type="button" class="btn btn-sm btn-danger btn-formation-remove" 
+                      data-candidat-pk="{{ candidat.pk }}" 
+                      data-formation-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
-              </a>
+              </button>
             </div>
           </div>
         {% endfor %}
@@ -284,9 +286,11 @@
                 <small class="text-muted">{{ cert.date }}</small><br>
                 {% if cert.description %}<small>{{ cert.description }}</small>{% endif %}
               </div>
-              <a href="{% url 'formulaire:certification_remove' candidat.pk forloop.counter0 %}" class="btn btn-sm btn-danger">
+              <button type="button" class="btn btn-sm btn-danger btn-certification-remove" 
+                      data-candidat-pk="{{ candidat.pk }}" 
+                      data-certification-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
-              </a>
+              </button>
             </div>
           </div>
         {% endfor %}
@@ -339,9 +343,11 @@
                 <strong>{{ langue.title }}</strong> <br>
                 {% if langue.description %}<small>{{ langue.description }}</small>{% endif %}
               </div>
-              <a href="{% url 'formulaire:langue_remove' candidat.pk forloop.counter0 %}" class="btn btn-sm btn-danger">
+              <button type="button" class="btn btn-sm btn-danger btn-langue-remove" 
+                      data-candidat-pk="{{ candidat.pk }}" 
+                      data-langue-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
-              </a>
+              </button>
             </div>
           </div>
         {% endfor %}
@@ -372,19 +378,14 @@
           <small class="form-text text-muted">Nom de l'entreprise ou de l'organisation</small>
         </div>
         <div class="col-md-6">
-          <label class="form-label">Poste</label>
-          <input type="text" name="poste" class="form-control" placeholder="{{ placeholders.experiences.poste }}" required>
-          <small class="form-text text-muted">Titre du poste occupé</small>
-        </div>
-        <div class="col-md-6">
           <label class="form-label">Période</label>
           <input type="text" name="date" class="form-control" placeholder="{{ placeholders.experiences.date }}" required>
           <small class="form-text text-muted">Format: YYYY-YYYY ou YYYY, MM/YYYY-MM/YYYY ou MM/YYYY</small>
         </div>
         <div class="col-md-6">
-          <label class="form-label">Technologies</label>
-          <input type="text" name="technologies" class="form-control" placeholder="{{ placeholders.experiences.technologies }}">
-          <small class="form-text text-muted">Séparées par des virgules</small>
+          <label class="form-label">Poste</label>
+          <input type="text" name="poste" class="form-control" placeholder="{{ placeholders.experiences.poste }}" required>
+          <small class="form-text text-muted">Titre du poste occupé</small>
         </div>
         <div class="col-md-12">
           <button type="submit" class="btn btn-success">
@@ -409,73 +410,84 @@
                 <small class="text-muted">{{ exp.date }}</small><br>
                 {% if exp.context %}<small><em>{{ exp.context }}</em></small><br>{% endif %}
               </div>
-              <a href="{% url 'formulaire:experience_remove' candidat.pk forloop.counter0 %}" class="btn btn-sm btn-danger">
+              <button type="button" class="btn btn-sm btn-danger btn-experience-remove" 
+                      data-candidat-pk="{{ candidat.pk }}" 
+                      data-exp-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
-              </a>
+              </button>
             </div>
 
             <!-- ================================================================
-                 MARK: 7.2 XP_PRO BULLETS - 2e étape du workflow (Réalisations)
+                 MARK: 7.2 XP_PRO STEP 2 - 2e étape du workflow (Contexte, Technologies, Réalisations)
                  ================================================================ -->
 
-            {# Section des réalisations hiérarchiques #}
-            {% if exp.description %}
-            <div class="mt-3 ps-3 border-start border-2">
-              <div class="d-flex align-items-center gap-2 mb-2">
-                <h6 class="mb-0">
-                  <i class="bi bi-diagram-3"></i> Réalisations
-                </h6>
+            <div class="mt-3 ps-3 border-start border-2 xp-pro-step2-container" data-exp-index="{{ forloop.counter0 }}" data-candidat-pk="{{ candidat.pk }}">
+              <h6 class="mb-3"><i class="bi bi-diagram-3"></i> Détails de l'expérience</h6>
+
+              <!-- Sous-section 1: Contexte -->
+              <div class="mb-4">
+                <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
+                  <span><i class="bi bi-list-check"></i> Contexte de l'expérience</span>
+                </label>
+                <textarea class="form-control xp-pro-step2-context"
+                          placeholder="{{ placeholders.experiences.context }}"
+                          rows="3">{{ exp.context }}</textarea>
               </div>
 
-              {# Champ Contexte pour cette expérience #}
-              <div class="mb-3">
-                <label class="form-label small">Contexte de l'expérience</label>
-                <div class="input-group input-group-sm">
-                  <textarea name="context"
-                            class="form-control xp-pro-context"
-                            placeholder="{{ placeholders.experiences.context }}"
-                            data-exp-index="{{ forloop.counter0 }}"
-                            data-candidat-pk="{{ candidat.pk }}"
-                            rows="2">{{ exp.context }}</textarea>
-                </div>
-                <div class="d-flex gap-2 mt-2">
-                  <button type="button"
-                          class="btn btn-sm btn-outline-primary btn-xp-pro-context-save"
-                          data-exp-index="{{ forloop.counter0 }}"
-                          data-candidat-pk="{{ candidat.pk }}">
-                    <i class="bi bi-save"></i> Enregistrer
+              <!-- Sous-section 2: Technologies utilisées -->
+              <div class="mb-4">
+                <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
+                  <span><i class="bi bi-list-check"></i> Technologies utilisées</span>
+                </label>
+                <div class="input-group input-group-sm mb-2">
+                  <input type="text"
+                         class="form-control xp-pro-step2-tech-input"
+                         placeholder="ex: Python, Django, PostgreSQL... (séparées par des virgules)"
+                         data-separator=",">
+                  <button class="btn btn-outline-success btn-xp-pro-step2-tech-add" type="button">
+                    <i class="bi bi-plus-lg"></i>
                   </button>
-                  <small class="form-text text-muted align-self-center">
-                    Auto-save toutes les 5 secondes
-                  </small>
+                </div>
+                <div class="xp-pro-step2-tech-badges">
+                  {% if exp.env_tech %}
+                    {% for tech in exp.env_tech %}
+                      <span class="badge bg-info text-dark me-2 mb-2">
+                        {{ tech }}
+                        <button type="button" class="btn-xp-pro-step2-tech-remove" data-tech="{{ tech }}">×</button>
+                      </span>
+                    {% endfor %}
+                  {% else %}
+                    <span class="text-muted small">Aucune technologie ajoutée</span>
+                  {% endif %}
                 </div>
               </div>
 
-              {# Liste des réalisations existantes #}
-              <div id="realizations-{{ forloop.counter0 }}" class="mb-2">
-                {% for realization in exp.description %}
-                  {% include "formulaire/partials/xp_pro_hierarchy_item.html" with item=realization exp_index=forloop.counter0 depth=0 candidat=candidat xp_pro_placeholders=placeholders.xp_pro %}
-                {% endfor %}
+              <!-- Sous-section 3: Réalisations -->
+              <div class="mb-4">
+                <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
+                  <span><i class="bi bi-list-check"></i> Réalisations</span>
+                  <button type="button"
+                          class="btn btn-sm btn-outline-success btn-xp-pro-step2-add-realization">
+                    <i class="bi bi-plus-lg"></i> Ajouter une activité
+                  </button>
+                </label>
+                <div id="realizations-{{ forloop.counter0 }}" class="xp-pro-step2-realizations ps-2">
+                  {% for realization in exp.description %}
+                    {% include "formulaire/partials/xp_pro_hierarchy_item.html" with item=realization exp_index=forloop.counter0 depth=0 candidat=candidat xp_pro_placeholders=placeholders.xp_pro %}
+                  {% endfor %}
+                </div>
               </div>
 
-              {# Bouton pour ajouter une réalisation #}
-              <div class="d-flex gap-2">
+              <!-- Bouton Enregistrer unique pour les 3 sous-sections -->
+              <div class="d-flex gap-2 align-items-center pt-3 border-top">
                 <button type="button"
-                        class="btn btn-sm btn-outline-success btn-xp-pro-hierarchy-add-root"
+                        class="btn btn-primary btn-xp-pro-step2-save"
                         data-exp-index="{{ forloop.counter0 }}"
                         data-candidat-pk="{{ candidat.pk }}">
-                  <i class="bi bi-plus-lg"></i> Ajouter une activité
-                </button>
-                <button type="button"
-                        class="btn btn-sm btn-outline-primary btn-xp-pro-realization-save"
-                        data-exp-index="{{ forloop.counter0 }}"
-                        data-candidat-pk="{{ candidat.pk }}"
-                        title="Enregistrer les modifications des réalisations">
-                  <i class="bi bi-check-lg"></i> Enregistrer réalisations
+                  <i class="bi bi-check-lg"></i> Enregistrer
                 </button>
               </div>
             </div>
-            {% endif %}
           </div>
         {% endfor %}
       {% else %}
@@ -490,7 +502,7 @@
       MARK: SCRIPTS
       ========================================================================-->
 
-{% block scripts %}
+{% block extra_js %}
 
 <script>
 const CANDIDAT_PK = '{{ candidat.pk }}';
@@ -763,8 +775,15 @@ function deleteMainSkillsHierarchyItem(e) {
   const btn = e.target.closest('.btn-main-skills-hierarchy-delete');
   const itemId = btn.dataset.itemId;
   const endpointBase = btn.dataset.endpointBase;
+  const depth = parseInt(btn.dataset.depth || '0');
+  const item = document.getElementById(`item-${itemId}`);
+  const title = item?.querySelector('.main-skills-hierarchy-title')?.value || 'cet élément';
+  
+  const message = depth === 0 
+    ? `Supprimer le domaine de compétences: ${title} ?\n\nCela supprimera aussi tous les sous-domaines et est irréversible.`
+    : `Supprimer: ${title} et ses enfants ?\n\nCette action est irréversible.`;
 
-  if (confirm('Supprimer cet item et ses enfants ?')) {
+  if (confirm(message)) {
     const section = endpointBase.replace('main_skills_', '');
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
@@ -897,8 +916,15 @@ function deleteXpProHierarchyItem(e) {
   const btn = e.target.closest('.btn-xp-pro-hierarchy-delete');
   const itemId = btn.dataset.itemId;
   const expIndex = btn.dataset.targetIndex;
+  const depth = parseInt(btn.dataset.depth || '0');
+  const item = document.getElementById(`item-${itemId}`);
+  const title = item?.querySelector('.xp-pro-hierarchy-title')?.value || 'cet élément';
+  
+  const message = depth === 0
+    ? `Supprimer la réalisation: ${title} ?\n\nCela supprimera aussi toutes les sous-tâches et est irréversible.`
+    : `Supprimer: ${title} et ses enfants ?\n\nCette action est irréversible.`;
 
-  if (confirm('Supprimer cette réalisation et ses enfants ?')) {
+  if (confirm(message)) {
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
@@ -912,6 +938,423 @@ function deleteXpProHierarchyItem(e) {
     })
     .catch(err => console.error('Erreur deleteXpProHierarchyItem:', err));
   }
+}
+
+// ========================================================================
+// MARK: XP_PRO EXPERIENCE HANDLERS - Add, Remove
+// ========================================================================
+
+function initExperienceHandlers() {
+  document.querySelectorAll('.btn-experience-remove').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', removeExperience);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+}
+
+function removeExperience(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-experience-remove');
+  const card = btn.closest('.alert');
+  const poste = card?.querySelector('strong:first-of-type')?.textContent || 'cette expérience';
+  const company = card?.querySelector('strong:nth-of-type(2)')?.textContent || '';
+  const subtitle = company ? ` chez ${company}` : '';
+  if (!confirm(`Supprimer l'expérience: ${poste}${subtitle} ?\n\nCette action supprimera aussi toutes les réalisations associées et est irréversible.`)) {
+    return;
+  }
+  const candidatPk = btn.dataset.candidatPk;
+  const expIndex = btn.dataset.expIndex;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/experience/${expIndex}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      // Remove the experience card from the DOM
+      const expDiv = btn.closest('.alert.alert-warning');
+      if (expDiv) {
+        expDiv.remove();
+      }
+    } else {
+      console.error('Erreur suppression expérience:', r.status);
+    }
+  })
+  .catch(err => console.error('Erreur removeExperience:', err));
+}
+
+// ========================================================================
+// MARK: FORMATION/CERTIFICATION/LANGUE HANDLERS - Delete buttons
+// ========================================================================
+
+function initFormationCertificationLangueHandlers() {
+  // Formation delete
+  document.querySelectorAll('.btn-formation-remove').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', removeFormation);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+  
+  // Certification delete
+  document.querySelectorAll('.btn-certification-remove').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', removeCertification);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+  
+  // Langue delete
+  document.querySelectorAll('.btn-langue-remove').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', removeLangue);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+}
+
+function removeFormation(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-formation-remove');
+  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette formation';
+  if (!confirm(`Supprimer la formation: ${title} ?\n\nCette action est irréversible.`)) {
+    return;
+  }
+  const candidatPk = btn.dataset.candidatPk;
+  const formationIndex = btn.dataset.formationIndex;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/formation/${formationIndex}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      const formationDiv = btn.closest('.alert.alert-info');
+      if (formationDiv) {
+        formationDiv.remove();
+      }
+    } else {
+      console.error('Erreur suppression formation:', r.status);
+    }
+  })
+  .catch(err => console.error('Erreur removeFormation:', err));
+}
+
+function removeCertification(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-certification-remove');
+  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette certification';
+  if (!confirm(`Supprimer la certification: ${title} ?\n\nCette action est irréversible.`)) {
+    return;
+  }
+  const candidatPk = btn.dataset.candidatPk;
+  const certificationIndex = btn.dataset.certificationIndex;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/certification/${certificationIndex}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      const certDiv = btn.closest('.alert.alert-success');
+      if (certDiv) {
+        certDiv.remove();
+      }
+    } else {
+      console.error('Erreur suppression certification:', r.status);
+    }
+  })
+  .catch(err => console.error('Erreur removeCertification:', err));
+}
+
+function removeLangue(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-langue-remove');
+  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette langue';
+  if (!confirm(`Supprimer la langue: ${title} ?\n\nCette action est irréversible.`)) {
+    return;
+  }
+  const candidatPk = btn.dataset.candidatPk;
+  const langueIndex = btn.dataset.langueIndex;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/langue/${langueIndex}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      const langueDiv = btn.closest('.alert.alert-info');
+      if (langueDiv) {
+        langueDiv.remove();
+      }
+    } else {
+      console.error('Erreur suppression langue:', r.status);
+    }
+  })
+  .catch(err => console.error('Erreur removeLangue:', err));
+}
+
+// ========================================================================
+// MARK: XP_PRO STEP 2 HANDLERS - Unified handler for contexte + technologies + realizations
+// ========================================================================
+
+let xpProStep2DirtyState = {}; // Tracking dirty state per experience
+
+function initXpProStep2Handlers() {
+  // Bouton Enregistrer
+  document.querySelectorAll('.btn-xp-pro-step2-save').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', (e) => saveXpProStep2(e, false));
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Bouton Ajouter technologie
+  document.querySelectorAll('.btn-xp-pro-step2-tech-add').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', addXpProStep2Technology);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Boutons Supprimer technologie (badges)
+  document.querySelectorAll('.btn-xp-pro-step2-tech-remove').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', removeXpProStep2Technology);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Bouton Ajouter réalisation
+  document.querySelectorAll('.btn-xp-pro-step2-add-realization').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', addXpProStep2Realization);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Auto-save sur contexte et technologies (dirty tracking)
+  document.querySelectorAll('.xp-pro-step2-context').forEach(textarea => {
+    if (!textarea.hasAttribute('data-listener-initialized')) {
+      textarea.addEventListener('input', () => markXpProStep2Dirty(textarea));
+      textarea.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  document.querySelectorAll('.xp-pro-step2-tech-input').forEach(input => {
+    if (!input.hasAttribute('data-listener-initialized')) {
+      input.addEventListener('input', () => markXpProStep2Dirty(input));
+      input.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+}
+
+function markXpProStep2Dirty(element) {
+  const container = element.closest('.xp-pro-step2-container');
+  if (!container) return;
+
+  const expIndex = container.dataset.expIndex;
+  if (!xpProStep2DirtyState[expIndex]) {
+    xpProStep2DirtyState[expIndex] = { dirty: false, timeout: null };
+  }
+
+  xpProStep2DirtyState[expIndex].dirty = true;
+
+  // Schedule auto-save in 5 seconds
+  clearTimeout(xpProStep2DirtyState[expIndex].timeout);
+  xpProStep2DirtyState[expIndex].timeout = setTimeout(() => {
+    saveXpProStep2(null, true, container); // Auto-save (silent mode)
+  }, 5000);
+}
+
+function addXpProStep2Technology(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-xp-pro-step2-tech-add');
+  const container = btn.closest('.xp-pro-step2-container');
+  const input = container.querySelector('.xp-pro-step2-tech-input');
+  const badgesDiv = container.querySelector('.xp-pro-step2-tech-badges');
+
+  const techs = input.value.split(',').map(t => t.trim()).filter(t => t);
+  if (techs.length === 0) return;
+
+  techs.forEach(tech => {
+    const badge = document.createElement('span');
+    badge.className = 'badge bg-info text-dark me-2 mb-2';
+    badge.innerHTML = `${tech} <button type="button" class="btn-xp-pro-step2-tech-remove" data-tech="${tech}" style="border: none; background: none; color: inherit; cursor: pointer; margin-left: 5px;">×</button>`;
+
+    const removeBtn = badge.querySelector('.btn-xp-pro-step2-tech-remove');
+    removeBtn.addEventListener('click', removeXpProStep2Technology);
+
+    badgesDiv.appendChild(badge);
+  });
+
+  input.value = '';
+  markXpProStep2Dirty(input);
+}
+
+function removeXpProStep2Technology(e) {
+  e.preventDefault();
+  const badge = e.target.closest('.badge');
+  if (badge) {
+    badge.remove();
+    markXpProStep2Dirty(e.target);
+  }
+}
+
+function addXpProStep2Realization(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-xp-pro-step2-add-realization');
+  const container = btn.closest('.xp-pro-step2-container');
+  const expIndex = container.dataset.expIndex;
+  const candidatPk = container.dataset.candidatPk;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/experience/${expIndex}/realization/ajouter/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => r.text())
+  .then(html => {
+    const realizationsDiv = container.querySelector(`#realizations-${expIndex}`);
+    realizationsDiv.insertAdjacentHTML('beforeend', html);
+    initXpProHierarchyHandlers();
+    markXpProStep2Dirty(btn);
+  })
+  .catch(err => console.error('Erreur addXpProStep2Realization:', err));
+}
+
+function saveXpProStep2(e, isSilent = true, containerOverride = null) {
+  let container = containerOverride;
+  if (!container && e) {
+    const btn = e.target.closest('.btn-xp-pro-step2-save');
+    container = btn?.closest('.xp-pro-step2-container');
+  }
+
+  if (!container) return;
+
+  const expIndex = container.dataset.expIndex;
+  const candidatPk = container.dataset.candidatPk;
+  const btn = container.querySelector('.btn-xp-pro-step2-save');
+
+  // Check if dirty
+  if (!xpProStep2DirtyState[expIndex]?.dirty) return;
+
+  // Collect data from 3 subsections
+  const context = container.querySelector('.xp-pro-step2-context').value.trim();
+
+  // Get technologies from badges
+  const techBadges = container.querySelectorAll('.badge');
+  const envTech = Array.from(techBadges)
+    .map(badge => badge.textContent.replace('×', '').trim())
+    .filter(t => t);
+
+  // Build realization tree
+  const realizationsDiv = container.querySelector('.xp-pro-step2-realizations');
+  const realizations = buildXpProStep2RealizationTree(realizationsDiv);
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+  formData.append('context', context);
+  formData.append('env_tech', JSON.stringify(envTech));
+  formData.append('realizations', JSON.stringify(realizations));
+
+  // Show feedback if explicit click (not auto-save)
+  const originalText = btn?.innerHTML;
+  if (!isSilent && btn) {
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
+    btn.disabled = true;
+  }
+
+  fetch(`/candidat/${candidatPk}/experience/${expIndex}/step2-update/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.status === 'ok') {
+      xpProStep2DirtyState[expIndex].dirty = false;
+
+      if (!isSilent && btn) {
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> Enregistré !';
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('btn-outline-success');
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.classList.remove('btn-outline-success');
+          btn.classList.add('btn-outline-primary');
+          btn.disabled = false;
+        }, 2000);
+      }
+    } else {
+      throw new Error(data.error || 'Erreur inconnue');
+    }
+  })
+  .catch(err => {
+    console.error('Erreur saveXpProStep2:', err);
+    if (!isSilent && btn) {
+      btn.innerHTML = '<i class="bi bi-exclamation-circle"></i> ✗ Erreur';
+      btn.classList.remove('btn-outline-primary');
+      btn.classList.add('btn-outline-danger');
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove('btn-outline-danger');
+        btn.classList.add('btn-outline-primary');
+        btn.disabled = false;
+      }, 2000);
+    }
+  });
+}
+
+function buildXpProStep2RealizationTree(container) {
+  const items = [];
+  // Les items root sont les divs avec id="item-xxx" qui sont des enfants directs de .xp-pro-step2-realizations
+  container.querySelectorAll(':scope > .xp-pro-hierarchy-item').forEach(itemDiv => {
+    const item = buildXpProStep2SingleItem(itemDiv);
+    if (item) items.push(item);
+  });
+  return items;
+}
+
+function buildXpProStep2SingleItem(itemDiv) {
+  const idAttr = itemDiv.id;
+  if (!idAttr || !idAttr.startsWith('item-')) return null;
+
+  const id = idAttr.replace('item-', '');
+  const titleInput = itemDiv.querySelector('.xp-pro-hierarchy-title');
+  const title = titleInput ? titleInput.value : '';
+
+  const children = [];
+  // Les enfants sont dans la div avec id="description-xxx"
+  const descriptionId = `description-${id}`;
+  const childrenContainer = itemDiv.querySelector(`#${descriptionId}`);
+
+  if (childrenContainer) {
+    childrenContainer.querySelectorAll(':scope > .xp-pro-hierarchy-item').forEach(childDiv => {
+      const child = buildXpProStep2SingleItem(childDiv);
+      if (child) children.push(child);
+    });
+  }
+
+  return {
+    id,
+    title,
+    description: children
+  };
 }
 
 // ========================================================================
@@ -1003,7 +1446,7 @@ async function saveData(section, showFeedback = false, element = null) {
     // Montrer le feedback si c'est un click-save
     let btn = null;
     if (showFeedback && section !== 'xp_pro_realization') {
-      btn = document.querySelector(`[data-section="${section.replace('main_skills_', '')}"][data-candidat-pk="${CANDIDAT_PK}"].btn-main-skills-save`) 
+      btn = document.querySelector(`[data-section="${section.replace('main_skills_', '')}"][data-candidat-pk="${CANDIDAT_PK}"].btn-main-skills-save`)
          || document.querySelector(`[data-candidat-pk="${CANDIDAT_PK}"].btn-poste-cible-save`);
       if (btn) {
         const textSpan = btn.querySelector('.btn-save-text');
@@ -1025,7 +1468,7 @@ async function saveData(section, showFeedback = false, element = null) {
 
     if (response.ok && showFeedback && btn) {
       const textSpan = btn.querySelector('.btn-save-text') || btn;
-      textSpan.innerHTML = 'Enregistré ! <i class="bi bi-check-circle"></i>';
+      textSpan.innerHTML = '<i class="bi bi-check-lg"></i> Enregistré !';
       btn.disabled = false;
       setTimeout(() => {
         if (section === 'xp_pro_realization') {
@@ -1137,81 +1580,28 @@ setInterval(() => {
 }, 5000);
 
 // ========================================================================
-// XP_PRO CONTEXT: Handlers spécifiques (textarea auto-save 5s)
-// ========================================================================
-
-function saveXpProContext(e) {
-  e?.preventDefault();
-  const textarea = e?.target?.closest('.btn-xp-pro-context-save')?.parentElement?.querySelector('.xp-pro-context') || e;
-  if (!textarea) return;
-
-  const btn = textarea.nextElementSibling;
-  const expIndex = textarea.dataset.expIndex;
-  const candidatPk = textarea.dataset.candidatPk;
-
-  const formData = new FormData();
-  formData.append('context', textarea.value);
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  // Ajouter feedback visuel si click (pas pour auto-save)
-  const isClick = e instanceof Event && e.type === 'click';
-  const originalText = btn?.innerHTML;
-
-  if (isClick && btn) {
-    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
-    btn.disabled = true;
-  }
-
-  fetch(`/candidat/${candidatPk}/experience/${expIndex}/contexte/mettre-a-jour/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(r => {
-    if (r.ok && isClick && btn) {
-      btn.innerHTML = 'Enregistré ! <i class="bi bi-check-circle"></i>';
-      btn.classList.remove('btn-outline-primary');
-      btn.classList.add('btn-outline-success');
-      setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.classList.remove('btn-outline-success');
-        btn.classList.add('btn-outline-primary');
-        btn.disabled = false;
-      }, 2000);
-    }
-  })
-  .catch(err => {
-    console.error('Erreur saveXpProContext:', err);
-    if (isClick && btn) {
-      btn.innerHTML = '<i class="bi bi-exclamation-circle"></i> ✗ Erreur';
-      btn.classList.remove('btn-outline-primary');
-      btn.classList.add('btn-outline-danger');
-      setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.classList.remove('btn-outline-danger');
-        btn.classList.add('btn-outline-primary');
-        btn.disabled = false;
-      }, 2000);
-    }
-  });
-}
-
-// ========================================================================
 // MARK: Initialisation générale
 // ========================================================================
 
 // Initialiser au chargement
 document.addEventListener('DOMContentLoaded', () => {
-  initMainSkillsHierarchyHandlers();
-  initXpProHierarchyHandlers();
   initPostesCibleHandlers();
+  initMainSkillsHierarchyHandlers();
+  initFormationCertificationLangueHandlers();
+  initExperienceHandlers();
+  initXpProHierarchyHandlers();
+  initXpProStep2Handlers();
   initAutosaveHandlers(); // Unique handler pour auto-save (remplace l'ancien: initSaveButtonHandlers, initPostesCibleDirtyTracking, initMainSkillsDirtyTracking, initXpProContextHandlers)
 });
 
 // Réinitialiser après chaque insertion HTMX
 document.addEventListener('htmx:afterSwap', () => {
-  initMainSkillsHierarchyHandlers();
-  initXpProHierarchyHandlers();
   initPostesCibleHandlers();
+  initMainSkillsHierarchyHandlers();
+  initFormationCertificationLangueHandlers();
+  initExperienceHandlers();
+  initXpProHierarchyHandlers();
+  initXpProStep2Handlers();
   initAutosaveHandlers(); // Unique handler pour auto-save
 });
 </script>
