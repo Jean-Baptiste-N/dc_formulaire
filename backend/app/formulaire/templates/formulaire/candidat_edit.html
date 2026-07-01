@@ -490,6 +490,8 @@
       MARK: SCRIPTS
       ========================================================================-->
 
+{% block scripts %}
+
 <script>
 const CANDIDAT_PK = '{{ candidat.pk }}';
 
@@ -780,7 +782,7 @@ function deleteMainSkillsHierarchyItem(e) {
 }
 
 // ========================================================================
-// MARK: XP_PRO HANDLERS (xp_pro_realization_item.html)
+// MARK: XP_PRO HANDLERS (xp_pro_hierarchy_item.html)
 // ========================================================================
 
 function initXpProHierarchyHandlers() {

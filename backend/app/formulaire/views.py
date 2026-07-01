@@ -130,11 +130,8 @@ def _get_placeholders():
 def _get_main_skills_placeholders(section):
     """Retourne les placeholders pour une section main_skills (bullet ou table)."""
     placeholders_dict = _get_placeholders()
-    main_skills_placeholders = placeholders_dict["main_skills"][section]
-    return {
-        "placeholder_root": main_skills_placeholders.get(0, "Item"),
-        "placeholder_level1": main_skills_placeholders.get(1, "Sous-item"),
-    }
+    # Retourner directement le dict avec les indices numériques pour que le filtre get_placeholder:depth fonctionne
+    return placeholders_dict["main_skills"][section]
 
 def _ensure_realization_ids(description):
     """Ajoute des IDs aux réalisations qui n'en ont pas (migration)."""
@@ -824,7 +821,7 @@ def xp_pro_realization_add(request, pk, exp_index):
         current_depth = requested_depth if requested_depth else 0
         xp_pro_placeholders = _get_placeholders()["xp_pro"]
         html = render_to_string(
-            "formulaire/partials/xp_pro_realization_item.html",
+            "formulaire/partials/xp_pro_hierarchy_item.html",
             {
                 "item": new_item,
                 "exp_index": exp_index,
