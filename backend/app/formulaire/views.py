@@ -68,7 +68,7 @@ def _empty_dossier():
         "certifications": [],
         "langues": [],
         "xp_pro": [],
-        "sections": []  # Pour compatibilité avec l'ancien système
+        "poste_cible": []
     }
 
 
@@ -141,6 +141,15 @@ def candidat_create(request):
         if form.is_valid():
             candidat = form.save(commit=False)
             candidat.dossier = _empty_dossier()
+
+            # Ajouter une première variante de poste cible avec le poste principal
+            if candidat.poste:
+                candidat.dossier["poste_cible"].append({
+                    "id": _new_id(),
+                    "title": candidat.poste,
+                    "active": True
+                })
+
             candidat.save()
             return redirect("formulaire:candidat_edit", pk=candidat.pk)
     else:
@@ -402,6 +411,87 @@ def certification_remove(request, pk, index):
 
 
 # ---------------------------------------------------------------------------
+# Postes cible (variantes)
+# ---------------------------------------------------------------------------
+
+@require_POST
+def poste_cible_add(request, pk):
+    """Ajoute une variante de poste cible."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    if "poste_cible" not in dossier:
+        dossier["poste_cible"] = []
+
+    # Créer une nouvelle variante
+    new_poste_cible = {
+        "id": _new_id(),
+        "title": "",
+        "active": False,
+    }
+
+    dossier["poste_cible"].append(new_poste_cible)
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
+
+    return render(
+        request,
+        "formulaire/partials/poste_cible_item.html",
+        {"poste_cible": new_poste_cible, "candidat": candidat},
+    )
+
+
+@require_POST
+def poste_cible_delete(request, pk, poste_cible_id):
+    """Supprime une variante de poste cible."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    if "poste_cible" in dossier:
+        dossier["poste_cible"] = [
+            pc for pc in dossier["poste_cible"] if pc["id"] != poste_cible_id
+        ]
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return HttpResponse("")
+
+
+@require_POST
+def poste_cible_activate(request, pk, poste_cible_id):
+    """Active une variante de poste cible (déplie les autres)."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    if "poste_cible" in dossier:
+        for pc in dossier["poste_cible"]:
+            pc["active"] = (pc["id"] == poste_cible_id)
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return HttpResponse("")
+
+
+@require_POST
+def poste_cible_update(request, pk, poste_cible_id):
+    """Met à jour le titre d'une variante de poste cible."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    title = _clean_text(request.POST.get("title", ""))
+
+    if "poste_cible" in dossier:
+        for pc in dossier["poste_cible"]:
+            if pc["id"] == poste_cible_id:
+                pc["title"] = title
+                break
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return HttpResponse("")
+
+
+# ---------------------------------------------------------------------------
 # Expériences professionnelles
 # ---------------------------------------------------------------------------
 
@@ -457,216 +547,6 @@ def experience_remove(request, pk, index):
         pass
 
     return redirect("formulaire:candidat_edit", pk=pk)
-
-
-# ---------------------------------------------------------------------------
-# Section CRUD (Ancien système - compatibilité)
-# ---------------------------------------------------------------------------
-
-@require_POST
-def section_add(request, pk):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    new_section = {"id": _new_id(), "titre": "", "postes": []}
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    dossier["sections"].append(new_section)
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    return render(
-        request,
-        "formulaire/partials/section_item.html",
-        {"section": new_section, "candidat": candidat},
-    )
-
-
-@require_POST
-def section_save(request, pk, section_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    titre = _clean_text(request.POST.get("titre", ""))
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            section["titre"] = titre
-            break
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    return render(
-        request,
-        "formulaire/partials/section_item.html",
-        {"section": next(s for s in dossier["sections"] if s["id"] == section_id), "candidat": candidat},
-    )
-
-
-@require_POST
-def section_delete(request, pk, section_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    dossier["sections"] = [s for s in dossier["sections"] if s["id"] != section_id]
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    return HttpResponse("")
-
-
-# ---------------------------------------------------------------------------
-# Item CRUD (Ancien système - compatibilité)
-# ---------------------------------------------------------------------------
-
-@require_POST
-def poste_add(request, pk, section_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    new_poste = {"id": _new_id(), "texte": "", "sous_postes": []}
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            section["postes"].append(new_poste)
-            break
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    return render(
-        request,
-        "formulaire/partials/poste_row.html",
-        {"poste": new_poste, "section_id": section_id, "candidat": candidat},
-    )
-
-
-@require_POST
-def poste_save(request, pk, section_id, poste_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    texte = request.POST.get("texte", "").strip()
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            for poste in section["postes"]:
-                if poste["id"] == poste_id:
-                    poste["texte"] = texte
-                    break
-            break
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            for poste in section["postes"]:
-                if poste["id"] == poste_id:
-                    return render(
-                        request,
-                        "formulaire/partials/poste_row.html",
-                        {"poste": poste, "section_id": section_id, "candidat": candidat},
-                    )
-    return HttpResponse("")
-
-
-@require_POST
-def poste_delete(request, pk, section_id, poste_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            section["postes"] = [p for p in section["postes"] if p["id"] != poste_id]
-            break
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    return HttpResponse("")
-
-
-# ---------------------------------------------------------------------------
-# Sous-item CRUD (Ancien système - compatibilité)
-# ---------------------------------------------------------------------------
-
-@require_POST
-def sous_poste_add(request, pk, section_id, poste_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    new_sous_poste = {"id": _new_id(), "texte": ""}
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            for poste in section["postes"]:
-                if poste["id"] == poste_id:
-                    poste["sous_postes"].append(new_sous_poste)
-                    break
-            break
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    return render(
-        request,
-        "formulaire/partials/sous_poste_row.html",
-        {
-            "sous_poste": new_sous_poste,
-            "poste_id": poste_id,
-            "section_id": section_id,
-            "candidat": candidat,
-        },
-    )
-
-
-@require_POST
-def sous_poste_save(request, pk, section_id, poste_id, sous_poste_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    texte = _clean_text(request.POST.get("texte", ""))
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            for poste in section["postes"]:
-                if poste["id"] == poste_id:
-                    for sous_poste in poste["sous_postes"]:
-                        if sous_poste["id"] == sous_poste_id:
-                            sous_poste["texte"] = texte
-                            break
-                    break
-            break
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            for poste in section["postes"]:
-                if poste["id"] == poste_id:
-                    for sous_poste in poste["sous_postes"]:
-                        if sous_poste["id"] == sous_poste_id:
-                            return render(
-                                request,
-                                "formulaire/partials/sous_poste_row.html",
-                                {
-                                    "sous_poste": sous_poste,
-                                    "poste_id": poste_id,
-                                    "section_id": section_id,
-                                    "candidat": candidat,
-                                },
-                            )
-    return HttpResponse("")
-
-
-@require_POST
-def sous_poste_delete(request, pk, section_id, poste_id, sous_poste_id):
-    candidat = get_object_or_404(Candidat, pk=pk)
-    dossier = candidat.dossier or _empty_dossier()
-    if "sections" not in dossier:
-        dossier["sections"] = []
-    for section in dossier["sections"]:
-        if section["id"] == section_id:
-            for poste in section["postes"]:
-                if poste["id"] == poste_id:
-                    poste["sous_postes"] = [
-                        sp for sp in poste["sous_postes"] if sp["id"] != sous_poste_id
-                    ]
-                    break
-            break
-    candidat.dossier = dossier
-    candidat.save(update_fields=["dossier"])
-    return HttpResponse("")
 
 
 # ---------------------------------------------------------------------------

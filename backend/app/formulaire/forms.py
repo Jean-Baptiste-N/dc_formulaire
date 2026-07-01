@@ -33,7 +33,7 @@ class CandidatInfoForm(ModelForm):
             "prenom": "Votre prénom",
             "email": "Adresse email professionnelle",
             "trigramme": "3 lettres (ex: JDT pour Jean DUPONT)",
-            "poste": "Titre du poste actuel ou ciblé",
+            "poste": "Titre du poste principal",
             "xp_duration": "Nombre total d'années d'expérience sur le poste",
         }
 

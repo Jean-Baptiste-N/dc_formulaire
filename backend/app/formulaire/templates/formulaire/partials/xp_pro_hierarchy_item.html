@@ -48,7 +48,7 @@
   <div id="description-{{ item.id }}" class="xp-pro-hierarchy-zone mt-2">
     {% for child in item.description %}
       {% with next_depth=depth|add:1 %}
-        {% include "formulaire/partials/xp_pro_realization_item.html" with item=child depth=next_depth exp_index=exp_index placeholder=xp_pro_placeholders|get_item:next_depth %}
+        {% include "formulaire/partials/xp_pro_hierarchy_item.html" with item=child depth=next_depth exp_index=exp_index placeholder=xp_pro_placeholders|get_item:next_depth %}
       {% endwith %}
     {% endfor %}
   </div>
