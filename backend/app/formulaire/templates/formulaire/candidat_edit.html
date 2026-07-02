@@ -1274,13 +1274,16 @@ function removeLangue(e) {
 // MARK: XP_PRO STEP 2 HANDLERS - Unified handler for contexte + technologies + realizations
 // ========================================================================
 
-let xpProStep2DirtyState = {}; // Tracking dirty state per experience
-
 function initXpProStep2Handlers() {
-  // Bouton Enregistrer
+  // Bouton Enregistrer (utilise le système auto-save unifié)
   document.querySelectorAll('.btn-xp-pro-step2-save').forEach(btn => {
     if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', (e) => saveXpProStep2(e, false));
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const container = this.closest('.xp-pro-step2-container');
+        const expIndex = container.dataset.expIndex;
+        saveData('xp_pro_step2', true, container);
+      });
       btn.setAttribute('data-listener-initialized', 'true');
     }
   });
@@ -1309,39 +1312,9 @@ function initXpProStep2Handlers() {
     }
   });
 
-  // Auto-save sur contexte et technologies (dirty tracking)
-  document.querySelectorAll('.xp-pro-step2-context').forEach(textarea => {
-    if (!textarea.hasAttribute('data-listener-initialized')) {
-      textarea.addEventListener('input', () => markXpProStep2Dirty(textarea));
-      textarea.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  document.querySelectorAll('.xp-pro-step2-tech-input').forEach(input => {
-    if (!input.hasAttribute('data-listener-initialized')) {
-      input.addEventListener('input', () => markXpProStep2Dirty(input));
-      input.setAttribute('data-listener-initialized', 'true');
-    }
-  });
 }
 
-function markXpProStep2Dirty(element) {
-  const container = element.closest('.xp-pro-step2-container');
-  if (!container) return;
-
-  const expIndex = container.dataset.expIndex;
-  if (!xpProStep2DirtyState[expIndex]) {
-    xpProStep2DirtyState[expIndex] = { dirty: false, timeout: null };
-  }
-
-  xpProStep2DirtyState[expIndex].dirty = true;
-
-  // Schedule auto-save in 5 seconds
-  clearTimeout(xpProStep2DirtyState[expIndex].timeout);
-  xpProStep2DirtyState[expIndex].timeout = setTimeout(() => {
-    saveXpProStep2(null, true, container); // Auto-save (silent mode)
-  }, 5000);
-}
+// Note: dirty tracking pour xp_pro_step2 est géré dans initAutosaveHandlers()
 
 function addXpProStep2Technology(e) {
   e.preventDefault();
@@ -1365,7 +1338,11 @@ function addXpProStep2Technology(e) {
   });
 
   input.value = '';
-  markXpProStep2Dirty(input);
+  const container = btn.closest('.xp-pro-step2-container');
+  const expIndex = container?.dataset.expIndex;
+  if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
+    dirtyState.xp_pro_step2[expIndex] = true;
+  }
 }
 
 function removeXpProStep2Technology(e) {
@@ -1373,7 +1350,11 @@ function removeXpProStep2Technology(e) {
   const badge = e.target.closest('.badge');
   if (badge) {
     badge.remove();
-    markXpProStep2Dirty(e.target);
+    const container = e.target.closest('.xp-pro-step2-container');
+    const expIndex = container?.dataset.expIndex;
+    if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
+      dirtyState.xp_pro_step2[expIndex] = true;
+    }
   }
 }
 
@@ -1396,92 +1377,14 @@ function addXpProStep2Realization(e) {
     const realizationsDiv = container.querySelector(`#realizations-${expIndex}`);
     realizationsDiv.insertAdjacentHTML('beforeend', html);
     initXpProHierarchyHandlers();
-    markXpProStep2Dirty(btn);
+    if (!dirtyState.xp_pro_step2[expIndex]) {
+      dirtyState.xp_pro_step2[expIndex] = true;
+    }
   })
   .catch(err => console.error('Erreur addXpProStep2Realization:', err));
 }
 
-function saveXpProStep2(e, isSilent = true, containerOverride = null) {
-  let container = containerOverride;
-  if (!container && e) {
-    const btn = e.target.closest('.btn-xp-pro-step2-save');
-    container = btn?.closest('.xp-pro-step2-container');
-  }
-
-  if (!container) return;
-
-  const expIndex = container.dataset.expIndex;
-  const candidatPk = container.dataset.candidatPk;
-  const btn = container.querySelector('.btn-xp-pro-step2-save');
-
-  // Check if dirty
-  if (!xpProStep2DirtyState[expIndex]?.dirty) return;
-
-  // Collect data from 3 subsections
-  const context = container.querySelector('.xp-pro-step2-context').value.trim();
-
-  // Get technologies from badges
-  const techBadges = container.querySelectorAll('.badge');
-  const envTech = Array.from(techBadges)
-    .map(badge => badge.textContent.replace('×', '').trim())
-    .filter(t => t);
-
-  // Build realization tree
-  const realizationsDiv = container.querySelector('.xp-pro-step2-realizations');
-  const realizations = buildXpProStep2RealizationTree(realizationsDiv);
-
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-  formData.append('context', context);
-  formData.append('env_tech', JSON.stringify(envTech));
-  formData.append('realizations', JSON.stringify(realizations));
-
-  // Show feedback if explicit click (not auto-save)
-  const originalText = btn?.innerHTML;
-  if (!isSilent && btn) {
-    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
-    btn.disabled = true;
-  }
-
-  fetch(`/candidat/${candidatPk}/experience/${expIndex}/step2-update/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.status === 'ok') {
-      xpProStep2DirtyState[expIndex].dirty = false;
-
-      if (!isSilent && btn) {
-        btn.innerHTML = '<i class="bi bi-check-lg"></i> Enregistré !';
-        btn.classList.remove('btn-outline-primary');
-        btn.classList.add('btn-outline-success');
-        setTimeout(() => {
-          btn.innerHTML = originalText;
-          btn.classList.remove('btn-outline-success');
-          btn.classList.add('btn-outline-primary');
-          btn.disabled = false;
-        }, 2000);
-      }
-    } else {
-      throw new Error(data.error || 'Erreur inconnue');
-    }
-  })
-  .catch(err => {
-    console.error('Erreur saveXpProStep2:', err);
-    if (!isSilent && btn) {
-      btn.innerHTML = '<i class="bi bi-exclamation-circle"></i> ✗ Erreur';
-      btn.classList.remove('btn-outline-primary');
-      btn.classList.add('btn-outline-danger');
-      setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.classList.remove('btn-outline-danger');
-        btn.classList.add('btn-outline-primary');
-        btn.disabled = false;
-      }, 2000);
-    }
-  });
-}
+// saveXpProStep2() a été supprimée et consolidée dans saveData() avec autosaveConfig.xp_pro_step2
 
 function buildXpProStep2RealizationTree(container) {
   const items = [];
@@ -1535,6 +1438,16 @@ const autosaveConfig = {
     endpoint: () => `/candidat/${CANDIDAT_PK}/poste-cible/bulk-update/`,
     type: 'bulk'
   },
+  skills_cible: {
+    dirtyKey: 'skills_cible',
+    getItems: () => Array.from(document.querySelectorAll('#skills-cible-list input[type="text"]')).map(input => ({
+      id: input.dataset.skillsCible,
+      title: input.value.trim(),
+      active: document.querySelector(`input[data-skills-cible="${input.dataset.skillsCible}"][type="checkbox"]`)?.checked || false,
+    })),
+    endpoint: () => `/candidat/${CANDIDAT_PK}/skills-cible/bulk-update/`,
+    type: 'bulk'
+  },
   main_skills_bullet: {
     dirtyKey: 'main_skills_bullet',
     getItems: () => Array.from(document.querySelectorAll('#main_skills_bullet_list .main-skills-hierarchy-item')).map(item => ({
@@ -1553,28 +1466,34 @@ const autosaveConfig = {
     endpoint: () => `/candidat/${CANDIDAT_PK}/main_skills/table/bulk-update/`,
     type: 'bulk'
   },
-  xp_pro_realization: {
-    dirtyKey: 'xp_pro_realization',
-    getItems: (expIndex) => Array.from(document.querySelectorAll(`#realizations-${expIndex} .xp-pro-hierarchy-item`)).map(item => ({
-      id: item.dataset.itemId,
-      title: item.querySelector('.xp-pro-hierarchy-title').value.trim(),
-    })),
-    endpoint: (expIndex) => `/candidat/${CANDIDAT_PK}/experience/${expIndex}/realization/bulk-update/`,
-    type: 'bulk-per-exp'
-  },
-  xp_pro_context: {
-    dirtyKey: 'xp_pro_context',
-    type: 'single'
+  xp_pro_step2: {
+    dirtyKey: 'xp_pro_step2',
+    getItems: (expIndex) => {
+      const container = document.querySelector(`.xp-pro-step2-container[data-exp-index="${expIndex}"]`);
+      if (!container) return null;
+      
+      const context = container.querySelector('.xp-pro-step2-context').value.trim();
+      const techBadges = container.querySelectorAll('.badge');
+      const envTech = Array.from(techBadges)
+        .map(badge => badge.textContent.replace('×', '').trim())
+        .filter(t => t);
+      const realizationsDiv = container.querySelector('.xp-pro-step2-realizations');
+      const realizations = buildXpProStep2RealizationTree(realizationsDiv);
+      
+      return { context, env_tech: envTech, realizations };
+    },
+    endpoint: (expIndex) => `/candidat/${CANDIDAT_PK}/experience/${expIndex}/step2-update/`,
+    type: 'xp_pro_step2'
   }
 };
 
 // Tracking des sections modifiées (dirty state)
 const dirtyState = {
   poste_cible: false,
+  skills_cible: false,
   main_skills_bullet: false,
   main_skills_table: false,
-  xp_pro_realization: {}, // Keyed by expIndex
-  xp_pro_context: {}       // Keyed by expIndex
+  xp_pro_step2: {} // Keyed by expIndex (consolide contexte + techno + réalisations)
 };
 
 // Fonction unifiée pour sauvegarder les données
@@ -1582,44 +1501,42 @@ async function saveData(section, showFeedback = false, element = null) {
   const config = autosaveConfig[section];
   if (!config) return;
 
-  let items = [];
   let endpoint = '';
-
-  if (section === 'xp_pro_realization' && element) {
-    const expIndex = element.dataset.targetIndex || element.dataset.expIndex;
-    items = config.getItems(expIndex);
-    endpoint = config.endpoint(expIndex);
-    if (items.length === 0) return;
-  } else if (section === 'xp_pro_context' && element) {
-    // xp_pro_context est géré différemment (voir plus bas)
-    return;
-  } else if (config.type === 'bulk') {
-    items = config.getItems();
-    endpoint = config.endpoint();
-    if (items.length === 0) return;
-  }
-
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-  if (config.type.startsWith('bulk')) {
+
+  if (config.type === 'xp_pro_step2' && element) {
+    const expIndex = element.dataset.expIndex;
+    const data = config.getItems(expIndex);
+    if (!data) return;
+    
+    endpoint = config.endpoint(expIndex);
+    formData.append('context', data.context);
+    formData.append('env_tech', JSON.stringify(data.env_tech));
+    formData.append('realizations', JSON.stringify(data.realizations));
+  } else if (config.type === 'bulk') {
+    const items = config.getItems();
+    endpoint = config.endpoint();
+    if (items.length === 0) return;
     formData.append('items', JSON.stringify(items));
+  } else {
+    return;
   }
 
   try {
     // Montrer le feedback si c'est un click-save
     let btn = null;
-    if (showFeedback && section !== 'xp_pro_realization') {
-      btn = document.querySelector(`[data-section="${section.replace('main_skills_', '')}"][data-candidat-pk="${CANDIDAT_PK}"].btn-main-skills-save`)
-         || document.querySelector(`[data-candidat-pk="${CANDIDAT_PK}"].btn-poste-cible-save`);
-      if (btn) {
-        const textSpan = btn.querySelector('.btn-save-text');
-        textSpan.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
-        btn.disabled = true;
+    if (showFeedback) {
+      if (section === 'xp_pro_step2' && element) {
+        btn = element.querySelector('.btn-xp-pro-step2-save');
+      } else {
+        btn = document.querySelector(`[data-section="${section.replace('main_skills_', '')}"][data-candidat-pk="${CANDIDAT_PK}"].btn-main-skills-save`)
+           || document.querySelector(`[data-candidat-pk="${CANDIDAT_PK}"].btn-poste-cible-save`)
+           || document.querySelector(`.btn-${section}-save`);
       }
-    } else if (showFeedback && section === 'xp_pro_realization' && element) {
-      btn = element.closest('.xp-pro-section')?.querySelector('.btn-xp-pro-realization-save');
       if (btn) {
-        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
+        const textSpan = btn.querySelector('.btn-save-text') || btn;
+        textSpan.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
         btn.disabled = true;
       }
     }
@@ -1629,25 +1546,27 @@ async function saveData(section, showFeedback = false, element = null) {
       body: formData,
     });
 
-    if (response.ok && showFeedback && btn) {
-      const textSpan = btn.querySelector('.btn-save-text') || btn;
-      textSpan.innerHTML = '<i class="bi bi-check-lg"></i> Enregistré !';
-      btn.disabled = false;
-      setTimeout(() => {
-        if (section === 'xp_pro_realization') {
-          btn.innerHTML = 'Enregistrer réalisations';
-        } else {
+    if (response.ok) {
+      if (showFeedback && btn) {
+        const textSpan = btn.querySelector('.btn-save-text') || btn;
+        textSpan.innerHTML = '<i class="bi bi-check-lg"></i> Enregistré !';
+        textSpan.classList?.remove('btn-outline-primary');
+        textSpan.classList?.add('btn-outline-success');
+        setTimeout(() => {
           textSpan.innerHTML = 'Enregistrer';
-        }
-      }, 2000);
-    }
+          textSpan.classList?.remove('btn-outline-success');
+          textSpan.classList?.add('btn-outline-primary');
+          btn.disabled = false;
+        }, 2000);
+      }
 
-    // Marquer comme clean
-    if (section === 'xp_pro_realization' && element) {
-      const expIndex = element.dataset.targetIndex || element.dataset.expIndex;
-      dirtyState[section][expIndex] = false;
-    } else {
-      dirtyState[section] = false;
+      // Marquer comme clean
+      if (section === 'xp_pro_step2' && element) {
+        const expIndex = element.dataset.expIndex;
+        dirtyState.xp_pro_step2[expIndex] = false;
+      } else {
+        dirtyState[section] = false;
+      }
     }
   } catch (err) {
     console.error(`Erreur saveData ${section}:`, err);
@@ -1660,40 +1579,55 @@ async function saveData(section, showFeedback = false, element = null) {
 
 // Fonction unifiée d'initialisation des handlers
 function initAutosaveHandlers() {
-  // Boutons pour bulk sections
-  document.querySelectorAll('.btn-poste-cible-save, .btn-main-skills-save').forEach(btn => {
+  // Boutons pour bulk sections (poste_cible, skills_cible, main_skills)
+  document.querySelectorAll('.btn-poste-cible-save, .btn-skills-cible-save, .btn-main-skills-save').forEach(btn => {
     if (!btn.hasAttribute('data-autosave-initialized')) {
       btn.addEventListener('click', function() {
-        const section = this.className.includes('poste-cible') ? 'poste_cible' : `main_skills_${this.dataset.section}`;
+        let section;
+        if (this.className.includes('poste-cible')) {
+          section = 'poste_cible';
+        } else if (this.className.includes('skills-cible')) {
+          section = 'skills_cible';
+        } else {
+          section = `main_skills_${this.dataset.section}`;
+        }
         saveData(section, true);
       });
       btn.setAttribute('data-autosave-initialized', 'true');
     }
   });
 
-  // Bouton pour xp_pro_realization
-  document.querySelectorAll('.btn-xp-pro-realization-save').forEach(btn => {
-    if (!btn.hasAttribute('data-autosave-initialized')) {
-      btn.addEventListener('click', function() {
-        const expIndex = this.dataset.expIndex;
-        const section = document.getElementById(`realizations-${expIndex}`);
-        saveData('xp_pro_realization', true, section);
+
+
+  // Dirty tracking pour poste_cible et skills_cible
+  document.querySelectorAll('#poste-cible-list input[type="text"], #skills-cible-list input[type="text"], #skills-cible-list input[type="checkbox"]').forEach(input => {
+    if (!input.hasAttribute('data-autosave-initialized')) {
+      input.addEventListener('change', function() {
+        if (this.classList.contains('skills-cible-checkbox') || this.dataset.skillsCible) {
+          dirtyState.skills_cible = true;
+        } else {
+          dirtyState.poste_cible = true;
+        }
       });
-      btn.setAttribute('data-autosave-initialized', 'true');
+      input.addEventListener('blur', function() {
+        if (this.type === 'text' && this.dataset.skillsCible) {
+          dirtyState.skills_cible = true;
+        }
+      });
+      input.setAttribute('data-autosave-initialized', 'true');
     }
   });
 
-  // Dirty tracking pour bulk sections
-  document.querySelectorAll('#poste-cible-list input[type="text"], .main-skills-hierarchy-title, .xp-pro-hierarchy-title').forEach(input => {
+  // Dirty tracking pour main_skills et xp_pro_step2 (réalisations)
+  document.querySelectorAll('.main-skills-hierarchy-title, .xp-pro-hierarchy-title').forEach(input => {
     if (!input.hasAttribute('data-autosave-initialized')) {
       input.addEventListener('change', function() {
         if (this.classList.contains('xp-pro-hierarchy-title')) {
-          const expIndex = this.dataset.targetIndex;
-          if (!dirtyState.xp_pro_realization[expIndex]) {
-            dirtyState.xp_pro_realization[expIndex] = true;
+          const container = this.closest('.xp-pro-step2-container');
+          const expIndex = container?.dataset.expIndex || this.dataset.targetIndex;
+          if (container && !dirtyState.xp_pro_step2[expIndex]) {
+            dirtyState.xp_pro_step2[expIndex] = true;
           }
-        } else if (this.id?.includes('poste')) {
-          dirtyState.poste_cible = true;
         } else {
           const section = this.dataset.endpointBase === 'bullet' ? 'main_skills_bullet' : 'main_skills_table';
           dirtyState[section] = true;
@@ -1703,40 +1637,48 @@ function initAutosaveHandlers() {
     }
   });
 
-  // Auto-save 5s timer pour xp_pro_context (handler distinct pour textarea)
-  document.querySelectorAll('.xp-pro-context').forEach(textarea => {
+  // Auto-save 5s timer pour xp_pro_step2 (contexte, technologies, réalisations)
+  document.querySelectorAll('.xp-pro-step2-context').forEach(textarea => {
     if (!textarea.hasAttribute('data-autosave-initialized')) {
       textarea.addEventListener('input', function() {
-        const expIndex = this.dataset.expIndex;
-        clearTimeout(this.autosaveTimer);
-        this.autosaveTimer = setTimeout(() => saveXpProContext(this), 5000);
+        const container = this.closest('.xp-pro-step2-container');
+        const expIndex = container?.dataset.expIndex;
+        if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
+          dirtyState.xp_pro_step2[expIndex] = true;
+        }
       });
       textarea.setAttribute('data-autosave-initialized', 'true');
     }
   });
 
-  // Boutons pour xp_pro_context
-  document.querySelectorAll('.btn-xp-pro-context-save').forEach(btn => {
-    if (!btn.hasAttribute('data-autosave-initialized')) {
-      btn.addEventListener('click', saveXpProContext);
-      btn.setAttribute('data-autosave-initialized', 'true');
+  // Dirty tracking pour technologies (badges)
+  document.querySelectorAll('.xp-pro-step2-tech-input').forEach(input => {
+    if (!input.hasAttribute('data-autosave-initialized')) {
+      input.addEventListener('input', function() {
+        const container = this.closest('.xp-pro-step2-container');
+        const expIndex = container?.dataset.expIndex;
+        if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
+          dirtyState.xp_pro_step2[expIndex] = true;
+        }
+      });
+      input.setAttribute('data-autosave-initialized', 'true');
     }
   });
 }
 
 // Auto-save toutes les 5s (silencieux) pour bulk sections
 setInterval(() => {
-  ['poste_cible', 'main_skills_bullet', 'main_skills_table'].forEach(section => {
+  ['poste_cible', 'skills_cible', 'main_skills_bullet', 'main_skills_table'].forEach(section => {
     if (dirtyState[section]) {
       saveData(section, false);
     }
   });
-  // Pour xp_pro_realization (par expérience)
-  Object.entries(dirtyState.xp_pro_realization).forEach(([expIndex, isDirty]) => {
+  // Pour xp_pro_step2 (contexte + technos + réalisations, par expérience)
+  Object.entries(dirtyState.xp_pro_step2).forEach(([expIndex, isDirty]) => {
     if (isDirty) {
-      const section = document.getElementById(`realizations-${expIndex}`);
-      if (section) {
-        saveData('xp_pro_realization', false, section);
+      const container = document.querySelector(`.xp-pro-step2-container[data-exp-index="${expIndex}"]`);
+      if (container) {
+        saveData('xp_pro_step2', false, container);
       }
     }
   });
