@@ -7,7 +7,9 @@
          {% if poste_cible.active %}checked{% endif %}
          data-candidat-pk="{{ candidat.pk }}"
          data-poste-cible="{{ poste_cible.id }}"
-         style="cursor: pointer;">
+         placeholder=""
+         style="cursor: pointer;"
+         title="Sélectionner comme poste cible actif">
   <input type="text"
          class="form-control form-control-sm flex-grow-1"
          value="{{ poste_cible.title }}"
@@ -20,6 +22,6 @@
           data-candidat-pk="{{ candidat.pk }}"
           data-poste-cible="{{ poste_cible.id }}"
           title="Supprimer">
-    <i class="bi bi-x"></i>
+    <i class="bi bi-trash"></i>
   </button>
 </div>
