@@ -1338,7 +1338,6 @@ function addXpProStep2Technology(e) {
   });
 
   input.value = '';
-  const container = btn.closest('.xp-pro-step2-container');
   const expIndex = container?.dataset.expIndex;
   if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
     dirtyState.xp_pro_step2[expIndex] = true;
@@ -1688,28 +1687,38 @@ setInterval(() => {
 // MARK: Initialisation générale
 // ========================================================================
 
+// Helper pour initialiser tous les handlers avec gestion d'erreur
+function initializeAllHandlers(context = 'DOMContentLoaded') {
+  const handlers = [
+    { name: 'initPostesCibleHandlers', fn: initPostesCibleHandlers },
+    { name: 'initSkillsCibleHandlers', fn: initSkillsCibleHandlers },
+    { name: 'initMainSkillsHierarchyHandlers', fn: initMainSkillsHierarchyHandlers },
+    { name: 'initFormationCertificationLangueHandlers', fn: initFormationCertificationLangueHandlers },
+    { name: 'initExperienceHandlers', fn: initExperienceHandlers },
+    { name: 'initXpProHierarchyHandlers', fn: initXpProHierarchyHandlers },
+    { name: 'initXpProStep2Handlers', fn: initXpProStep2Handlers },
+    { name: 'initAutosaveHandlers', fn: initAutosaveHandlers }
+  ];
+
+  handlers.forEach(({ name, fn }) => {
+    try {
+      fn();
+    } catch (err) {
+      console.error(`[${context}] Erreur dans ${name}:`, err);
+    }
+  });
+}
+
 // Initialiser au chargement
 document.addEventListener('DOMContentLoaded', () => {
-  initPostesCibleHandlers();
-  initSkillsCibleHandlers();
-  initMainSkillsHierarchyHandlers();
-  initFormationCertificationLangueHandlers();
-  initExperienceHandlers();
-  initXpProHierarchyHandlers();
-  initXpProStep2Handlers();
-  initAutosaveHandlers(); // Unique handler pour auto-save (remplace l'ancien: initSaveButtonHandlers, initPostesCibleDirtyTracking, initMainSkillsDirtyTracking, initXpProContextHandlers)
+  console.log('[DOMContentLoaded] Initialisation des handlers');
+  initializeAllHandlers('DOMContentLoaded');
 });
 
 // Réinitialiser après chaque insertion HTMX
 document.addEventListener('htmx:afterSwap', () => {
-  initPostesCibleHandlers();
-  initSkillsCibleHandlers();
-  initMainSkillsHierarchyHandlers();
-  initFormationCertificationLangueHandlers();
-  initExperienceHandlers();
-  initXpProHierarchyHandlers();
-  initXpProStep2Handlers();
-  initAutosaveHandlers(); // Unique handler pour auto-save
+  console.log('[htmx:afterSwap] Réinitialisation des handlers');
+  initializeAllHandlers('htmx:afterSwap');
 });
 </script>
 {% endblock %}
