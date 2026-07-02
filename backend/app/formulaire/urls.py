@@ -15,13 +15,22 @@ urlpatterns = [
     path("candidat/<uuid:pk>/export/", views.candidat_export_docx, name="candidat_export"),
 
     # ========================================================================
-    # 2. POSTES CIBLES - Add, Delete, Activate, Update
+    # 2.1 POSTES CIBLES - Add, Delete, Activate, Update
     # ========================================================================
     path("candidat/<uuid:pk>/poste-cible/ajouter/", views.poste_cible_add, name="poste_cible_add"),
     path("candidat/<uuid:pk>/poste-cible/<str:poste_cible_id>/supprimer/", views.poste_cible_delete, name="poste_cible_delete"),
     path("candidat/<uuid:pk>/poste-cible/<str:poste_cible_id>/activer/", views.poste_cible_activate, name="poste_cible_activate"),
     path("candidat/<uuid:pk>/poste-cible/<str:poste_cible_id>/mettre-a-jour/", views.poste_cible_update, name="poste_cible_update"),
     path("candidat/<uuid:pk>/poste-cible/bulk-update/", views.poste_cible_bulk_update, name="poste_cible_bulk_update"),
+
+    # ========================================================================
+    # 2.2 SKILLS CIBLES - Add, Delete, Toggle, Update
+    # ========================================================================
+    path("candidat/<uuid:pk>/skills-cible/ajouter/", views.skills_cible_add, name="skills_cible_add"),
+    path("candidat/<uuid:pk>/skills-cible/<str:skills_cible_id>/supprimer/", views.skills_cible_delete, name="skills_cible_delete"),
+    path("candidat/<uuid:pk>/skills-cible/<str:skills_cible_id>/toggle/", views.skills_cible_toggle, name="skills_cible_toggle"),
+    path("candidat/<uuid:pk>/skills-cible/<str:skills_cible_id>/mettre-a-jour/", views.skills_cible_update, name="skills_cible_update"),
+    path("candidat/<uuid:pk>/skills-cible/bulk-update/", views.skills_cible_bulk_update, name="skills_cible_bulk_update"),
 
     # ========================================================================
     # 3. MAIN-SKILLS DOMAINES DE COMPÉTENCES - Bullet Section

@@ -58,7 +58,7 @@
 </div>
 
 <!-- ============================================================================
-     MARK: 2. POSTES CIBLES - Variantes de postes recherchés
+     MARK: 2.1 POSTES CIBLES - Variantes de postes recherchés
      ============================================================================ -->
 
 <div class="card shadow-sm mb-4">
@@ -82,6 +82,36 @@
       <i class="bi bi-plus"></i> Ajouter une variante
     </button>
     <button type="button" class="btn btn-primary btn-sm btn-poste-cible-save ms-2" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-save"></i> <span class="btn-save-text">Enregistrer</span>
+    </button>
+  </div>
+</div>
+
+<!-- ============================================================================
+     MARK: 2.2 SKILLS CIBLES - Compétences cibles (Checkboxes)
+     ============================================================================ -->
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header">
+    <h2 class="h6 mb-0"><i class="bi bi-gem"></i> Compétences ciblées</h2>
+  </div>
+  <div class="card-body">
+    <p class="text-muted small mb-3">Ajoutez les compétences que vous ciblez. Cochez les compétences que vous voulez mettre en avant dans le document d'export.</p>
+
+    <div id="skills-cible-list" class="mb-3">
+      {% if candidat.dossier.skills_cible %}
+        {% for skills_cible in candidat.dossier.skills_cible %}
+          {% include "formulaire/partials/skills_cible_item.html" with skills_cible=skills_cible candidat=candidat %}
+        {% endfor %}
+      {% else %}
+        <p class="text-muted fst-italic">Aucune compétence cible ajoutée</p>
+      {% endif %}
+    </div>
+
+    <button type="button" class="btn btn-success btn-sm btn-skills-cible-add" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-plus"></i> Ajouter une compétence cible
+    </button>
+    <button type="button" class="btn btn-primary btn-sm btn-skills-cible-save ms-2" data-candidat-pk="{{ candidat.pk }}">
       <i class="bi bi-save"></i> <span class="btn-save-text">Enregistrer</span>
     </button>
   </div>
@@ -638,6 +668,139 @@ function deletePostesCible(e) {
     }
   })
   .catch(err => console.error('Erreur deletePostesCible:', err));
+}
+
+// ========================================================================
+// MARK: SKILLS_CIBLE HANDLERS (skills_cible_item.html)
+// ========================================================================
+
+function initSkillsCibleHandlers() {
+  // Bouton pour ajouter une compétence cible
+  document.querySelectorAll('.btn-skills-cible-add').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', addSkillsCible);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Checkbox pour activer/désactiver une compétence cible
+  document.querySelectorAll('.skills-cible-checkbox').forEach(input => {
+    if (!input.hasAttribute('data-listener-initialized')) {
+      input.addEventListener('change', toggleSkillsCible);
+      input.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Input pour modifier le titre
+  document.querySelectorAll('#skills-cible-list input[type="text"]').forEach(input => {
+    if (!input.hasAttribute('data-listener-initialized')) {
+      input.addEventListener('blur', updateSkillsCible);
+      input.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Bouton pour supprimer une compétence cible
+  document.querySelectorAll('.skills-cible-delete').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', deleteSkillsCible);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+}
+
+function addSkillsCible(e) {
+  e.preventDefault();
+  const candidatPk = e.target.closest('.btn-skills-cible-add').dataset.candidatPk;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/skills-cible/ajouter/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => r.text())
+  .then(html => {
+    const listDiv = document.getElementById('skills-cible-list');
+    const emptyMsg = listDiv.querySelector('.text-muted.fst-italic');
+    if (emptyMsg) {
+      emptyMsg.remove();
+    }
+    listDiv.insertAdjacentHTML('beforeend', html);
+    initSkillsCibleHandlers();
+  })
+  .catch(err => console.error('Erreur addSkillsCible:', err));
+}
+
+function toggleSkillsCible(e) {
+  const checkbox = e.target;
+  const candidatPk = checkbox.dataset.candidatPk;
+  const skillsCibleId = checkbox.dataset.skillsCible;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/skills-cible/${skillsCibleId}/toggle/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .catch(err => console.error('Erreur toggleSkillsCible:', err));
+}
+
+function updateSkillsCible(e) {
+  const input = e.target;
+  const candidatPk = input.dataset.candidatPk;
+  const skillsCibleId = input.dataset.skillsCible;
+  const title = input.value.trim();
+
+  // Ne faire la requête que si le titre a changé
+  if (title === input.dataset.originalTitle) {
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/skills-cible/${skillsCibleId}/mettre-a-jour/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(() => {
+    input.dataset.originalTitle = title;
+  })
+  .catch(err => console.error('Erreur updateSkillsCible:', err));
+}
+
+function deleteSkillsCible(e) {
+  e.preventDefault();
+  if (!confirm('Supprimer cette compétence cible ?')) {
+    return;
+  }
+
+  const btn = e.target.closest('.skills-cible-delete');
+  const candidatPk = btn.dataset.candidatPk;
+  const skillsCibleId = btn.dataset.skillsCible;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/skills-cible/${skillsCibleId}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(() => {
+    const itemDiv = document.getElementById(`skills-cible-${skillsCibleId}`);
+    if (itemDiv) {
+      itemDiv.remove();
+    }
+    // Vérifier si la liste est vide et afficher le message
+    const listDiv = document.getElementById('skills-cible-list');
+    if (listDiv.children.length === 0) {
+      listDiv.innerHTML = '<p class="text-muted fst-italic">Aucune compétence cible ajoutée</p>';
+    }
+  })
+  .catch(err => console.error('Erreur deleteSkillsCible:', err));
 }
 
 // ========================================================================
@@ -1586,6 +1749,7 @@ setInterval(() => {
 // Initialiser au chargement
 document.addEventListener('DOMContentLoaded', () => {
   initPostesCibleHandlers();
+  initSkillsCibleHandlers();
   initMainSkillsHierarchyHandlers();
   initFormationCertificationLangueHandlers();
   initExperienceHandlers();
@@ -1597,6 +1761,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Réinitialiser après chaque insertion HTMX
 document.addEventListener('htmx:afterSwap', () => {
   initPostesCibleHandlers();
+  initSkillsCibleHandlers();
   initMainSkillsHierarchyHandlers();
   initFormationCertificationLangueHandlers();
   initExperienceHandlers();

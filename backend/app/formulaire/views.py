@@ -31,6 +31,7 @@ def _empty_dossier():
     return {
         "header": {},
         "poste_cible": [],
+        "skills_cible": [],
         "main_skills": {
             "bullet": [],
             "table": []
@@ -75,6 +76,11 @@ def _sync_header_and_defaults(candidat):
                 'title': candidat.poste,
                 'active': True
             })
+        needs_save = True
+
+    # Initialiser skills_cible par défaut s'il n'existe pas
+    if not dossier.get('skills_cible'):
+        dossier['skills_cible'] = []
         needs_save = True
 
     # Sauvegarder si nécessaire
@@ -256,7 +262,7 @@ def candidat_detail(request, pk):
     return render(request, "formulaire/candidat_detail.html", {"candidat": candidat})
 
 # ============================================================================
-# MARK: 2. POSTES CIBLES - Add, Delete, Activate, Update
+# MARK: 2.1 POSTES CIBLES - Add, Delete, Activate, Update
 # ============================================================================
 
 @require_POST
@@ -348,6 +354,108 @@ def poste_cible_bulk_update(request, pk):
             for pc in dossier["poste_cible"]:
                 if pc["id"] == item.get("id"):
                     pc["title"] = _clean_text(item.get("title", ""))
+                    break
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return JsonResponse({"status": "ok"})
+
+# ============================================================================
+# MARK: 2.2 SKILLS_CIBLE - Compétences cibles (Checkboxes)
+# ============================================================================
+
+@require_POST
+def skills_cible_add(request, pk):
+    """Ajoute une compétence cible."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    if "skills_cible" not in dossier:
+        dossier["skills_cible"] = []
+
+    # Créer une nouvelle compétence cible
+    new_skill_cible = {
+        "id": _new_id(),
+        "title": "",
+        "active": False,
+    }
+
+    dossier["skills_cible"].append(new_skill_cible)
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
+
+    return render(
+        request,
+        "formulaire/partials/skills_cible_item.html",
+        {"skills_cible": new_skill_cible, "candidat": candidat},
+    )
+
+@require_POST
+def skills_cible_delete(request, pk, skills_cible_id):
+    """Supprime une compétence cible."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    if "skills_cible" in dossier:
+        dossier["skills_cible"] = [
+            sc for sc in dossier["skills_cible"] if sc["id"] != skills_cible_id
+        ]
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return HttpResponse("")
+
+@require_POST
+def skills_cible_toggle(request, pk, skills_cible_id):
+    """Active/désactive une compétence cible (toggle checkbox)."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    if "skills_cible" in dossier:
+        for sc in dossier["skills_cible"]:
+            if sc["id"] == skills_cible_id:
+                sc["active"] = not sc["active"]
+                break
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return HttpResponse("")
+
+@require_POST
+def skills_cible_update(request, pk, skills_cible_id):
+    """Met à jour le titre d'une compétence cible."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    title = _clean_text(request.POST.get("title", ""))
+
+    if "skills_cible" in dossier:
+        for sc in dossier["skills_cible"]:
+            if sc["id"] == skills_cible_id:
+                sc["title"] = title
+                break
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return HttpResponse("")
+
+@require_POST
+def skills_cible_bulk_update(request, pk):
+    """Met à jour les titres de plusieurs compétences cibles (bulk update)."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        items = json.loads(request.POST.get("items", "[]"))
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    if "skills_cible" in dossier:
+        for item in items:
+            for sc in dossier["skills_cible"]:
+                if sc["id"] == item.get("id"):
+                    sc["title"] = _clean_text(item.get("title", ""))
+                    sc["active"] = item.get("active", False)
                     break
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
