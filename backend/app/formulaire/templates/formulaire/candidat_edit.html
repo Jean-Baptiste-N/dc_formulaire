@@ -158,21 +158,21 @@
   <div class="card-body">
     <p class="text-muted small mb-3">Ajoutez des catégories d'outils et technologies maîtrisées (ex: Langages > Python, Bash)</p>
 
-    <button type="button" class="btn btn-success mb-3 btn-main-skills-hierarchy-add-root" data-section="table" data-candidat-pk="{{ candidat.pk }}">
-      <i class="bi bi-plus-lg"></i> Ajouter une catégorie
-    </button>
-
     <div id="main_skills_table_list">
       {% if candidat.dossier.main_skills.table %}
-        {% for item in candidat.dossier.main_skills.table %}
-          {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_table" main_skills_placeholders=placeholders.main_skills.table max_depth=1 %}
-        {% endfor %}
+      {% for item in candidat.dossier.main_skills.table %}
+      {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_table" main_skills_placeholders=placeholders.main_skills.table max_depth=1 %}
+      {% endfor %}
       {% else %}
-        <p class="text-muted">Aucune compétence ajoutée</p>
+      <p class="text-muted">Aucune compétence ajoutée</p>
       {% endif %}
     </div>
-    <button type="button" class="btn btn-primary btn-sm btn-main-skills-save mt-3" data-section="table" data-candidat-pk="{{ candidat.pk }}">
-      <i class="bi bi-save"></i> <span class="btn-save-text">Enregistrer</span>
+
+    <button type="button" class="btn btn-secondary btn-sm btn-main-skills-hierarchy-add-root" data-section="table" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-plus-lg"></i> Ajouter une Catégorie
+    </button>
+    <button type="button" class="btn btn-success btn-sm btn-main-skills-save ms-2" data-section="table" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-save"></i> Enregistrer
     </button>
 
     <!-- Aperçu tableau -->
@@ -231,12 +231,12 @@
         </div>
         <div class="col-md-12">
           <label class="form-label">Description</label>
-          <textarea name="description" class="form-control" placeholder="{{ placeholders.formations.description }}" rows="2"></textarea>
+          <textarea name="description" class="form-control" placeholder="{{ placeholders.formations.description }}"></textarea>
           <small class="form-text text-muted">Détails sur les contenus de la formation</small>
         </div>
         <div class="col-md-12">
-          <button type="submit" class="btn btn-success">
-            <i class="bi bi-check-lg"></i> Ajouter la formation
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="bi bi-check-lg"></i> Ajouter la Formation
           </button>
         </div>
       </div>
@@ -294,12 +294,12 @@
         </div>
         <div class="col-md-12">
           <label class="form-label">Description</label>
-          <textarea name="description" class="form-control" placeholder="{{ placeholders.certifications.description }}" rows="2"></textarea>
+          <textarea name="description" class="form-control" placeholder="{{ placeholders.certifications.description }}"></textarea>
           <small class="form-text text-muted">Détails sur les contenus de la certification</small>
         </div>
         <div class="col-md-12">
-          <button type="submit" class="btn btn-success">
-            <i class="bi bi-check-lg"></i> Ajouter la certification
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="bi bi-check-lg"></i> Ajouter la Certification
           </button>
         </div>
       </div>
@@ -352,12 +352,12 @@
         </div>
         <div class="col-md-12">
           <label class="form-label">Niveau/Détails</label>
-          <textarea name="description" class="form-control" placeholder="{{ placeholders.langues.description }}" rows="2"></textarea>
+          <textarea name="description" class="form-control" placeholder="{{ placeholders.langues.description }}"></textarea>
           <small class="form-text text-muted">Niveau de maîtrise et certifications éventuelles</small>
         </div>
         <div class="col-md-12">
-          <button type="submit" class="btn btn-success">
-            <i class="bi bi-check-lg"></i> Ajouter la langue
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="bi bi-check-lg"></i> Ajouter la Langue
           </button>
         </div>
       </div>
@@ -418,12 +418,12 @@
           <small class="form-text text-muted">Titre du poste occupé</small>
         </div>
         <div class="col-md-12">
-          <button type="submit" class="btn btn-success">
-            <i class="bi bi-check-lg"></i> Ajouter l'expérience
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="bi bi-check-lg"></i> Ajouter l'Expérience Professionnelle
           </button>
           <small class="form-text text-muted d-block mt-2">
             <i class="bi bi-info-circle"></i>
-            <strong>Workflow en 2 étapes :</strong> Créez l'expérience, puis ajoutez et organisez vos réalisations hiérarchiquement.
+            <strong>Workflow en 2 étapes :</strong> Créez l'expérience professionnelle, puis ajoutez et organisez vos réalisations hiérarchiquement.
           </small>
         </div>
       </div>
@@ -461,7 +461,7 @@
                 </label>
                 <textarea class="form-control xp-pro-step2-context"
                           placeholder="{{ placeholders.experiences.context }}"
-                          rows="3">{{ exp.context }}</textarea>
+                          rows="2">{{ exp.context }}</textarea>
               </div>
 
               <!-- Sous-section 2: Technologies utilisées -->
@@ -474,7 +474,7 @@
                          class="form-control xp-pro-step2-tech-input"
                          placeholder="ex: Python, Django, PostgreSQL... (séparées par des virgules)"
                          data-separator=",">
-                  <button class="btn btn-outline-success btn-xp-pro-step2-tech-add" type="button">
+                  <button class="btn btn-outline-success btn-sm btn-xp-pro-step2-tech-add" type="button">
                     <i class="bi bi-plus-lg"></i>
                   </button>
                 </div>
@@ -496,22 +496,22 @@
               <div class="mb-4">
                 <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
                   <span><i class="bi bi-list-check"></i> Réalisations</span>
-                  <button type="button"
-                          class="btn btn-sm btn-outline-success btn-xp-pro-step2-add-realization">
-                    <i class="bi bi-plus-lg"></i> Ajouter une activité
-                  </button>
                 </label>
                 <div id="realizations-{{ forloop.counter0 }}" class="xp-pro-step2-realizations ps-2">
                   {% for realization in exp.description %}
-                    {% include "formulaire/partials/xp_pro_hierarchy_item.html" with item=realization exp_index=forloop.counter0 depth=0 candidat=candidat xp_pro_placeholders=placeholders.xp_pro %}
+                  {% include "formulaire/partials/xp_pro_hierarchy_item.html" with item=realization exp_index=forloop.counter0 depth=0 candidat=candidat xp_pro_placeholders=placeholders.xp_pro %}
                   {% endfor %}
                 </div>
               </div>
 
-              <!-- Bouton Enregistrer unique pour les 3 sous-sections -->
+              <!-- Boutons Ajouter puis Enregistrer unique pour les 3 sous-sections -->
               <div class="d-flex gap-2 align-items-center pt-3 border-top">
                 <button type="button"
-                        class="btn btn-primary btn-xp-pro-step2-save"
+                        class="btn btn-sm btn-secondary btn-xp-pro-step2-add-realization">
+                  <i class="bi bi-plus-lg"></i> Ajouter une Activité
+                </button>
+                <button type="button"
+                        class="btn btn-sm btn-success btn-xp-pro-step2-save"
                         data-exp-index="{{ forloop.counter0 }}"
                         data-candidat-pk="{{ candidat.pk }}">
                   <i class="bi bi-check-lg"></i> Enregistrer

@@ -505,11 +505,20 @@ body {
 }
 
 .xp-pro-step2-context:focus {
-  border-color: #80bdff;
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  border-color: #548DD4;
+  box-shadow: 0 0 0 0.2rem rgba(84, 141, 212, 0.25);
 }
 
 /* Technologies - Input & Badges */
+.bg-info {
+  background-color: #548DD4 !important;
+}
+
+.badge.bg-info {
+  background-color: #548DD4 !important;
+  color: white !important;
+}
+
 .xp-pro-step2-tech-input {
   font-size: 0.9rem;
   border-radius: 0.25rem;
@@ -526,7 +535,7 @@ body {
 .btn-xp-pro-step2-tech-add,
 .btn-xp-pro-step2-tech-remove {
   padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
 }
 
 .btn-xp-pro-step2-tech-add {
@@ -581,8 +590,8 @@ body {
 }
 
 .skills-cible-checkbox:checked {
-  background-color: #198754;
-  border-color: #198754;
+  background-color: #548DD4;
+  border-color: #548DD4;
 }
 
 .skills-cible-checkbox:focus {
