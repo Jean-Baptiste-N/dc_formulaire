@@ -74,16 +74,16 @@
           {% include "formulaire/partials/poste_cible_item.html" with poste_cible=poste_cible candidat=candidat %}
         {% endfor %}
       {% else %}
-        <p class="text-muted fst-italic">Aucune variante ajoutée</p>
+        <p class="text-muted fst-italic">Aucun poste cible ajouté</p>
       {% endif %}
     </div>
 
-    <button type="button" class="btn btn-success btn-sm btn-poste-cible-add" data-candidat-pk="{{ candidat.pk }}">
-      <i class="bi bi-plus"></i> Ajouter une variante
+    <button type="button" class="btn btn-secondary btn-sm btn-poste-cible-add" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-plus"></i> Ajouter un Poste cible
     </button>
-    <button type="button" class="btn btn-primary btn-sm btn-poste-cible-save ms-2" data-candidat-pk="{{ candidat.pk }}">
-      <i class="bi bi-save"></i> <span class="btn-save-text">Enregistrer</span>
-    </button>
+    <button type="button" class="btn btn-success btn-sm btn-poste-cible-save ms-2" data-candidat-pk="{{ candidat.pk }}">
+        <i class="bi bi-save"></i> Enregistrer
+      </button>
   </div>
 </div>
 
@@ -108,11 +108,11 @@
       {% endif %}
     </div>
 
-    <button type="button" class="btn btn-success btn-sm btn-skills-cible-add" data-candidat-pk="{{ candidat.pk }}">
-      <i class="bi bi-plus"></i> Ajouter une compétence cible
+    <button type="button" class="btn btn-secondary btn-sm btn-skills-cible-add" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-plus"></i> Ajouter une Compétence cible
     </button>
-    <button type="button" class="btn btn-primary btn-sm btn-skills-cible-save ms-2" data-candidat-pk="{{ candidat.pk }}">
-      <i class="bi bi-save"></i> <span class="btn-save-text">Enregistrer</span>
+    <button type="button" class="btn btn-success btn-sm btn-skills-cible-save ms-2" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-save"></i> Enregistrer
     </button>
   </div>
 </div>
@@ -128,21 +128,21 @@
   <div class="card-body">
     <p class="text-muted small mb-3">Ajoutez des domaines de compétences et leurs expertises liées (ex: Ingénierie système > Configuration de logiciel > Vérification de la conformité aux spécifications internes)</p>
 
-    <button type="button" class="btn btn-success mb-3 btn-main-skills-hierarchy-add-root" data-section="bullet" data-candidat-pk="{{ candidat.pk }}">
-      <i class="bi bi-plus-lg"></i> Ajouter un domaine de compétence
-    </button>
-
     <div id="main_skills_bullet_list">
       {% if candidat.dossier.main_skills.bullet %}
-        {% for item in candidat.dossier.main_skills.bullet %}
-          {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_bullet" main_skills_placeholders=placeholders.main_skills.bullet max_depth=1 %}
-        {% endfor %}
+      {% for item in candidat.dossier.main_skills.bullet %}
+      {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_bullet" main_skills_placeholders=placeholders.main_skills.bullet max_depth=1 %}
+      {% endfor %}
       {% else %}
-        <p class="text-muted">Aucune compétence ajoutée</p>
+      <p class="text-muted">Aucune compétence ajoutée</p>
       {% endif %}
     </div>
-    <button type="button" class="btn btn-primary btn-sm btn-main-skills-save mt-3" data-section="bullet" data-candidat-pk="{{ candidat.pk }}">
-      <i class="bi bi-save"></i> <span class="btn-save-text">Enregistrer</span>
+
+    <button type="button" class="btn btn-secondary btn-sm btn-main-skills-hierarchy-add-root" data-section="bullet" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-plus"></i> Ajouter un Domaine de compétence
+    </button>
+    <button type="button" class="btn btn-success btn-sm btn-main-skills-save ms-2" data-section="bullet" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-save"></i> Enregistrer
     </button>
   </div>
 </div>
@@ -253,8 +253,8 @@
                 <small class="text-muted">{{ formation.school }} ({{ formation.date }})</small><br>
                 {% if formation.description %}<small>{{ formation.description }}</small>{% endif %}
               </div>
-              <button type="button" class="btn btn-sm btn-danger btn-formation-remove" 
-                      data-candidat-pk="{{ candidat.pk }}" 
+              <button type="button" class="btn btn-sm btn-danger btn-formation-remove"
+                      data-candidat-pk="{{ candidat.pk }}"
                       data-formation-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
               </button>
@@ -316,8 +316,8 @@
                 <small class="text-muted">{{ cert.date }}</small><br>
                 {% if cert.description %}<small>{{ cert.description }}</small>{% endif %}
               </div>
-              <button type="button" class="btn btn-sm btn-danger btn-certification-remove" 
-                      data-candidat-pk="{{ candidat.pk }}" 
+              <button type="button" class="btn btn-sm btn-danger btn-certification-remove"
+                      data-candidat-pk="{{ candidat.pk }}"
                       data-certification-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
               </button>
@@ -373,8 +373,8 @@
                 <strong>{{ langue.title }}</strong> <br>
                 {% if langue.description %}<small>{{ langue.description }}</small>{% endif %}
               </div>
-              <button type="button" class="btn btn-sm btn-danger btn-langue-remove" 
-                      data-candidat-pk="{{ candidat.pk }}" 
+              <button type="button" class="btn btn-sm btn-danger btn-langue-remove"
+                      data-candidat-pk="{{ candidat.pk }}"
                       data-langue-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
               </button>
@@ -440,8 +440,8 @@
                 <small class="text-muted">{{ exp.date }}</small><br>
                 {% if exp.context %}<small><em>{{ exp.context }}</em></small><br>{% endif %}
               </div>
-              <button type="button" class="btn btn-sm btn-danger btn-experience-remove" 
-                      data-candidat-pk="{{ candidat.pk }}" 
+              <button type="button" class="btn btn-sm btn-danger btn-experience-remove"
+                      data-candidat-pk="{{ candidat.pk }}"
                       data-exp-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
               </button>
@@ -941,8 +941,8 @@ function deleteMainSkillsHierarchyItem(e) {
   const depth = parseInt(btn.dataset.depth || '0');
   const item = document.getElementById(`item-${itemId}`);
   const title = item?.querySelector('.main-skills-hierarchy-title')?.value || 'cet élément';
-  
-  const message = depth === 0 
+
+  const message = depth === 0
     ? `Supprimer le domaine de compétences: ${title} ?\n\nCela supprimera aussi tous les sous-domaines et est irréversible.`
     : `Supprimer: ${title} et ses enfants ?\n\nCette action est irréversible.`;
 
@@ -1082,7 +1082,7 @@ function deleteXpProHierarchyItem(e) {
   const depth = parseInt(btn.dataset.depth || '0');
   const item = document.getElementById(`item-${itemId}`);
   const title = item?.querySelector('.xp-pro-hierarchy-title')?.value || 'cet élément';
-  
+
   const message = depth === 0
     ? `Supprimer la réalisation: ${title} ?\n\nCela supprimera aussi toutes les sous-tâches et est irréversible.`
     : `Supprimer: ${title} et ses enfants ?\n\nCette action est irréversible.`;
@@ -1162,7 +1162,7 @@ function initFormationCertificationLangueHandlers() {
       btn.setAttribute('data-listener-initialized', 'true');
     }
   });
-  
+
   // Certification delete
   document.querySelectorAll('.btn-certification-remove').forEach(btn => {
     if (!btn.hasAttribute('data-listener-initialized')) {
@@ -1170,7 +1170,7 @@ function initFormationCertificationLangueHandlers() {
       btn.setAttribute('data-listener-initialized', 'true');
     }
   });
-  
+
   // Langue delete
   document.querySelectorAll('.btn-langue-remove').forEach(btn => {
     if (!btn.hasAttribute('data-listener-initialized')) {
@@ -1470,7 +1470,7 @@ const autosaveConfig = {
     getItems: (expIndex) => {
       const container = document.querySelector(`.xp-pro-step2-container[data-exp-index="${expIndex}"]`);
       if (!container) return null;
-      
+
       const context = container.querySelector('.xp-pro-step2-context').value.trim();
       const techBadges = container.querySelectorAll('.badge');
       const envTech = Array.from(techBadges)
@@ -1478,7 +1478,7 @@ const autosaveConfig = {
         .filter(t => t);
       const realizationsDiv = container.querySelector('.xp-pro-step2-realizations');
       const realizations = buildXpProStep2RealizationTree(realizationsDiv);
-      
+
       return { context, env_tech: envTech, realizations };
     },
     endpoint: (expIndex) => `/candidat/${CANDIDAT_PK}/experience/${expIndex}/step2-update/`,
@@ -1508,7 +1508,7 @@ async function saveData(section, showFeedback = false, element = null) {
     const expIndex = element.dataset.expIndex;
     const data = config.getItems(expIndex);
     if (!data) return;
-    
+
     endpoint = config.endpoint(expIndex);
     formData.append('context', data.context);
     formData.append('env_tech', JSON.stringify(data.env_tech));
@@ -1548,13 +1548,18 @@ async function saveData(section, showFeedback = false, element = null) {
     if (response.ok) {
       if (showFeedback && btn) {
         const textSpan = btn.querySelector('.btn-save-text') || btn;
+        // Sauvegarder les classes initiales du bouton
+        const initialClasses = btn.className;
+
+        // Feedback de succès
         textSpan.innerHTML = '<i class="bi bi-check-lg"></i> Enregistré !';
-        textSpan.classList?.remove('btn-outline-primary');
-        textSpan.classList?.add('btn-outline-success');
+        btn.classList.remove('btn-success', 'btn-primary', 'btn-secondary');
+        btn.classList.add('btn-outline-success');
+
+        // Restaurer après 2 secondes
         setTimeout(() => {
-          textSpan.innerHTML = 'Enregistrer';
-          textSpan.classList?.remove('btn-outline-success');
-          textSpan.classList?.add('btn-outline-primary');
+          textSpan.innerHTML = '<i class="bi bi-save"></i> Enregistrer';
+          btn.className = initialClasses; // Restaurer les classes initiales
           btn.disabled = false;
         }, 2000);
       }

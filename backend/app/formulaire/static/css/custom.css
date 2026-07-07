@@ -165,10 +165,10 @@ body {
 }
 
 /* Icon Buttons */
-.btn-icon {
+/* .btn-icon {
   padding: 0.3rem 0.6rem;
   font-size: 0.875rem;
-}
+} */
 
 /* ============================================================================
    MARK: 3. CARDS & SECTIONS
@@ -287,6 +287,11 @@ body {
   color: #495057;
   font-weight: 500;
   margin-bottom: 0.5rem;
+}
+
+.form-check-input:checked {
+  background-color: #548DD4;
+  border-color: #548DD4;
 }
 
 /* ============================================================================

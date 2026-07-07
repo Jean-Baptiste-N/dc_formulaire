@@ -2,7 +2,6 @@
 Django settings for dc_formulaire project.
 """
 
-import os
 from pathlib import Path
 
 import dj_database_url
@@ -80,7 +79,13 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# En développement: désactiver le manifest pour rafraîchir les CSS automatiquement
+# En production: utiliser le manifest compressé pour la performance
+if DEBUG:
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+else:
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

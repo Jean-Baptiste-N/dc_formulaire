@@ -547,7 +547,7 @@ def main_skills_hierarchy_add_child(request, pk, section):
             "formulaire/partials/main_skills_hierarchy_item.html",
             {
                 "item": new_child,
-                "depth": depth + 1,
+                "depth": depth,
                 "target_index": target_index,
                 "endpoint_base": f"main_skills_{section}",
                 "max_depth": 1,
