@@ -8,7 +8,7 @@
    ============================================================================ */
 
 body {
-  background-color: #f8f9fa;
+  background-color: #FFF1E5;
 }
 
 /* ============================================================================
@@ -17,146 +17,157 @@ body {
 
 /* Primary Button */
 .btn-primary {
-  background-color: #0d6efd;
-  border-color: #0d6efd;
+  background-color: #548DD4;
+  border-color: #548DD4;
   font-weight: 500;
 }
 
 .btn-primary:hover {
-  background-color: #0b5ed7;
-  border-color: #0a58ca;
+  background-color: #2E70C2;
+  border-color: #275B9B;
 }
 
 .btn-primary:active {
-  background-color: #0a58ca;
-  border-color: #0a3622;
+  background-color: #2E70C2;
+  border-color: #275B9B;
 }
 
 /* Outline Primary */
 .btn-outline-primary {
-  color: #0d6efd;
-  border-color: #0d6efd;
+  color: #548DD4;
+  background-color: white;
+  border-color: #548DD4;
   font-weight: 500;
 }
 
 .btn-outline-primary:hover {
-  background-color: #0d6efd;
-  border-color: #0d6efd;
   color: white;
+  background-color: #2E70C2;
+  border-color: #275B9B;
 }
 
 .btn-outline-primary:active {
-  background-color: #0b5ed7;
-  border-color: #0a58ca;
   color: white;
+  background-color: #2E70C2;
+  border-color: #275B9B;
 }
 
 /* Secondary Button */
 .btn-secondary {
-  background-color: #6c757d;
-  border-color: #6c757d;
+  background-color: #F69545;
+  border-color: #F69545;
   font-weight: 500;
 }
 
 .btn-secondary:hover {
-  background-color: #0b5ed7;
-  border-color: #0a58ca;
+  background-color: #F57C00;
+  border-color: #EF6C00;
 }
 
 .btn-secondary:active {
-  background-color: #0a58ca;
-  border-color: #0a3622;
+  background-color: #F57C00;
+  border-color: #EF6C00;
 }
 
 /* Outline Secondary */
 .btn-outline-secondary {
-  color: #6c757d;
-  border-color: #6c757d;
+  color: #F69545;
+  background-color: white;
+  border-color: #F69545;
+  font-weight: 500;
 }
 
 .btn-outline-secondary:hover {
-  background-color: #6c757d;
-  border-color: #6c757d;
   color: white;
+  background-color: #F57C00;
+  border-color: #EF6C00;
+}
+
+.btn-outline-secondary:active {
+  color: white;
+  background-color: #F57C00;
+  border-color: #EF6C00;
 }
 
 /* Success Button */
 .btn-success {
-  background-color: #198754;
-  border-color: #198754;
+  background-color: #48A822;
+  border-color: #48A822;
   font-weight: 500;
 }
 
 .btn-success:hover {
-  background-color: #157347;
-  border-color: #146c43;
+  background-color: #3B8B1B;
+  border-color: #307C12;
 }
 
 .btn-success:active {
-  background-color: #146c43;
+  background-color: #3B8B1B;
+  border-color: #307C12;
 }
 
 /* Outline Success */
 .btn-outline-success {
-  color: #198754;
-  border-color: #198754;
+  color: #48A822;
+  background-color: white;
+  border-color: #48A822;
   font-weight: 500;
 }
 
 .btn-outline-success:hover {
-  background-color: #198754;
-  border-color: #198754;
   color: white;
+  background-color: #3B8B1B;
+  border-color: #307C12;
 }
 
 .btn-outline-success:active {
-  background-color: #157347;
-  border-color: #146c43;
   color: white;
+  background-color: #3B8B1B;
+  border-color: #307C12;
 }
 
 /* Danger Button */
 .btn-danger {
-  background-color: #dc3545;
-  border-color: #dc3545;
+  background-color: #F03346;
+  border-color: #F03346;
   font-weight: 500;
 }
 
 .btn-danger:hover {
-  background-color: #bb2d3b;
-  border-color: #b02a37;
+  background-color: #BB2D3B;
+  border-color: #B02A37;
 }
 
 /* Outline Danger */
 .btn-outline-danger {
-  color: #dc3545;
-  border-color: #dc3545;
+  color: #F03346;
+  background-color: white;
+  border-color: #F03346;
   font-weight: 500;
 }
 
 .btn-outline-danger:hover {
-  background-color: #dc3545;
-  border-color: #dc3545;
   color: white;
+  background-color: #BB2D3B;
+  border-color: #B02A37;
 }
 
 .btn-outline-danger:active {
-  background-color: #bb2d3b;
-  border-color: #b02a37;
   color: white;
+  background-color: #BB2D3B;
+  border-color: #B02A37;
 }
 
 /* Small Button Sizing */
 .btn-sm {
-  padding: 0.4rem 0.75rem;
+  padding: 0.3rem 0.6rem;
   font-size: 0.875rem;
 }
 
 /* Icon Buttons */
 .btn-icon {
-  padding: 0.2rem 0.4rem;
-  font-size: 0.8rem;
-  line-height: 1;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.875rem;
 }
 
 /* ============================================================================
@@ -180,7 +191,7 @@ body {
 }
 
 .section-card {
-  border-left: 4px solid #0d6efd;
+  border-left: 4px solid #548DD4;
 }
 
 /* ============================================================================
