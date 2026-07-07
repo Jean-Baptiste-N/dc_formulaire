@@ -2,6 +2,9 @@ import json
 import logging
 import uuid
 from pathlib import Path
+import io
+import tempfile
+from docxtpl import DocxTemplate
 
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
@@ -11,7 +14,7 @@ from django.views.decorators.http import require_POST
 
 from .forms import CandidatInfoForm
 from .models import Candidat
-from .utils import clean_text
+from .utils import clean_text, remove_empty_paragraphs
 
 logger = logging.getLogger(__name__)
 
@@ -827,8 +830,7 @@ def experience_add(request, pk):
 @require_POST
 def experience_remove(request, pk, index):
     """Supprime une expérience."""
-    from django.http import JsonResponse
-    
+
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
@@ -1024,7 +1026,7 @@ def xp_pro_step2_update(request, pk, exp_index):
                 env_tech_list = [_clean_text(tech.strip()) for tech in env_tech_raw.split(",") if tech.strip()]
         except json.JSONDecodeError:
             env_tech_list = [_clean_text(tech.strip()) for tech in env_tech_raw.split(",") if tech.strip()]
-        
+
         experience["env_tech"] = env_tech_list
 
         # 3. Mettre à jour les réalisations (description)
@@ -1082,7 +1084,6 @@ def candidat_export_docx(request, pk):
         )
 
     try:
-        from docxtpl import DocxTemplate
 
         tpl = DocxTemplate(template_path)
         # Extraire les données du dossier JSON
@@ -1109,26 +1110,47 @@ def candidat_export_docx(request, pk):
             "dossier": candidat.dossier,
             # Passer les clés du dossier directement au contexte
             "header": header_data,
-            "main_skills": dossier_data.get("main_skills", {"bullet": []}),
+            "main_skills": dossier_data.get("main_skills", {"bullet": [], "table": []}),
             "xp_pro": dossier_data.get("xp_pro", []),
             "formations": dossier_data.get("formations", []),
             "certifications": dossier_data.get("certifications", []),
+            "poste_cible": dossier_data.get("poste_cible", []),
+            "skills_cible": dossier_data.get("skills_cible", []),
+            "langues": dossier_data.get("langues", []),
         }
-        tpl.render(context)
 
-        import io
+        # Récupérer le poste_cible actif pour le nom du fichier
+        poste_cible_list = context.get("poste_cible", [])
+        active_poste = next((p for p in poste_cible_list if p.get("active")), None)
+        poste_filename = (active_poste.get("title", "") if active_poste else candidat.poste or "").title().replace(" ", "_")
+
+        tpl.render(context)
 
         buffer = io.BytesIO()
         tpl.save(buffer)
-        buffer.seek(0)
 
-        filename = f"DC_{candidat.trigramme}_{candidat.poste}.docx".replace(" ", "_")
-        response = HttpResponse(
-            buffer.read(),
-            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        )
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
-        return response
+        # Supprimer les bullets vides et les paragraphes vides dans les tables (colonne 1 seulement)
+        buffer.seek(0)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
+            tmp.write(buffer.getvalue())
+            tmp_path = tmp.name
+
+        try:
+            remove_empty_paragraphs(tmp_path)
+
+            with open(tmp_path, "rb") as f:
+                file_content = f.read()
+
+            filename = f"DC_{candidat.trigramme}_{poste_filename}.docx".replace(" ", "_")
+            response = HttpResponse(
+                file_content,
+                content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+            response["Content-Disposition"] = f'attachment; filename="{filename}"'
+            return response
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
+
     except Exception as e:
         logger.exception("Erreur lors de la génération du DOCX pour le candidat %s: %s", pk, str(e))
         return HttpResponse(

@@ -28,7 +28,7 @@ EXPOSE 8001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')" || exit 1
+    CMD curl -f http://localhost:8001/ || exit 1
 
 # Use entrypoint to run the application
 ENTRYPOINT ["/entrypoint.sh"]
