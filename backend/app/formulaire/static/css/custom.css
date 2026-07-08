@@ -181,6 +181,12 @@ body {
 }
 
 .card-header {
+  background-color: #f5f5f5;
+  border-bottom: 2px solid #dee2e6;
+  padding: 1rem;
+}
+
+.card-header-create {
   background-color: #548DD4 !important;
   border-bottom: 2px solid #dee2e6;
   padding: 1rem;
@@ -304,15 +310,15 @@ body {
 }
 
 .alert-info {
-  background-color: #d1ecf1;
-  border-color: #bee5eb;
-  color: #0c5460;
+  background-color: #e7f2ff;
+  border-color: #d8e9ff;
+  color: #6a7481;
 }
 
-.alert-warning {
-  background-color: #fff3cd;
-  border-color: #ffeeba;
-  color: #856404;
+.alert-xp-pro {
+  background-color: #fff4eb;
+  border-color: #fde6d3;
+  color: #796656;
 }
 
 .alert-success {
@@ -517,6 +523,11 @@ body {
 .badge.bg-info {
   background-color: #548DD4 !important;
   color: white !important;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .xp-pro-step2-tech-input {
