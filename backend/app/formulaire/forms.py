@@ -75,7 +75,7 @@ class FormationForm(forms.Form):
         label="Description",
         help_text="Détails sur les contenus de la formation",
         required=False,
-        widget=forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "ex: Cours sur les algorithmes, structures de données, etc."})
+        widget=forms.Textarea(attrs={"class": "form-control", "placeholder": "ex: Cours sur les algorithmes, structures de données, etc."})
     )
     date = forms.CharField(
         label="Période",
@@ -101,7 +101,7 @@ class CertificationForm(forms.Form):
         label="Description",
         help_text="Détails sur les contenus de la certification",
         required=False,
-        widget=forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "ex: Formules et classes avancées en Python, gestion des exceptions, etc."})
+        widget=forms.Textarea(attrs={"class": "form-control", "placeholder": "ex: Formules et classes avancées en Python, gestion des exceptions, etc."})
     )
     date = forms.CharField(
         label="Date",
@@ -127,7 +127,7 @@ class LangueForm(forms.Form):
         label="Niveau/Détails",
         help_text="Niveau de maîtrise ou certifications",
         required=False,
-        widget=forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "ex: Bilingue, TOEIC 925/990"})
+        widget=forms.Textarea(attrs={"class": "form-control", "placeholder": "ex: Bilingue, TOEIC 925/990"})
     )
 
 # ============================================================================

@@ -1,6 +1,6 @@
 # DC Formulaire
 # Container with the backend of the application, using Python 3.12 and Gunicorn as the WSGI server.
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -28,7 +28,11 @@ EXPOSE 8001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')" || exit 1
+    CMD curl -f http://localhost:8001/ || exit 1
+
+# Installer Trivy pour scanner
+RUN apt-get update && apt-get install -y curl && \
+    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
 # Use entrypoint to run the application
 ENTRYPOINT ["/entrypoint.sh"]

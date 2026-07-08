@@ -2,16 +2,21 @@ import json
 import logging
 import uuid
 from pathlib import Path
+import io
+import tempfile
+from typing import Tuple, Literal, Optional
+from docxtpl import DocxTemplate
 
 from django.conf import settings
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.utils.html import escape
 from django.views.decorators.http import require_POST
 
 from .forms import CandidatInfoForm
 from .models import Candidat
-from .utils import clean_text
+from .utils import clean_text, remove_empty_paragraphs
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +27,30 @@ logger = logging.getLogger(__name__)
 def _new_id():
     return str(uuid.uuid4())
 
+def get_candidat_or_redirect(pk_or_slug, index=0) -> Tuple[Literal['success', 'redirect', 'not_found'], Optional[Candidat]]:
+    """Lookup candidat par slug ou pk. Si accès via pk, redirige vers slug.
+
+    Pour les slugs avec doublons, utiliser le paramètre 'index' pour accéder au Nth candidat.
+    """
+    # Essayer de lookup par slug d'abord
+    candidates = Candidat.objects.filter(slug=pk_or_slug).all()
+    if candidates:
+        # Vérifier l'index
+        if index < 0 or index >= len(candidates):
+            return ('not_found', None)
+        candidat = candidates[index]
+        return ('success', candidat)
+
+    # Sinon, essayer par pk (UUID)
+    try:
+        candidat = Candidat.objects.get(pk=pk_or_slug)
+        # Si on a trouvé via pk et qu'il a un slug différent, il faudra rediriger
+        if candidat.slug and candidat.slug != pk_or_slug:
+            return ('redirect', candidat)  # Signal de redirection
+        return ('success', candidat)
+    except Candidat.DoesNotExist:
+        return ('not_found', None)
+
 def _clean_text(text):
     """Wrapper pour compatibilité avec le code existant."""
     return clean_text(text)
@@ -31,6 +60,7 @@ def _empty_dossier():
     return {
         "header": {},
         "poste_cible": [],
+        "skills_cible": [],
         "main_skills": {
             "bullet": [],
             "table": []
@@ -75,6 +105,11 @@ def _sync_header_and_defaults(candidat):
                 'title': candidat.poste,
                 'active': True
             })
+        needs_save = True
+
+    # Initialiser skills_cible par défaut s'il n'existe pas
+    if not dossier.get('skills_cible'):
+        dossier['skills_cible'] = []
         needs_save = True
 
     # Sauvegarder si nécessaire
@@ -192,8 +227,22 @@ def candidat_create(request):
 # Candidat edit (main form)
 # ---------------------------------------------------------------------------
 
-def candidat_edit(request, pk):
-    candidat = get_object_or_404(Candidat, pk=pk)
+def candidat_edit(request, pk=None, slug=None):
+    identifier = slug or pk
+    index = int(request.GET.get('index', 0))
+    status, candidat = get_candidat_or_redirect(identifier, index=index)
+
+    if status == 'not_found':
+        raise Http404(f"Candidat not found: {identifier}")
+
+    assert candidat is not None, f"Candidat should not be None (status={status})"
+
+    # Si on accède via pk et le candidat a un slug différent, rediriger vers slug
+    if status == 'redirect' and candidat.slug:
+        url = f'/candidat/{candidat.slug}/modifier/'
+        if index > 0:
+            url += f'?index={index}'
+        return redirect(url)
 
     # Synchro du header et initialisation des defaults (poste_cible)
     # À faire en premier, avant toute autre logique
@@ -251,12 +300,27 @@ def candidat_edit(request, pk):
 # Candidat detail (visualisation)
 # ---------------------------------------------------------------------------
 
-def candidat_detail(request, pk):
-    candidat = get_object_or_404(Candidat, pk=pk)
+def candidat_detail(request, pk=None, slug=None):
+    identifier = slug or pk
+    index = int(request.GET.get('index', 0))
+    status, candidat = get_candidat_or_redirect(identifier, index=index)
+
+    if status == 'not_found':
+        raise Http404(f"Candidat not found: {identifier}")
+
+    assert candidat is not None, f"Candidat should not be None (status={status})"
+
+    # Si on accède via pk et le candidat a un slug différent, rediriger vers slug
+    if status == 'redirect' and candidat.slug:
+        url = f'/candidat/{candidat.slug}/detail/'
+        if index > 0:
+            url += f'?index={index}'
+        return redirect(url)
+
     return render(request, "formulaire/candidat_detail.html", {"candidat": candidat})
 
 # ============================================================================
-# MARK: 2. POSTES CIBLES - Add, Delete, Activate, Update
+# MARK: 2.1 POSTES CIBLES - Add, Delete, Activate, Update
 # ============================================================================
 
 @require_POST
@@ -355,6 +419,108 @@ def poste_cible_bulk_update(request, pk):
     return JsonResponse({"status": "ok"})
 
 # ============================================================================
+# MARK: 2.2 SKILLS_CIBLE - Compétences cibles (Checkboxes)
+# ============================================================================
+
+@require_POST
+def skills_cible_add(request, pk):
+    """Ajoute une compétence cible."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    if "skills_cible" not in dossier:
+        dossier["skills_cible"] = []
+
+    # Créer une nouvelle compétence cible
+    new_skill_cible = {
+        "id": _new_id(),
+        "title": "",
+        "active": False,
+    }
+
+    dossier["skills_cible"].append(new_skill_cible)
+    candidat.dossier = dossier
+    candidat.save(update_fields=["dossier"])
+
+    return render(
+        request,
+        "formulaire/partials/skills_cible_item.html",
+        {"skills_cible": new_skill_cible, "candidat": candidat},
+    )
+
+@require_POST
+def skills_cible_delete(request, pk, skills_cible_id):
+    """Supprime une compétence cible."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    if "skills_cible" in dossier:
+        dossier["skills_cible"] = [
+            sc for sc in dossier["skills_cible"] if sc["id"] != skills_cible_id
+        ]
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return HttpResponse("")
+
+@require_POST
+def skills_cible_toggle(request, pk, skills_cible_id):
+    """Active/désactive une compétence cible (toggle checkbox)."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    if "skills_cible" in dossier:
+        for sc in dossier["skills_cible"]:
+            if sc["id"] == skills_cible_id:
+                sc["active"] = not sc["active"]
+                break
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return HttpResponse("")
+
+@require_POST
+def skills_cible_update(request, pk, skills_cible_id):
+    """Met à jour le titre d'une compétence cible."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    title = _clean_text(request.POST.get("title", ""))
+
+    if "skills_cible" in dossier:
+        for sc in dossier["skills_cible"]:
+            if sc["id"] == skills_cible_id:
+                sc["title"] = title
+                break
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return HttpResponse("")
+
+@require_POST
+def skills_cible_bulk_update(request, pk):
+    """Met à jour les titres de plusieurs compétences cibles (bulk update)."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        items = json.loads(request.POST.get("items", "[]"))
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    if "skills_cible" in dossier:
+        for item in items:
+            for sc in dossier["skills_cible"]:
+                if sc["id"] == item.get("id"):
+                    sc["title"] = _clean_text(item.get("title", ""))
+                    sc["active"] = item.get("active", False)
+                    break
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+    return JsonResponse({"status": "ok"})
+
+# ============================================================================
 # MARK: 3.1 MAIN-SKILLS DOMAINES DE COMPÉTENCES - Bullet Section
 # ============================================================================
 
@@ -436,7 +602,7 @@ def main_skills_hierarchy_add_child(request, pk, section):
             "formulaire/partials/main_skills_hierarchy_item.html",
             {
                 "item": new_child,
-                "depth": depth + 1,
+                "depth": depth,
                 "target_index": target_index,
                 "endpoint_base": f"main_skills_{section}",
                 "max_depth": 1,
@@ -566,6 +732,25 @@ def formation_add(request, pk):
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
+        # Pour AJAX: retourner juste le snippet HTML du nouvel élément
+        index = len(dossier["formations"]) - 1
+        desc_html = f'<br><small class="text-muted">{escape(formation["description"])}</small>' if formation.get("description", "").strip() else ''
+        html = f'''<div class="alert alert-info mb-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{escape(formation["date"])} - {escape(formation["title"])}</strong> <br>
+              <small>{escape(formation["school"])}</small>
+              {desc_html}
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-formation-remove"
+                    data-candidat-pk="{pk}"
+                    data-formation-index="{index}">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>'''
+        return HttpResponse(html)
+
     return redirect("formulaire:candidat_edit", pk=pk)
 
 @require_POST
@@ -611,6 +796,24 @@ def certification_add(request, pk):
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
+        # Pour AJAX: retourner juste le snippet HTML du nouvel élément
+        index = len(dossier["certifications"]) - 1
+        desc_html = f'<br><small class="text-muted">{escape(certification["description"])}</small>' if certification.get("description", "").strip() else ''
+        html = f'''<div class="alert alert-info mb-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{escape(certification["date"])} - {escape(certification["title"])}</strong>
+              {desc_html}
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-certification-remove"
+                    data-candidat-pk="{pk}"
+                    data-certification-index="{index}">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>'''
+        return HttpResponse(html)
+
     return redirect("formulaire:candidat_edit", pk=pk)
 
 @require_POST
@@ -655,6 +858,24 @@ def langue_add(request, pk):
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
+        # Pour AJAX: retourner juste le snippet HTML du nouvel élément
+        index = len(dossier["langues"]) - 1
+        desc_html = f'<br><small class="text-muted">{escape(langue["description"])}</small>' if langue.get("description", "").strip() else ''
+        html = f'''<div class="alert alert-info mb-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{escape(langue["title"])}</strong>
+              {desc_html}
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-langue-remove"
+                    data-candidat-pk="{pk}"
+                    data-langue-index="{index}">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>'''
+        return HttpResponse(html)
+
     return redirect("formulaire:candidat_edit", pk=pk)
 
 @require_POST
@@ -691,7 +912,6 @@ def experience_add(request, pk):
     tech_list = [_clean_text(t) for t in technologies.split(",") if t.strip()] if technologies else []
 
     # Pré-remplir avec un premier item vide (scaffolding UX)
-    # L'utilisateur ajoutera les réalisations hiérarchiquement après création
     description_array = [{
         "id": _new_id(),
         "title": "",
@@ -714,13 +934,99 @@ def experience_add(request, pk):
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
+        # Pour AJAX: retourner la section complète avec toutes les sous-sections remplissables
+        index = len(dossier["xp_pro"]) - 1
+        placeholders = _get_placeholders()
+
+        # Générer le HTML des réalisations avec le partial existant
+        realizations_html = ""
+        for realization in experience["description"]:
+            realizations_html += render_to_string(
+                "formulaire/partials/xp_pro_hierarchy_item.html",
+                {
+                    "item": realization,
+                    "exp_index": index,
+                    "depth": 0,
+                    "candidat": candidat,
+                    "xp_pro_placeholders": placeholders.get("xp_pro", {}),
+                }
+            )
+
+        # Tech badges HTML
+        tech_badges_html = ""
+        if tech_list:
+            for tech in tech_list:
+                tech_badges_html += f'<span class="badge bg-info text-dark me-2 mb-2">{escape(tech)}<button type="button" class="btn-xp-pro-step2-tech-remove" data-tech="{escape(tech)}">×</button></span>'
+        else:
+            tech_badges_html = '<span class="text-muted small">Aucune technologie ajoutée</span>'
+
+        # Retourner le HTML complet avec structure xp_pro_step2
+        html = f'''<div class="alert alert-xp-pro mb-3 xp-pro-step2-container" data-exp-index="{index}" data-candidat-pk="{pk}">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div style="flex: 1;">
+              <strong>{escape(experience["date"])} : {escape(experience["poste"])}</strong> chez <strong>{escape(experience["company"])}</strong><br>
+            </div>
+            <button type="button" class="btn btn-sm btn-danger btn-experience-remove"
+                    data-candidat-pk="{pk}"
+                    data-exp-index="{index}">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+
+          <!-- Contexte -->
+          <div class="mb-4">
+            <label class="form-label small fw-semibold"><i class="bi bi-list-check"></i> Contexte de l'expérience</label>
+            <textarea class="form-control xp-pro-step2-context"
+                      placeholder="{escape(placeholders['experiences']['context'])}"
+                      rows="2">{escape(experience.get('context', ''))}</textarea>
+          </div>
+
+          <!-- Technologies -->
+          <div class="mb-4">
+            <label class="form-label small fw-semibold"><i class="bi bi-list-check"></i> Technologies utilisées</label>
+            <div class="input-group input-group-sm mb-2">
+              <input type="text"
+                      class="form-control xp-pro-step2-tech-input"
+                      placeholder="ex: Python, Django, PostgreSQL... (séparées par des virgules)"
+                      data-separator=",">
+              <button class="btn btn-outline-success btn-sm btn-xp-pro-step2-tech-add" type="button">
+                <i class="bi bi-plus-lg"></i>
+              </button>
+            </div>
+            <div class="xp-pro-step2-tech-badges">
+              {tech_badges_html}
+            </div>
+          </div>
+
+          <!-- Réalisations -->
+          <div class="mb-4">
+            <label class="form-label small fw-semibold"><i class="bi bi-list-check"></i> Réalisations</label>
+            <div id="realizations-{index}" class="xp-pro-step2-realizations ps-2">
+              {realizations_html}
+            </div>
+          </div>
+
+          <!-- Boutons -->
+          <div class="d-flex gap-2 align-items-center pt-3 border-top">
+            <button type="button" class="btn btn-sm btn-secondary btn-xp-pro-step2-add-realization">
+              <i class="bi bi-plus-lg"></i> Ajouter une Activité
+            </button>
+            <button type="button"
+                    class="btn btn-sm btn-success btn-xp-pro-step2-save"
+                    data-exp-index="{index}"
+                    data-candidat-pk="{pk}">
+              <i class="bi bi-check-lg"></i> Enregistrer
+            </button>
+          </div>
+        </div>'''
+        return HttpResponse(html)
+
     return redirect("formulaire:candidat_edit", pk=pk)
 
 @require_POST
 def experience_remove(request, pk, index):
     """Supprime une expérience."""
-    from django.http import JsonResponse
-    
+
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
@@ -881,7 +1187,6 @@ def xp_pro_realization_delete(request, pk, exp_index, item_id):
         return HttpResponse(f"Erreur: {e}", status=400)
 
 @require_POST
-@require_POST
 def xp_pro_step2_update(request, pk, exp_index):
     """
     Met à jour les 3 sections de la 2e étape du workflow xp_pro:
@@ -911,12 +1216,14 @@ def xp_pro_step2_update(request, pk, exp_index):
             # Essayer de parser comme JSON (array)
             if env_tech_raw.startswith("["):
                 env_tech_list = json.loads(env_tech_raw)
+                # Nettoyer chaque tech après parse JSON (supprime les guillemets d'échappement)
+                env_tech_list = [_clean_text(tech) if isinstance(tech, str) else tech for tech in env_tech_list if tech]
             else:
                 # Sinon, parser comme chaîne comma-separated
                 env_tech_list = [_clean_text(tech.strip()) for tech in env_tech_raw.split(",") if tech.strip()]
         except json.JSONDecodeError:
             env_tech_list = [_clean_text(tech.strip()) for tech in env_tech_raw.split(",") if tech.strip()]
-        
+
         experience["env_tech"] = env_tech_list
 
         # 3. Mettre à jour les réalisations (description)
@@ -962,8 +1269,23 @@ def xp_pro_step2_bulk_update(request, pk, exp_index):
 # MARK: 10. DOCX EXPORT
 # ============================================================================
 
-def candidat_export_docx(request, pk):
-    candidat = get_object_or_404(Candidat, pk=pk)
+def candidat_export_docx(request, pk=None, slug=None):
+    identifier = slug or pk
+    index = int(request.GET.get('index', 0))
+    status, candidat = get_candidat_or_redirect(identifier, index=index)
+
+    if status == 'not_found':
+        raise Http404(f"Candidat not found: {identifier}")
+
+    assert candidat is not None, f"Candidat should not be None (status={status})"
+
+    # Si on accède via pk et le candidat a un slug différent, rediriger vers slug
+    if status == 'redirect' and candidat.slug:
+        url = f'/candidat/{candidat.slug}/export/'
+        if index > 0:
+            url += f'?index={index}'
+        return redirect(url)
+
     template_path = Path(settings.DOCX_TEMPLATE_PATH)
 
     if not template_path.exists():
@@ -974,7 +1296,6 @@ def candidat_export_docx(request, pk):
         )
 
     try:
-        from docxtpl import DocxTemplate
 
         tpl = DocxTemplate(template_path)
         # Extraire les données du dossier JSON
@@ -1001,26 +1322,47 @@ def candidat_export_docx(request, pk):
             "dossier": candidat.dossier,
             # Passer les clés du dossier directement au contexte
             "header": header_data,
-            "main_skills": dossier_data.get("main_skills", {"bullet": []}),
+            "main_skills": dossier_data.get("main_skills", {"bullet": [], "table": []}),
             "xp_pro": dossier_data.get("xp_pro", []),
             "formations": dossier_data.get("formations", []),
             "certifications": dossier_data.get("certifications", []),
+            "poste_cible": dossier_data.get("poste_cible", []),
+            "skills_cible": dossier_data.get("skills_cible", []),
+            "langues": dossier_data.get("langues", []),
         }
-        tpl.render(context)
 
-        import io
+        # Récupérer le poste_cible actif pour le nom du fichier
+        poste_cible_list = context.get("poste_cible", [])
+        active_poste = next((p for p in poste_cible_list if p.get("active")), None)
+        poste_filename = (active_poste.get("title", "") if active_poste else candidat.poste or "").title().replace(" ", "_")
+
+        tpl.render(context)
 
         buffer = io.BytesIO()
         tpl.save(buffer)
-        buffer.seek(0)
 
-        filename = f"DC_{candidat.trigramme}_{candidat.poste}.docx".replace(" ", "_")
-        response = HttpResponse(
-            buffer.read(),
-            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        )
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
-        return response
+        # Supprimer les bullets vides et les paragraphes vides dans les tables (colonne 1 seulement)
+        buffer.seek(0)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
+            tmp.write(buffer.getvalue())
+            tmp_path = tmp.name
+
+        try:
+            remove_empty_paragraphs(tmp_path)
+
+            with open(tmp_path, "rb") as f:
+                file_content = f.read()
+
+            filename = f"DC_{candidat.trigramme}_{poste_filename}.docx".replace(" ", "_")
+            response = HttpResponse(
+                file_content,
+                content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+            response["Content-Disposition"] = f'attachment; filename="{filename}"'
+            return response
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
+
     except Exception as e:
         logger.exception("Erreur lors de la génération du DOCX pour le candidat %s: %s", pk, str(e))
         return HttpResponse(

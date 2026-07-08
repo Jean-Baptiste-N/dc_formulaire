@@ -58,7 +58,7 @@
 </div>
 
 <!-- ============================================================================
-     MARK: 2. POSTES CIBLES - Variantes de postes recherchés
+     MARK: 2.1 POSTES CIBLES - Variantes de postes recherchés
      ============================================================================ -->
 
 <div class="card shadow-sm mb-4">
@@ -74,15 +74,45 @@
           {% include "formulaire/partials/poste_cible_item.html" with poste_cible=poste_cible candidat=candidat %}
         {% endfor %}
       {% else %}
-        <p class="text-muted fst-italic">Aucune variante ajoutée</p>
+        <p class="text-muted fst-italic">Aucun poste cible ajouté</p>
       {% endif %}
     </div>
 
-    <button type="button" class="btn btn-success btn-sm btn-poste-cible-add" data-candidat-pk="{{ candidat.pk }}">
-      <i class="bi bi-plus"></i> Ajouter une variante
+    <button type="button" class="btn btn-secondary btn-sm btn-poste-cible-add" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-plus"></i> Ajouter un Poste cible
     </button>
-    <button type="button" class="btn btn-primary btn-sm btn-poste-cible-save ms-2" data-candidat-pk="{{ candidat.pk }}">
-      <i class="bi bi-save"></i> <span class="btn-save-text">Enregistrer</span>
+    <button type="button" class="btn btn-success btn-sm btn-poste-cible-save ms-2" data-candidat-pk="{{ candidat.pk }}">
+        <i class="bi bi-save"></i> Enregistrer
+      </button>
+  </div>
+</div>
+
+<!-- ============================================================================
+     MARK: 2.2 SKILLS CIBLES - Compétences cibles (Checkboxes)
+     ============================================================================ -->
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header">
+    <h2 class="h6 mb-0"><i class="bi bi-gem"></i> Compétences ciblées</h2>
+  </div>
+  <div class="card-body">
+    <p class="text-muted small mb-3">Ajoutez les compétences que vous ciblez. Cochez les compétences que vous voulez mettre en avant dans le document d'export.</p>
+
+    <div id="skills-cible-list" class="mb-3">
+      {% if candidat.dossier.skills_cible %}
+        {% for skills_cible in candidat.dossier.skills_cible %}
+          {% include "formulaire/partials/skills_cible_item.html" with skills_cible=skills_cible candidat=candidat %}
+        {% endfor %}
+      {% else %}
+        <p class="text-muted fst-italic">Aucune compétence cible ajoutée</p>
+      {% endif %}
+    </div>
+
+    <button type="button" class="btn btn-secondary btn-sm btn-skills-cible-add" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-plus"></i> Ajouter une Compétence cible
+    </button>
+    <button type="button" class="btn btn-success btn-sm btn-skills-cible-save ms-2" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-save"></i> Enregistrer
     </button>
   </div>
 </div>
@@ -98,21 +128,21 @@
   <div class="card-body">
     <p class="text-muted small mb-3">Ajoutez des domaines de compétences et leurs expertises liées (ex: Ingénierie système > Configuration de logiciel > Vérification de la conformité aux spécifications internes)</p>
 
-    <button type="button" class="btn btn-success mb-3 btn-main-skills-hierarchy-add-root" data-section="bullet" data-candidat-pk="{{ candidat.pk }}">
-      <i class="bi bi-plus-lg"></i> Ajouter un domaine de compétence
-    </button>
-
     <div id="main_skills_bullet_list">
       {% if candidat.dossier.main_skills.bullet %}
-        {% for item in candidat.dossier.main_skills.bullet %}
-          {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_bullet" main_skills_placeholders=placeholders.main_skills.bullet max_depth=1 %}
-        {% endfor %}
+      {% for item in candidat.dossier.main_skills.bullet %}
+      {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_bullet" main_skills_placeholders=placeholders.main_skills.bullet max_depth=1 %}
+      {% endfor %}
       {% else %}
-        <p class="text-muted">Aucune compétence ajoutée</p>
+      <p class="text-muted">Aucune compétence ajoutée</p>
       {% endif %}
     </div>
-    <button type="button" class="btn btn-primary btn-sm btn-main-skills-save mt-3" data-section="bullet" data-candidat-pk="{{ candidat.pk }}">
-      <i class="bi bi-save"></i> <span class="btn-save-text">Enregistrer</span>
+
+    <button type="button" class="btn btn-secondary btn-sm btn-main-skills-hierarchy-add-root" data-section="bullet" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-plus"></i> Ajouter un Domaine de compétence
+    </button>
+    <button type="button" class="btn btn-success btn-sm btn-main-skills-save ms-2" data-section="bullet" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-save"></i> Enregistrer
     </button>
   </div>
 </div>
@@ -128,21 +158,21 @@
   <div class="card-body">
     <p class="text-muted small mb-3">Ajoutez des catégories d'outils et technologies maîtrisées (ex: Langages > Python, Bash)</p>
 
-    <button type="button" class="btn btn-success mb-3 btn-main-skills-hierarchy-add-root" data-section="table" data-candidat-pk="{{ candidat.pk }}">
-      <i class="bi bi-plus-lg"></i> Ajouter une catégorie
-    </button>
-
     <div id="main_skills_table_list">
       {% if candidat.dossier.main_skills.table %}
-        {% for item in candidat.dossier.main_skills.table %}
-          {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_table" main_skills_placeholders=placeholders.main_skills.table max_depth=1 %}
-        {% endfor %}
+      {% for item in candidat.dossier.main_skills.table %}
+      {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_table" main_skills_placeholders=placeholders.main_skills.table max_depth=1 %}
+      {% endfor %}
       {% else %}
-        <p class="text-muted">Aucune compétence ajoutée</p>
+      <p class="text-muted">Aucune compétence ajoutée</p>
       {% endif %}
     </div>
-    <button type="button" class="btn btn-primary btn-sm btn-main-skills-save mt-3" data-section="table" data-candidat-pk="{{ candidat.pk }}">
-      <i class="bi bi-save"></i> <span class="btn-save-text">Enregistrer</span>
+
+    <button type="button" class="btn btn-secondary btn-sm btn-main-skills-hierarchy-add-root" data-section="table" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-plus-lg"></i> Ajouter une Catégorie
+    </button>
+    <button type="button" class="btn btn-success btn-sm btn-main-skills-save ms-2" data-section="table" data-candidat-pk="{{ candidat.pk }}">
+      <i class="bi bi-save"></i> Enregistrer
     </button>
 
     <!-- Aperçu tableau -->
@@ -180,9 +210,9 @@
   </div>
   <div class="card-body">
     <!-- Formulaire d'ajout -->
-    <form method="post" action="{% url 'formulaire:formation_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
+    <form id="formation-add-form" method="post" action="{% url 'formulaire:formation_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
       {% csrf_token %}
-      <h5 class="mb-3"><i class="bi bi-plus-lg"></i> Ajouter une formation</h5>
+      <p class="text-muted small mb-3">Remplissez les champs pour indiquer une formation suivie et cliquez sur ajouter. Répétez l'action pour chaque formation</p>
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Titre</label>
@@ -199,14 +229,14 @@
           <input type="text" name="date" class="form-control" placeholder="{{ placeholders.formations.date }}" required>
           <small class="form-text text-muted">Format: YYYY-YYYY ou YYYY, MM/YYYY-MM/YYYY ou MM/YYYY</small>
         </div>
-        <div class="col-md-12">
+        <div class="col-md-6">
           <label class="form-label">Description</label>
-          <textarea name="description" class="form-control" placeholder="{{ placeholders.formations.description }}" rows="2"></textarea>
+          <textarea name="description" class="form-control" placeholder="{{ placeholders.formations.description }}"></textarea>
           <small class="form-text text-muted">Détails sur les contenus de la formation</small>
         </div>
         <div class="col-md-12">
-          <button type="submit" class="btn btn-success">
-            <i class="bi bi-check-lg"></i> Ajouter la formation
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="bi bi-check-lg"></i> Ajouter la Formation
           </button>
         </div>
       </div>
@@ -217,14 +247,14 @@
       {% if candidat.dossier.formations %}
         {% for formation in candidat.dossier.formations %}
           <div class="alert alert-info mb-2">
-            <div class="d-flex justify-content-between">
+            <div class="d-flex justify-content-between align-items-center">
               <div>
-                <strong>{{ formation.title }}</strong> <br>
-                <small class="text-muted">{{ formation.school }} ({{ formation.date }})</small><br>
-                {% if formation.description %}<small>{{ formation.description }}</small>{% endif %}
+                <strong>{{ formation.date }} - {{ formation.title }}</strong> <br>
+                <small>{{ formation.school }}</small>
+                {% if formation.description %}<br><small class="text-muted">{{ formation.description }}</small>{% endif %}
               </div>
-              <button type="button" class="btn btn-sm btn-danger btn-formation-remove" 
-                      data-candidat-pk="{{ candidat.pk }}" 
+              <button type="button" class="btn btn-sm btn-outline-danger btn-formation-remove"
+                      data-candidat-pk="{{ candidat.pk }}"
                       data-formation-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
               </button>
@@ -248,11 +278,11 @@
   </div>
   <div class="card-body">
     <!-- Formulaire d'ajout -->
-    <form method="post" action="{% url 'formulaire:certification_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
+    <form id="certification-add-form" method="post" action="{% url 'formulaire:certification_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
       {% csrf_token %}
-      <h5 class="mb-3"><i class="bi bi-plus-lg"></i> Ajouter une certification</h5>
+      <p class="text-muted small mb-3">Remplissez les champs pour indiquer une certification obtenue et cliquez sur ajouter. Répétez l'action pour chaque certification</p>
       <div class="row g-3">
-        <div class="col-md-6">
+        <div class="col-md-12">
           <label class="form-label">Titre</label>
           <input type="text" name="title" class="form-control" placeholder="{{ placeholders.certifications.title }}" required>
           <small class="form-text text-muted">Titre de la certification</small>
@@ -262,14 +292,14 @@
           <input type="text" name="date" class="form-control" placeholder="{{ placeholders.certifications.date }}" required>
           <small class="form-text text-muted">Format: YYYY ou YYYY-MM</small>
         </div>
-        <div class="col-md-12">
+        <div class="col-md-6">
           <label class="form-label">Description</label>
-          <textarea name="description" class="form-control" placeholder="{{ placeholders.certifications.description }}" rows="2"></textarea>
+          <textarea name="description" class="form-control" placeholder="{{ placeholders.certifications.description }}"></textarea>
           <small class="form-text text-muted">Détails sur les contenus de la certification</small>
         </div>
         <div class="col-md-12">
-          <button type="submit" class="btn btn-success">
-            <i class="bi bi-check-lg"></i> Ajouter la certification
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="bi bi-check-lg"></i> Ajouter la Certification
           </button>
         </div>
       </div>
@@ -279,15 +309,14 @@
     <div id="certifications-list">
       {% if candidat.dossier.certifications %}
         {% for cert in candidat.dossier.certifications %}
-          <div class="alert alert-success mb-2">
-            <div class="d-flex justify-content-between">
+          <div class="alert alert-info mb-2">
+            <div class="d-flex justify-content-between align-items-center">
               <div>
-                <strong>{{ cert.title }}</strong> <br>
-                <small class="text-muted">{{ cert.date }}</small><br>
-                {% if cert.description %}<small>{{ cert.description }}</small>{% endif %}
+                <strong>{{ cert.date }} - {{ cert.title }}</strong>
+                {% if cert.description %}<br><small class="text-muted">{{ cert.description }}</small>{% endif %}
               </div>
-              <button type="button" class="btn btn-sm btn-danger btn-certification-remove" 
-                      data-candidat-pk="{{ candidat.pk }}" 
+              <button type="button" class="btn btn-sm btn-outline-danger btn-certification-remove"
+                      data-candidat-pk="{{ candidat.pk }}"
                       data-certification-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
               </button>
@@ -311,23 +340,23 @@
   </div>
   <div class="card-body">
     <!-- Formulaire d'ajout -->
-    <form method="post" action="{% url 'formulaire:langue_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
+    <form id="langue-add-form" method="post" action="{% url 'formulaire:langue_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
       {% csrf_token %}
-      <h5 class="mb-3"><i class="bi bi-plus-lg"></i> Ajouter une langue</h5>
+      <p class="text-muted small mb-3">Remplissez les champs pour indiquer une langue comprise et parlée et cliquez sur ajouter. Répétez l'action pour chaque langue</p>
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Langue</label>
           <input type="text" name="title" class="form-control" placeholder="{{ placeholders.langues.title }}" required>
           <small class="form-text text-muted">Nom de la langue</small>
         </div>
-        <div class="col-md-12">
+        <div class="col-md-6">
           <label class="form-label">Niveau/Détails</label>
-          <textarea name="description" class="form-control" placeholder="{{ placeholders.langues.description }}" rows="2"></textarea>
+          <textarea name="description" class="form-control" placeholder="{{ placeholders.langues.description }}"></textarea>
           <small class="form-text text-muted">Niveau de maîtrise et certifications éventuelles</small>
         </div>
         <div class="col-md-12">
-          <button type="submit" class="btn btn-success">
-            <i class="bi bi-check-lg"></i> Ajouter la langue
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="bi bi-check-lg"></i> Ajouter la Langue
           </button>
         </div>
       </div>
@@ -338,13 +367,13 @@
       {% if candidat.dossier.langues %}
         {% for langue in candidat.dossier.langues %}
           <div class="alert alert-info mb-2">
-            <div class="d-flex justify-content-between">
+            <div class="d-flex justify-content-between align-items-center">
               <div>
-                <strong>{{ langue.title }}</strong> <br>
-                {% if langue.description %}<small>{{ langue.description }}</small>{% endif %}
+                <strong>{{ langue.title }}</strong>
+                {% if langue.description %}<br><small>{{ langue.description }}</small>{% endif %}
               </div>
-              <button type="button" class="btn btn-sm btn-danger btn-langue-remove" 
-                      data-candidat-pk="{{ candidat.pk }}" 
+              <button type="button" class="btn btn-sm btn-outline-danger btn-langue-remove"
+                      data-candidat-pk="{{ candidat.pk }}"
                       data-langue-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
               </button>
@@ -368,10 +397,15 @@
   </div>
   <div class="card-body">
     <!-- Formulaire d'ajout -->
-    <form method="post" action="{% url 'formulaire:experience_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
+    <form id="experience-add-form" method="post" action="{% url 'formulaire:experience_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
       {% csrf_token %}
-      <h5 class="mb-3"><i class="bi bi-plus-lg"></i> Ajouter une expérience</h5>
+      <p class="text-muted small mb-3">Remplissez les champs pour indiquer une expérience professionnelle. Répétez l'action pour chaque expérience</p>
       <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Poste</label>
+          <input type="text" name="poste" class="form-control" placeholder="{{ placeholders.experiences.poste }}" required>
+          <small class="form-text text-muted">Titre du poste occupé</small>
+        </div>
         <div class="col-md-6">
           <label class="form-label">Entreprise</label>
           <input type="text" name="company" class="form-control" placeholder="{{ placeholders.experiences.company }}" required>
@@ -382,18 +416,12 @@
           <input type="text" name="date" class="form-control" placeholder="{{ placeholders.experiences.date }}" required>
           <small class="form-text text-muted">Format: YYYY-YYYY ou YYYY, MM/YYYY-MM/YYYY ou MM/YYYY</small>
         </div>
-        <div class="col-md-6">
-          <label class="form-label">Poste</label>
-          <input type="text" name="poste" class="form-control" placeholder="{{ placeholders.experiences.poste }}" required>
-          <small class="form-text text-muted">Titre du poste occupé</small>
-        </div>
         <div class="col-md-12">
-          <button type="submit" class="btn btn-success">
-            <i class="bi bi-check-lg"></i> Ajouter l'expérience
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="bi bi-check-lg"></i> Ajouter l'Expérience Professionnelle
           </button>
           <small class="form-text text-muted d-block mt-2">
-            <i class="bi bi-info-circle"></i>
-            <strong>Workflow en 2 étapes :</strong> Créez l'expérience, puis ajoutez et organisez vos réalisations hiérarchiquement.
+            <i class="bi bi-info-circle"></i><strong>Workflow en 2 étapes :</strong> Créez l'expérience professionnelle, puis ajoutez et organisez vos réalisations hiérarchiquement.
           </small>
         </div>
       </div>
@@ -403,15 +431,13 @@
     <div id="experiences-list">
       {% if candidat.dossier.xp_pro %}
         {% for exp in candidat.dossier.xp_pro %}
-          <div class="alert alert-warning mb-3">
+          <div class="alert alert-xp-pro mb-3 xp-pro-step2-container" data-exp-index="{{ forloop.counter0 }}" data-candidat-pk="{{ candidat.pk }}">
             <div class="d-flex justify-content-between align-items-start mb-2">
               <div style="flex: 1;">
-                <strong>{{ exp.poste }}</strong> chez <strong>{{ exp.company }}</strong><br>
-                <small class="text-muted">{{ exp.date }}</small><br>
-                {% if exp.context %}<small><em>{{ exp.context }}</em></small><br>{% endif %}
+                <strong>{{ exp.date }} : {{ exp.poste }}</strong> chez <strong>{{ exp.company }}</strong><br>
               </div>
-              <button type="button" class="btn btn-sm btn-danger btn-experience-remove" 
-                      data-candidat-pk="{{ candidat.pk }}" 
+              <button type="button" class="btn btn-sm btn-danger btn-experience-remove"
+                      data-candidat-pk="{{ candidat.pk }}"
                       data-exp-index="{{ forloop.counter0 }}">
                 <i class="bi bi-trash"></i>
               </button>
@@ -421,73 +447,69 @@
                  MARK: 7.2 XP_PRO STEP 2 - 2e étape du workflow (Contexte, Technologies, Réalisations)
                  ================================================================ -->
 
-            <div class="mt-3 ps-3 border-start border-2 xp-pro-step2-container" data-exp-index="{{ forloop.counter0 }}" data-candidat-pk="{{ candidat.pk }}">
-              <h6 class="mb-3"><i class="bi bi-diagram-3"></i> Détails de l'expérience</h6>
+            <!-- Sous-section 1: Contexte -->
+            <div class="mb-4">
+              <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-list-check"></i> Contexte de l'expérience</span>
+              </label>
+              <textarea class="form-control xp-pro-step2-context"
+                        placeholder="{{ placeholders.experiences.context }}"
+                        rows="2">{{ exp.context }}</textarea>
+            </div>
 
-              <!-- Sous-section 1: Contexte -->
-              <div class="mb-4">
-                <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
-                  <span><i class="bi bi-list-check"></i> Contexte de l'expérience</span>
-                </label>
-                <textarea class="form-control xp-pro-step2-context"
-                          placeholder="{{ placeholders.experiences.context }}"
-                          rows="3">{{ exp.context }}</textarea>
-              </div>
-
-              <!-- Sous-section 2: Technologies utilisées -->
-              <div class="mb-4">
-                <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
-                  <span><i class="bi bi-list-check"></i> Technologies utilisées</span>
-                </label>
-                <div class="input-group input-group-sm mb-2">
-                  <input type="text"
-                         class="form-control xp-pro-step2-tech-input"
-                         placeholder="ex: Python, Django, PostgreSQL... (séparées par des virgules)"
-                         data-separator=",">
-                  <button class="btn btn-outline-success btn-xp-pro-step2-tech-add" type="button">
-                    <i class="bi bi-plus-lg"></i>
-                  </button>
-                </div>
-                <div class="xp-pro-step2-tech-badges">
-                  {% if exp.env_tech %}
-                    {% for tech in exp.env_tech %}
-                      <span class="badge bg-info text-dark me-2 mb-2">
-                        {{ tech }}
-                        <button type="button" class="btn-xp-pro-step2-tech-remove" data-tech="{{ tech }}">×</button>
-                      </span>
-                    {% endfor %}
-                  {% else %}
-                    <span class="text-muted small">Aucune technologie ajoutée</span>
-                  {% endif %}
-                </div>
-              </div>
-
-              <!-- Sous-section 3: Réalisations -->
-              <div class="mb-4">
-                <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
-                  <span><i class="bi bi-list-check"></i> Réalisations</span>
-                  <button type="button"
-                          class="btn btn-sm btn-outline-success btn-xp-pro-step2-add-realization">
-                    <i class="bi bi-plus-lg"></i> Ajouter une activité
-                  </button>
-                </label>
-                <div id="realizations-{{ forloop.counter0 }}" class="xp-pro-step2-realizations ps-2">
-                  {% for realization in exp.description %}
-                    {% include "formulaire/partials/xp_pro_hierarchy_item.html" with item=realization exp_index=forloop.counter0 depth=0 candidat=candidat xp_pro_placeholders=placeholders.xp_pro %}
-                  {% endfor %}
-                </div>
-              </div>
-
-              <!-- Bouton Enregistrer unique pour les 3 sous-sections -->
-              <div class="d-flex gap-2 align-items-center pt-3 border-top">
-                <button type="button"
-                        class="btn btn-primary btn-xp-pro-step2-save"
-                        data-exp-index="{{ forloop.counter0 }}"
-                        data-candidat-pk="{{ candidat.pk }}">
-                  <i class="bi bi-check-lg"></i> Enregistrer
+            <!-- Sous-section 2: Technologies utilisées -->
+            <div class="mb-4">
+              <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-list-check"></i> Technologies utilisées</span>
+              </label>
+              <div class="input-group input-group-sm mb-2">
+                <input type="text"
+                        class="form-control xp-pro-step2-tech-input"
+                        placeholder="ex: Python, Django, PostgreSQL... (séparées par des virgules)"
+                        data-separator=",">
+                <button class="btn btn-outline-success btn-sm btn-xp-pro-step2-tech-add" type="button">
+                  <i class="bi bi-plus-lg"></i>
                 </button>
               </div>
+              <div class="xp-pro-step2-tech-badges">
+                {% if exp.env_tech %}
+                  {% for tech in exp.env_tech %}
+                    <span class="badge bg-info text-dark me-2 mb-2">
+                      {{ tech }}
+                      <button type="button" class="btn-xp-pro-step2-tech-remove" data-tech="{{ tech }}">×</button>
+                    </span>
+                  {% endfor %}
+                {% else %}
+                  <span class="text-muted small">Aucune technologie ajoutée</span>
+                {% endif %}
+              </div>
             </div>
+
+            <!-- Sous-section 3: Réalisations -->
+            <div class="mb-4">
+              <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-list-check"></i> Réalisations</span>
+              </label>
+              <div id="realizations-{{ forloop.counter0 }}" class="xp-pro-step2-realizations ps-2">
+                {% for realization in exp.description %}
+                {% include "formulaire/partials/xp_pro_hierarchy_item.html" with item=realization exp_index=forloop.counter0 depth=0 candidat=candidat xp_pro_placeholders=placeholders.xp_pro %}
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Boutons Ajouter puis Enregistrer unique pour les 3 sous-sections -->
+            <div class="d-flex gap-2 align-items-center pt-3 border-top">
+              <button type="button"
+                      class="btn btn-sm btn-secondary btn-xp-pro-step2-add-realization">
+                <i class="bi bi-plus-lg"></i> Ajouter une Activité
+              </button>
+              <button type="button"
+                      class="btn btn-sm btn-success btn-xp-pro-step2-save"
+                      data-exp-index="{{ forloop.counter0 }}"
+                      data-candidat-pk="{{ candidat.pk }}">
+                <i class="bi bi-check-lg"></i> Enregistrer
+              </button>
+              </div>
           </div>
         {% endfor %}
       {% else %}
@@ -506,6 +528,8 @@
 
 <script>
 const CANDIDAT_PK = '{{ candidat.pk }}';
+const CANDIDAT_SLUG = '{{ candidat.slug }}';
+const CANDIDAT_DISPLAY_URL = '/candidat/{{ candidat.slug }}/modifier/';
 
 // ========================================================================
 // MARK: POSTE_CIBLE HANDLERS (poste_cible_item.html)
@@ -571,23 +595,13 @@ function addPostesCible(e) {
 
 function activatePostesCible(e) {
   const radio = e.target;
-  const candidatPk = radio.dataset.candidatPk;
-  const posteCibleId = radio.dataset.posteCible;
-
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/activer/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .catch(err => console.error('Erreur activatePostesCible:', err));
+  const posteCibleTitle = radio.closest('.list-group-item')?.querySelector('input')?.value || 'ce poste';
+  console.log(`[DIRTY] poste_cible marqué comme modifié (activation: ${posteCibleTitle})`);
+  dirtyState.poste_cible = true;
 }
 
 function updatePostesCible(e) {
   const input = e.target;
-  const candidatPk = input.dataset.candidatPk;
-  const posteCibleId = input.dataset.posteCible;
   const title = input.value.trim();
 
   // Ne faire la requête que si le titre a changé
@@ -595,27 +609,19 @@ function updatePostesCible(e) {
     return;
   }
 
-  const formData = new FormData();
-  formData.append('title', title);
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/mettre-a-jour/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(() => {
-    input.dataset.originalTitle = title;
-  })
-  .catch(err => console.error('Erreur updatePostesCible:', err));
+  console.log(`[DIRTY] poste_cible marqué comme modifié (mise à jour titre: ${title})`);
+  dirtyState.poste_cible = true;
 }
 
 function deletePostesCible(e) {
   e.preventDefault();
+  const btn = e.target.closest('.poste-cible-delete');
+  const posteCibleTitle = btn.closest('.list-group-item')?.querySelector('input')?.value || 'ce poste';
   if (!confirm('Supprimer cette variante de poste ?')) {
     return;
   }
+  console.log(`[DELETE] Utilisateur supprime le poste cible: ${posteCibleTitle}`);
 
-  const btn = e.target.closest('.poste-cible-delete');
   const candidatPk = btn.dataset.candidatPk;
   const posteCibleId = btn.dataset.posteCible;
 
@@ -627,6 +633,7 @@ function deletePostesCible(e) {
     body: formData,
   })
   .then(() => {
+    console.log(`[DELETE SUCCESS] Poste cible ${posteCibleTitle} supprimé avec succès, section marqué comme modifié`);
     const itemDiv = document.getElementById(`poste-cible-${posteCibleId}`);
     if (itemDiv) {
       itemDiv.remove();
@@ -636,8 +643,152 @@ function deletePostesCible(e) {
     if (listDiv.children.length === 0) {
       listDiv.innerHTML = '<p class="text-muted fst-italic">Aucune variante ajoutée</p>';
     }
+    // Marquer comme modifié
+    if (!dirtyState['poste_cible']) {
+      dirtyState['poste_cible'] = true;
+    }
   })
-  .catch(err => console.error('Erreur deletePostesCible:', err));
+  .catch(err => console.error(`[ERROR] Exception lors de la suppression poste cible:`, err));
+}
+
+// ========================================================================
+// MARK: SKILLS_CIBLE HANDLERS (skills_cible_item.html)
+// ========================================================================
+
+function initSkillsCibleHandlers() {
+  // Bouton pour ajouter une compétence cible
+  document.querySelectorAll('.btn-skills-cible-add').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', addSkillsCible);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Checkbox pour activer/désactiver une compétence cible
+  document.querySelectorAll('.skills-cible-checkbox').forEach(input => {
+    if (!input.hasAttribute('data-listener-initialized')) {
+      input.addEventListener('change', toggleSkillsCible);
+      input.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Input pour modifier le titre
+  document.querySelectorAll('#skills-cible-list input[type="text"]').forEach(input => {
+    if (!input.hasAttribute('data-listener-initialized')) {
+      input.addEventListener('blur', updateSkillsCible);
+      input.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Bouton pour supprimer une compétence cible
+  document.querySelectorAll('.skills-cible-delete').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', deleteSkillsCible);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+}
+
+function addSkillsCible(e) {
+  e.preventDefault();
+  const candidatPk = e.target.closest('.btn-skills-cible-add').dataset.candidatPk;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/skills-cible/ajouter/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => r.text())
+  .then(html => {
+    const listDiv = document.getElementById('skills-cible-list');
+    const emptyMsg = listDiv.querySelector('.text-muted.fst-italic');
+    if (emptyMsg) {
+      emptyMsg.remove();
+    }
+    listDiv.insertAdjacentHTML('beforeend', html);
+    initSkillsCibleHandlers();
+  })
+  .catch(err => console.error('Erreur addSkillsCible:', err));
+}
+
+function toggleSkillsCible(e) {
+  const checkbox = e.target;
+  const candidatPk = checkbox.dataset.candidatPk;
+  const skillsCibleId = checkbox.dataset.skillsCible;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/skills-cible/${skillsCibleId}/toggle/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .catch(err => console.error('Erreur toggleSkillsCible:', err));
+}
+
+function updateSkillsCible(e) {
+  const input = e.target;
+  const candidatPk = input.dataset.candidatPk;
+  const skillsCibleId = input.dataset.skillsCible;
+  const title = input.value.trim();
+
+  // Ne faire la requête que si le titre a changé
+  if (title === input.dataset.originalTitle) {
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/skills-cible/${skillsCibleId}/mettre-a-jour/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(() => {
+    input.dataset.originalTitle = title;
+  })
+  .catch(err => console.error('Erreur updateSkillsCible:', err));
+}
+
+function deleteSkillsCible(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.skills-cible-delete');
+  const skillsCibleTitle = btn.closest('.list-group-item')?.querySelector('input')?.value || 'cette compétence';
+  if (!confirm('Supprimer cette compétence cible ?')) {
+    return;
+  }
+  console.log(`[DELETE] Utilisateur supprime la compétence cible: ${skillsCibleTitle}`);
+
+  const candidatPk = btn.dataset.candidatPk;
+  const skillsCibleId = btn.dataset.skillsCible;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/skills-cible/${skillsCibleId}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(() => {
+    console.log(`[DELETE SUCCESS] Compétence cible ${skillsCibleTitle} supprimée avec succès, section marqué comme modifié`);
+    const itemDiv = document.getElementById(`skills-cible-${skillsCibleId}`);
+    if (itemDiv) {
+      itemDiv.remove();
+    }
+    // Vérifier si la liste est vide et afficher le message
+    const listDiv = document.getElementById('skills-cible-list');
+    if (listDiv.children.length === 0) {
+      listDiv.innerHTML = '<p class="text-muted fst-italic">Aucune compétence cible ajoutée</p>';
+    }
+    // Marquer comme modifié
+    if (!dirtyState['skills_cible']) {
+      dirtyState['skills_cible'] = true;
+    }
+  })
+  .catch(err => console.error(`[ERROR] Exception lors de la suppression compétence cible:`, err));
 }
 
 // ========================================================================
@@ -685,6 +836,10 @@ function addMainSkillsHierarchyParentItem(e) {
   const btn = e.target.closest('.btn-main-skills-hierarchy-add-root');
   const section = btn.dataset.section; // 'bullet' ou 'table'
   const candidatPk = btn.dataset.candidatPk;
+  const dirtyKey = `main_skills_${section}`;
+
+  console.log(`[DIRTY] ${dirtyKey} marqué comme modifié (ajout domaine)`);
+  dirtyState[dirtyKey] = true;
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
@@ -720,12 +875,16 @@ function addMainSkillsHierarchyChildItem(e) {
   const childDepth = depth + 1;
 
   const section = endpointBase.replace('main_skills_', ''); // 'bullet' ou 'table'
+  const dirtyKey = `main_skills_${section}`;
 
   // Refuser si on dépasse la limite de profondeur (max 2 niveaux: 0, 1)
   if (childDepth > 1) {
     alert(`⚠️ Limite de profondeur atteinte (2 niveaux maximum)`);
     return;
   }
+
+  console.log(`[DIRTY] ${dirtyKey} marqué comme modifié (ajout sous-domaine)`);
+  dirtyState[dirtyKey] = true;
 
   const formData = new FormData();
   formData.append('parent_id', itemId);
@@ -755,11 +914,16 @@ function updateMainSkillsHierarchyItem(e) {
   const input = e.target;
   const itemId = input.dataset.itemId;
   const endpointBase = input.dataset.endpointBase;
+  const title = input.value.trim();
 
   const section = endpointBase.replace('main_skills_', '');
+  const dirtyKey = `main_skills_${section}`;
+
+  console.log(`[DIRTY] ${dirtyKey} marqué comme modifié (modification titre: ${title})`);
+  dirtyState[dirtyKey] = true;
 
   const formData = new FormData();
-  formData.append('title', input.value);
+  formData.append('title', title);
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
   fetch(`/candidat/${CANDIDAT_PK}/main_skills/${section}/item/${itemId}/mettre-a-jour/`, {
@@ -778,13 +942,17 @@ function deleteMainSkillsHierarchyItem(e) {
   const depth = parseInt(btn.dataset.depth || '0');
   const item = document.getElementById(`item-${itemId}`);
   const title = item?.querySelector('.main-skills-hierarchy-title')?.value || 'cet élément';
-  
-  const message = depth === 0 
+  const section = endpointBase.replace('main_skills_', '');
+
+  const message = depth === 0
     ? `Supprimer le domaine de compétences: ${title} ?\n\nCela supprimera aussi tous les sous-domaines et est irréversible.`
     : `Supprimer: ${title} et ses enfants ?\n\nCette action est irréversible.`;
 
   if (confirm(message)) {
-    const section = endpointBase.replace('main_skills_', '');
+    console.log(`[DELETE] Utilisateur supprime ${section}: ${title}`);
+    const dirtyKey = `main_skills_${section}`;
+    dirtyState[dirtyKey] = true;
+
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
@@ -793,11 +961,271 @@ function deleteMainSkillsHierarchyItem(e) {
       body: formData,
     })
     .then(() => {
+      console.log(`[DELETE SUCCESS] ${section} ${title} supprimé avec succès, section marqué comme modifié`);
       const itemDiv = document.getElementById(`item-${itemId}`);
       if (itemDiv) itemDiv.remove();
     })
-    .catch(err => console.error('Erreur deleteMainSkillsHierarchyItem:', err));
+    .catch(err => console.error(`[ERROR] Exception lors de la suppression ${section}:`, err));
   }
+}
+
+// ========================================================================
+// MARK: FORMATION/CERTIFICATION/LANGUE HANDLERS - Delete buttons
+// ========================================================================
+
+function initFormationCertificationLangueHandlers() {
+  // Formation add form submit - AJAX
+  const formationForm = document.querySelector('#formation-add-form');
+  if (formationForm && !formationForm.hasAttribute('data-listener-initialized')) {
+    formationForm.addEventListener('submit', addFormation);
+    formationForm.setAttribute('data-listener-initialized', 'true');
+  }
+
+  // Certification add form submit - AJAX
+  const certificationForm = document.querySelector('#certification-add-form');
+  if (certificationForm && !certificationForm.hasAttribute('data-listener-initialized')) {
+    certificationForm.addEventListener('submit', addCertification);
+    certificationForm.setAttribute('data-listener-initialized', 'true');
+  }
+
+  // Langue add form submit - AJAX
+  const langueForm = document.querySelector('#langue-add-form');
+  if (langueForm && !langueForm.hasAttribute('data-listener-initialized')) {
+    langueForm.addEventListener('submit', addLangue);
+    langueForm.setAttribute('data-listener-initialized', 'true');
+  }
+
+  // Formation delete
+  document.querySelectorAll('.btn-formation-remove').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', removeFormation);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Certification delete
+  document.querySelectorAll('.btn-certification-remove').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', removeCertification);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Langue delete
+  document.querySelectorAll('.btn-langue-remove').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', removeLangue);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+}
+
+// ========================================================================
+// MARK: FORMATIONS / CERTIFICATIONS / LANGUES ADD HANDLERS (AJAX)
+// ========================================================================
+
+function addFormation(e) {
+  e.preventDefault();
+  const form = e.target;
+  const candidatPk = form.action.split('/')[3]; // Extraire PK de l'URL
+  const title = form.querySelector('input[name="title"]').value.trim();
+
+  console.log(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour formation: ${title}`);
+
+  const formData = new FormData(form);
+
+  fetch(form.action, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      return r.text();
+    } else {
+      console.error(`[ERROR] Erreur ajout formation: réponse HTTP ${r.status}`);
+      throw new Error(`HTTP ${r.status}`);
+    }
+  })
+  .then(html => {
+    console.log(`[SUCCESS] Formation ${title} ajoutée avec succès`);
+    const listDiv = document.getElementById('formations-list');
+    const emptyMsg = listDiv.querySelector('.text-muted');
+    if (emptyMsg) {
+      emptyMsg.remove();
+    }
+    listDiv.insertAdjacentHTML('beforeend', html);
+    form.reset();
+    initFormationCertificationLangueHandlers();
+  })
+  .catch(err => console.error(`[ERROR] Exception lors de l'ajout formation:`, err));
+}
+
+function addCertification(e) {
+  e.preventDefault();
+  const form = e.target;
+  const candidatPk = form.action.split('/')[3]; // Extraire PK de l'URL
+  const title = form.querySelector('input[name="title"]').value.trim();
+
+  console.log(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour certification: ${title}`);
+
+  const formData = new FormData(form);
+
+  fetch(form.action, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      return r.text();
+    } else {
+      console.error(`[ERROR] Erreur ajout certification: réponse HTTP ${r.status}`);
+      throw new Error(`HTTP ${r.status}`);
+    }
+  })
+  .then(html => {
+    console.log(`[SUCCESS] Certification ${title} ajoutée avec succès`);
+    const listDiv = document.getElementById('certifications-list');
+    const emptyMsg = listDiv.querySelector('.text-muted');
+    if (emptyMsg) {
+      emptyMsg.remove();
+    }
+    listDiv.insertAdjacentHTML('beforeend', html);
+    form.reset();
+    initFormationCertificationLangueHandlers();
+  })
+  .catch(err => console.error(`[ERROR] Exception lors de l'ajout certification:`, err));
+}
+
+function addLangue(e) {
+  e.preventDefault();
+  const form = e.target;
+  const candidatPk = form.action.split('/')[3]; // Extraire PK de l'URL
+  const title = form.querySelector('input[name="title"]').value.trim();
+
+  console.log(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour langue: ${title}`);
+
+  const formData = new FormData(form);
+
+  fetch(form.action, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      return r.text();
+    } else {
+      console.error(`[ERROR] Erreur ajout langue: réponse HTTP ${r.status}`);
+      throw new Error(`HTTP ${r.status}`);
+    }
+  })
+  .then(html => {
+    console.log(`[SUCCESS] Langue ${title} ajoutée avec succès`);
+    const listDiv = document.getElementById('langues-list');
+    const emptyMsg = listDiv.querySelector('.text-muted');
+    if (emptyMsg) {
+      emptyMsg.remove();
+    }
+    listDiv.insertAdjacentHTML('beforeend', html);
+    form.reset();
+    initFormationCertificationLangueHandlers();
+  })
+  .catch(err => console.error(`[ERROR] Exception lors de l'ajout langue:`, err));
+}
+
+function removeFormation(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-formation-remove');
+  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette formation';
+  if (!confirm(`Supprimer la formation: ${title} ?\n\nCette action est irréversible.`)) {
+    return;
+  }
+  const candidatPk = btn.dataset.candidatPk;
+  const formationIndex = btn.dataset.formationIndex;
+  console.log(`[DELETE] Utilisateur supprime la formation: ${title}`);
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/formation/${formationIndex}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      console.log(`[DELETE SUCCESS] Formation ${title} supprimée avec succès`);
+      const formationDiv = btn.closest('.alert.alert-info');
+      if (formationDiv) {
+        formationDiv.remove();
+      }
+    } else {
+      console.error(`[ERROR] Erreur suppression formation: réponse HTTP ${r.status}`);
+    }
+  })
+  .catch(err => console.error(`[ERROR] Exception lors de la suppression formation:`, err));
+}
+
+function removeCertification(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-certification-remove');
+  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette certification';
+  if (!confirm(`Supprimer la certification: ${title} ?\n\nCette action est irréversible.`)) {
+    return;
+  }
+  const candidatPk = btn.dataset.candidatPk;
+  const certificationIndex = btn.dataset.certificationIndex;
+  console.log(`[DELETE] Utilisateur supprime la certification: ${title}`);
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/certification/${certificationIndex}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      console.log(`[DELETE SUCCESS] Certification ${title} supprimée avec succès`);
+      const certDiv = btn.closest('.alert.alert-info');
+      if (certDiv) {
+        certDiv.remove();
+      }
+    } else {
+      console.error(`[ERROR] Erreur suppression certification: réponse HTTP ${r.status}`);
+    }
+  })
+  .catch(err => console.error(`[ERROR] Exception lors de la suppression certification:`, err));
+}
+
+function removeLangue(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-langue-remove');
+  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette langue';
+  if (!confirm(`Supprimer la langue: ${title} ?\n\nCette action est irréversible.`)) {
+    return;
+  }
+  const candidatPk = btn.dataset.candidatPk;
+  const langueIndex = btn.dataset.langueIndex;
+  console.log(`[DELETE] Utilisateur supprime la langue: ${title}`);
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/langue/${langueIndex}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      console.log(`[DELETE SUCCESS] Langue ${title} supprimée avec succès`);
+      const langueDiv = btn.closest('.alert.alert-info');
+      if (langueDiv) {
+        langueDiv.remove();
+      }
+    } else {
+      console.error(`[ERROR] Erreur suppression langue: réponse HTTP ${r.status}`);
+    }
+  })
+  .catch(err => console.error('Erreur removeLangue:', err));
 }
 
 // ========================================================================
@@ -905,8 +1333,8 @@ function updateXpProHierarchyItem(e) {
   const expIndex = input.dataset.targetIndex;
 
   // Marquer comme dirty pour auto-save 5s
-  if (!dirtyState.xp_pro_realization[expIndex]) {
-    dirtyState.xp_pro_realization[expIndex] = true;
+  if (!dirtyState.xp_pro_step2[expIndex]) {
+    dirtyState.xp_pro_step2[expIndex] = true;
   }
 }
 
@@ -919,12 +1347,13 @@ function deleteXpProHierarchyItem(e) {
   const depth = parseInt(btn.dataset.depth || '0');
   const item = document.getElementById(`item-${itemId}`);
   const title = item?.querySelector('.xp-pro-hierarchy-title')?.value || 'cet élément';
-  
+
   const message = depth === 0
     ? `Supprimer la réalisation: ${title} ?\n\nCela supprimera aussi toutes les sous-tâches et est irréversible.`
     : `Supprimer: ${title} et ses enfants ?\n\nCette action est irréversible.`;
 
   if (confirm(message)) {
+    console.log(`[DELETE] Utilisateur supprime réalisation: ${title} (xp_pro_step2[${expIndex}])`);
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
@@ -933,10 +1362,15 @@ function deleteXpProHierarchyItem(e) {
       body: formData,
     })
     .then(() => {
+      console.log(`[DELETE SUCCESS] Réalisation ${title} supprimée, xp_pro_step2[${expIndex}] marqué comme modifié`);
       const itemDiv = document.getElementById(`item-${itemId}`);
       if (itemDiv) itemDiv.remove();
+      // Marquer comme modifié
+      if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
+      if (!dirtyState.xp_pro_step2[expIndex]) dirtyState.xp_pro_step2[expIndex] = true;
+      else if (typeof dirtyState.xp_pro_step2[expIndex] === 'object') dirtyState.xp_pro_step2[expIndex].dirty = true;
     })
-    .catch(err => console.error('Erreur deleteXpProHierarchyItem:', err));
+    .catch(err => console.error(`[ERROR] Exception lors de la suppression réalisation:`, err));
   }
 }
 
@@ -945,12 +1379,58 @@ function deleteXpProHierarchyItem(e) {
 // ========================================================================
 
 function initExperienceHandlers() {
+  // Experience add form submit - AJAX
+  const experienceForm = document.querySelector('#experience-add-form');
+  if (experienceForm && !experienceForm.hasAttribute('data-listener-initialized')) {
+    experienceForm.addEventListener('submit', addExperience);
+    experienceForm.setAttribute('data-listener-initialized', 'true');
+  }
+
   document.querySelectorAll('.btn-experience-remove').forEach(btn => {
     if (!btn.hasAttribute('data-listener-initialized')) {
       btn.addEventListener('click', removeExperience);
       btn.setAttribute('data-listener-initialized', 'true');
     }
   });
+}
+
+function addExperience(e) {
+  e.preventDefault();
+  const form = e.target;
+  const poste = form.querySelector('input[name="poste"]').value.trim();
+  const company = form.querySelector('input[name="company"]').value.trim();
+
+  console.log(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour expérience: ${poste} chez ${company}`);
+
+  const formData = new FormData(form);
+
+  fetch(form.action, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      return r.text();
+    } else {
+      console.error(`[ERROR] Erreur ajout expérience: réponse HTTP ${r.status}`);
+      throw new Error(`HTTP ${r.status}`);
+    }
+  })
+  .then(html => {
+    console.log(`[SUCCESS] Expérience ${poste} chez ${company} ajoutée avec succès`);
+    const listDiv = document.getElementById('experiences-list');
+    const emptyMsg = listDiv.querySelector('.text-muted');
+    if (emptyMsg) {
+      emptyMsg.remove();
+    }
+    listDiv.insertAdjacentHTML('beforeend', html);
+    form.reset();
+    initExperienceHandlers();
+    // Réinitialiser aussi les handlers xp_pro
+    initXpProHierarchyHandlers();
+    initXpProStep2Handlers();
+  })
+  .catch(err => console.error(`[ERROR] Exception lors de l'ajout expérience:`, err));
 }
 
 function removeExperience(e) {
@@ -963,6 +1443,8 @@ function removeExperience(e) {
   if (!confirm(`Supprimer l'expérience: ${poste}${subtitle} ?\n\nCette action supprimera aussi toutes les réalisations associées et est irréversible.`)) {
     return;
   }
+  console.log(`[DELETE] Utilisateur supprime l'expérience: ${poste}${subtitle}`);
+
   const candidatPk = btn.dataset.candidatPk;
   const expIndex = btn.dataset.expIndex;
 
@@ -975,150 +1457,65 @@ function removeExperience(e) {
   })
   .then(r => {
     if (r.ok) {
+      console.log(`[DELETE SUCCESS] Expérience ${poste}${subtitle} supprimée avec succès`);
       // Remove the experience card from the DOM
-      const expDiv = btn.closest('.alert.alert-warning');
+      const expDiv = btn.closest('.alert.alert-xp-pro');
       if (expDiv) {
         expDiv.remove();
       }
     } else {
-      console.error('Erreur suppression expérience:', r.status);
+      console.error(`[ERROR] Erreur suppression expérience: réponse HTTP ${r.status}`);
     }
   })
-  .catch(err => console.error('Erreur removeExperience:', err));
-}
-
-// ========================================================================
-// MARK: FORMATION/CERTIFICATION/LANGUE HANDLERS - Delete buttons
-// ========================================================================
-
-function initFormationCertificationLangueHandlers() {
-  // Formation delete
-  document.querySelectorAll('.btn-formation-remove').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', removeFormation);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-  
-  // Certification delete
-  document.querySelectorAll('.btn-certification-remove').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', removeCertification);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-  
-  // Langue delete
-  document.querySelectorAll('.btn-langue-remove').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', removeLangue);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-}
-
-function removeFormation(e) {
-  e.preventDefault();
-  const btn = e.target.closest('.btn-formation-remove');
-  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette formation';
-  if (!confirm(`Supprimer la formation: ${title} ?\n\nCette action est irréversible.`)) {
-    return;
-  }
-  const candidatPk = btn.dataset.candidatPk;
-  const formationIndex = btn.dataset.formationIndex;
-
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/formation/${formationIndex}/supprimer/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(r => {
-    if (r.ok) {
-      const formationDiv = btn.closest('.alert.alert-info');
-      if (formationDiv) {
-        formationDiv.remove();
-      }
-    } else {
-      console.error('Erreur suppression formation:', r.status);
-    }
-  })
-  .catch(err => console.error('Erreur removeFormation:', err));
-}
-
-function removeCertification(e) {
-  e.preventDefault();
-  const btn = e.target.closest('.btn-certification-remove');
-  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette certification';
-  if (!confirm(`Supprimer la certification: ${title} ?\n\nCette action est irréversible.`)) {
-    return;
-  }
-  const candidatPk = btn.dataset.candidatPk;
-  const certificationIndex = btn.dataset.certificationIndex;
-
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/certification/${certificationIndex}/supprimer/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(r => {
-    if (r.ok) {
-      const certDiv = btn.closest('.alert.alert-success');
-      if (certDiv) {
-        certDiv.remove();
-      }
-    } else {
-      console.error('Erreur suppression certification:', r.status);
-    }
-  })
-  .catch(err => console.error('Erreur removeCertification:', err));
-}
-
-function removeLangue(e) {
-  e.preventDefault();
-  const btn = e.target.closest('.btn-langue-remove');
-  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette langue';
-  if (!confirm(`Supprimer la langue: ${title} ?\n\nCette action est irréversible.`)) {
-    return;
-  }
-  const candidatPk = btn.dataset.candidatPk;
-  const langueIndex = btn.dataset.langueIndex;
-
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/langue/${langueIndex}/supprimer/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(r => {
-    if (r.ok) {
-      const langueDiv = btn.closest('.alert.alert-info');
-      if (langueDiv) {
-        langueDiv.remove();
-      }
-    } else {
-      console.error('Erreur suppression langue:', r.status);
-    }
-  })
-  .catch(err => console.error('Erreur removeLangue:', err));
+  .catch(err => console.error(`[ERROR] Exception lors de la suppression expérience:`, err));
 }
 
 // ========================================================================
 // MARK: XP_PRO STEP 2 HANDLERS - Unified handler for contexte + technologies + realizations
 // ========================================================================
 
-let xpProStep2DirtyState = {}; // Tracking dirty state per experience
-
 function initXpProStep2Handlers() {
-  // Bouton Enregistrer
+  // Bouton Enregistrer (utilise le système auto-save unifié)
   document.querySelectorAll('.btn-xp-pro-step2-save').forEach(btn => {
     if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', (e) => saveXpProStep2(e, false));
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const container = this.closest('.xp-pro-step2-container');
+        const expIndex = container.dataset.expIndex;
+        console.log(`[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour xp_pro_step2[${expIndex}]`);
+        saveData('xp_pro_step2', true, container);
+      });
       btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Context textarea - mark dirty on change
+  document.querySelectorAll('.xp-pro-step2-context').forEach(textarea => {
+    if (!textarea.hasAttribute('data-listener-initialized')) {
+      textarea.addEventListener('input', function(e) {
+        const container = this.closest('.xp-pro-step2-container');
+        const expIndex = container.dataset.expIndex;
+        console.log(`[DIRTY] Utilisateur modifie le contexte pour xp_pro_step2[${expIndex}]`);
+        if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
+        dirtyState.xp_pro_step2[expIndex] = true;
+      });
+      textarea.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Tech input - mark dirty on change
+  document.querySelectorAll('.xp-pro-step2-tech-input').forEach(input => {
+    if (!input.hasAttribute('data-listener-initialized')) {
+      input.addEventListener('input', function(e) {
+        const container = this.closest('.xp-pro-step2-container');
+        const expIndex = container.dataset.expIndex;
+        if (this.value.trim()) {
+          console.log(`[DIRTY] Utilisateur ajoute une technologie pour xp_pro_step2[${expIndex}]`);
+          if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
+          dirtyState.xp_pro_step2[expIndex] = true;
+        }
+      });
+      input.setAttribute('data-listener-initialized', 'true');
     }
   });
 
@@ -1146,54 +1543,32 @@ function initXpProStep2Handlers() {
     }
   });
 
-  // Auto-save sur contexte et technologies (dirty tracking)
-  document.querySelectorAll('.xp-pro-step2-context').forEach(textarea => {
-    if (!textarea.hasAttribute('data-listener-initialized')) {
-      textarea.addEventListener('input', () => markXpProStep2Dirty(textarea));
-      textarea.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  document.querySelectorAll('.xp-pro-step2-tech-input').forEach(input => {
-    if (!input.hasAttribute('data-listener-initialized')) {
-      input.addEventListener('input', () => markXpProStep2Dirty(input));
-      input.setAttribute('data-listener-initialized', 'true');
-    }
-  });
 }
 
-function markXpProStep2Dirty(element) {
-  const container = element.closest('.xp-pro-step2-container');
-  if (!container) return;
-
-  const expIndex = container.dataset.expIndex;
-  if (!xpProStep2DirtyState[expIndex]) {
-    xpProStep2DirtyState[expIndex] = { dirty: false, timeout: null };
-  }
-
-  xpProStep2DirtyState[expIndex].dirty = true;
-
-  // Schedule auto-save in 5 seconds
-  clearTimeout(xpProStep2DirtyState[expIndex].timeout);
-  xpProStep2DirtyState[expIndex].timeout = setTimeout(() => {
-    saveXpProStep2(null, true, container); // Auto-save (silent mode)
-  }, 5000);
-}
+// Note: dirty tracking pour xp_pro_step2 est géré dans initAutosaveHandlers()
 
 function addXpProStep2Technology(e) {
   e.preventDefault();
   const btn = e.target.closest('.btn-xp-pro-step2-tech-add');
   const container = btn.closest('.xp-pro-step2-container');
+  const expIndex = container.dataset.expIndex;
   const input = container.querySelector('.xp-pro-step2-tech-input');
   const badgesDiv = container.querySelector('.xp-pro-step2-tech-badges');
 
   const techs = input.value.split(',').map(t => t.trim()).filter(t => t);
   if (techs.length === 0) return;
 
+  // Supprimer le texte "Aucune technologie ajoutée" si c'est le premier badge
+  const emptyMsg = badgesDiv.querySelector('.text-muted');
+  if (emptyMsg) emptyMsg.remove();
+
   techs.forEach(tech => {
+    // Nettoyer les guillemets d'échappement si présents
+    const cleanedTech = tech.replace(/^\"|\"$/g, '');
+    console.log(`[DIRTY] Utilisateur ajoute la technologie: ${cleanedTech} (xp_pro_step2[${expIndex}])`);
     const badge = document.createElement('span');
     badge.className = 'badge bg-info text-dark me-2 mb-2';
-    badge.innerHTML = `${tech} <button type="button" class="btn-xp-pro-step2-tech-remove" data-tech="${tech}" style="border: none; background: none; color: inherit; cursor: pointer; margin-left: 5px;">×</button>`;
+    badge.innerHTML = `${cleanedTech} <button type="button" class="btn-xp-pro-step2-tech-remove" data-tech="${cleanedTech}" style="border: none; background: none; color: inherit; cursor: pointer; margin-left: 5px;">×</button>`;
 
     const removeBtn = badge.querySelector('.btn-xp-pro-step2-tech-remove');
     removeBtn.addEventListener('click', removeXpProStep2Technology);
@@ -1202,15 +1577,23 @@ function addXpProStep2Technology(e) {
   });
 
   input.value = '';
-  markXpProStep2Dirty(input);
+  if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
+  dirtyState.xp_pro_step2[expIndex] = true;
 }
 
 function removeXpProStep2Technology(e) {
   e.preventDefault();
   const badge = e.target.closest('.badge');
   if (badge) {
+    const tech = badge.textContent.replace('×', '').trim();
+    const container = e.target.closest('.xp-pro-step2-container');
+    const expIndex = container?.dataset.expIndex;
+    console.log(`[DELETE] Utilisateur supprime la technologie: ${tech} (xp_pro_step2[${expIndex}])`);
     badge.remove();
-    markXpProStep2Dirty(e.target);
+    console.log(`[DELETE SUCCESS] Technologie ${tech} supprimée`);
+    console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié`);
+    if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
+    dirtyState.xp_pro_step2[expIndex] = true;
   }
 }
 
@@ -1220,6 +1603,8 @@ function addXpProStep2Realization(e) {
   const container = btn.closest('.xp-pro-step2-container');
   const expIndex = container.dataset.expIndex;
   const candidatPk = container.dataset.candidatPk;
+
+  console.log(`[DIRTY] Utilisateur ajoute une réalisation pour xp_pro_step2[${expIndex}]`);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
@@ -1233,96 +1618,18 @@ function addXpProStep2Realization(e) {
     const realizationsDiv = container.querySelector(`#realizations-${expIndex}`);
     realizationsDiv.insertAdjacentHTML('beforeend', html);
     initXpProHierarchyHandlers();
-    markXpProStep2Dirty(btn);
+    if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
+    dirtyState.xp_pro_step2[expIndex] = true;
   })
   .catch(err => console.error('Erreur addXpProStep2Realization:', err));
 }
 
-function saveXpProStep2(e, isSilent = true, containerOverride = null) {
-  let container = containerOverride;
-  if (!container && e) {
-    const btn = e.target.closest('.btn-xp-pro-step2-save');
-    container = btn?.closest('.xp-pro-step2-container');
-  }
-
-  if (!container) return;
-
-  const expIndex = container.dataset.expIndex;
-  const candidatPk = container.dataset.candidatPk;
-  const btn = container.querySelector('.btn-xp-pro-step2-save');
-
-  // Check if dirty
-  if (!xpProStep2DirtyState[expIndex]?.dirty) return;
-
-  // Collect data from 3 subsections
-  const context = container.querySelector('.xp-pro-step2-context').value.trim();
-
-  // Get technologies from badges
-  const techBadges = container.querySelectorAll('.badge');
-  const envTech = Array.from(techBadges)
-    .map(badge => badge.textContent.replace('×', '').trim())
-    .filter(t => t);
-
-  // Build realization tree
-  const realizationsDiv = container.querySelector('.xp-pro-step2-realizations');
-  const realizations = buildXpProStep2RealizationTree(realizationsDiv);
-
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-  formData.append('context', context);
-  formData.append('env_tech', JSON.stringify(envTech));
-  formData.append('realizations', JSON.stringify(realizations));
-
-  // Show feedback if explicit click (not auto-save)
-  const originalText = btn?.innerHTML;
-  if (!isSilent && btn) {
-    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
-    btn.disabled = true;
-  }
-
-  fetch(`/candidat/${candidatPk}/experience/${expIndex}/step2-update/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.status === 'ok') {
-      xpProStep2DirtyState[expIndex].dirty = false;
-
-      if (!isSilent && btn) {
-        btn.innerHTML = '<i class="bi bi-check-lg"></i> Enregistré !';
-        btn.classList.remove('btn-outline-primary');
-        btn.classList.add('btn-outline-success');
-        setTimeout(() => {
-          btn.innerHTML = originalText;
-          btn.classList.remove('btn-outline-success');
-          btn.classList.add('btn-outline-primary');
-          btn.disabled = false;
-        }, 2000);
-      }
-    } else {
-      throw new Error(data.error || 'Erreur inconnue');
-    }
-  })
-  .catch(err => {
-    console.error('Erreur saveXpProStep2:', err);
-    if (!isSilent && btn) {
-      btn.innerHTML = '<i class="bi bi-exclamation-circle"></i> ✗ Erreur';
-      btn.classList.remove('btn-outline-primary');
-      btn.classList.add('btn-outline-danger');
-      setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.classList.remove('btn-outline-danger');
-        btn.classList.add('btn-outline-primary');
-        btn.disabled = false;
-      }, 2000);
-    }
-  });
-}
+// saveXpProStep2() a été supprimée et consolidée dans saveData() avec autosaveConfig.xp_pro_step2
 
 function buildXpProStep2RealizationTree(container) {
   const items = [];
-  // Les items root sont les divs avec id="item-xxx" qui sont des enfants directs de .xp-pro-step2-realizations
+  // Chercher tous les items avec classe xp-pro-hierarchy-item qui sont des enfants directs
+  if (!container) return items;
   container.querySelectorAll(':scope > .xp-pro-hierarchy-item').forEach(itemDiv => {
     const item = buildXpProStep2SingleItem(itemDiv);
     if (item) items.push(item);
@@ -1372,6 +1679,16 @@ const autosaveConfig = {
     endpoint: () => `/candidat/${CANDIDAT_PK}/poste-cible/bulk-update/`,
     type: 'bulk'
   },
+  skills_cible: {
+    dirtyKey: 'skills_cible',
+    getItems: () => Array.from(document.querySelectorAll('#skills-cible-list input[type="text"]')).map(input => ({
+      id: input.dataset.skillsCible,
+      title: input.value.trim(),
+      active: document.querySelector(`input[data-skills-cible="${input.dataset.skillsCible}"][type="checkbox"]`)?.checked || false,
+    })),
+    endpoint: () => `/candidat/${CANDIDAT_PK}/skills-cible/bulk-update/`,
+    type: 'bulk'
+  },
   main_skills_bullet: {
     dirtyKey: 'main_skills_bullet',
     getItems: () => Array.from(document.querySelectorAll('#main_skills_bullet_list .main-skills-hierarchy-item')).map(item => ({
@@ -1390,74 +1707,116 @@ const autosaveConfig = {
     endpoint: () => `/candidat/${CANDIDAT_PK}/main_skills/table/bulk-update/`,
     type: 'bulk'
   },
-  xp_pro_realization: {
-    dirtyKey: 'xp_pro_realization',
-    getItems: (expIndex) => Array.from(document.querySelectorAll(`#realizations-${expIndex} .xp-pro-hierarchy-item`)).map(item => ({
-      id: item.dataset.itemId,
-      title: item.querySelector('.xp-pro-hierarchy-title').value.trim(),
-    })),
-    endpoint: (expIndex) => `/candidat/${CANDIDAT_PK}/experience/${expIndex}/realization/bulk-update/`,
-    type: 'bulk-per-exp'
-  },
-  xp_pro_context: {
-    dirtyKey: 'xp_pro_context',
-    type: 'single'
+  xp_pro_step2: {
+    dirtyKey: 'xp_pro_step2',
+    getItems: (expIndex) => {
+      const container = document.querySelector(`.xp-pro-step2-container[data-exp-index="${expIndex}"]`);
+      if (!container) return null;
+
+      const context = container.querySelector('.xp-pro-step2-context').value.trim();
+      const techBadges = container.querySelectorAll('.badge');
+      const envTech = Array.from(techBadges)
+        .map(badge => badge.textContent.replace('×', '').trim())
+        .map(tech => tech.replace(/^"|"$/g, '')) // Enlever les guillemets d'échappement
+        .filter(t => t);
+      const realizationsDiv = container.querySelector('.xp-pro-step2-realizations');
+      const realizations = buildXpProStep2RealizationTree(realizationsDiv);
+
+      return { context, env_tech: envTech, description: realizations };
+    },
+    endpoint: (expIndex) => `/candidat/${CANDIDAT_PK}/experience/${expIndex}/step2-update/`,
+    type: 'xp_pro_step2'
   }
 };
 
-// Tracking des sections modifiées (dirty state)
+// Tracking des sections modifiés (dirty state)
 const dirtyState = {
   poste_cible: false,
+  skills_cible: false,
   main_skills_bullet: false,
   main_skills_table: false,
-  xp_pro_realization: {}, // Keyed by expIndex
-  xp_pro_context: {}       // Keyed by expIndex
+  xp_pro_step2: {} // Keyed by expIndex (consolide contexte + techno + réalisations)
 };
+
+// Timer global d'auto-save (créé une seule fois au chargement)
+let autosaveTimer = null;
+
+function startAutosaveTimer() {
+  if (autosaveTimer) {
+    console.log('[AUTO-SAVE] Timer déjà actif');
+    return; // Timer déjà actif
+  }
+
+  console.log('[AUTO-SAVE] Démarrage du timer 5s');
+  autosaveTimer = setInterval(() => {
+    ['poste_cible', 'skills_cible', 'main_skills_bullet', 'main_skills_table'].forEach(section => {
+      if (dirtyState[section]) {
+        console.log(`[AUTO-SAVE] Sauvegarde de ${section} après 5s d'inactivité`);
+        saveData(section, false);
+      }
+    });
+    // Pour xp_pro_step2 (contexte + technos + réalisations, par expérience)
+    Object.entries(dirtyState.xp_pro_step2).forEach(([expIndex, isDirty]) => {
+      if (isDirty) {
+        console.log(`[AUTO-SAVE] Sauvegarde de xp_pro_step2[${expIndex}] après 5s d'inactivité`);
+        const container = document.querySelector(`.xp-pro-step2-container[data-exp-index="${expIndex}"]`);
+        if (container) {
+          saveData('xp_pro_step2', false, container);
+        }
+      }
+    });
+  }, 12000); // 12 secondes
+}
 
 // Fonction unifiée pour sauvegarder les données
 async function saveData(section, showFeedback = false, element = null) {
   const config = autosaveConfig[section];
   if (!config) return;
 
-  let items = [];
   let endpoint = '';
-
-  if (section === 'xp_pro_realization' && element) {
-    const expIndex = element.dataset.targetIndex || element.dataset.expIndex;
-    items = config.getItems(expIndex);
-    endpoint = config.endpoint(expIndex);
-    if (items.length === 0) return;
-  } else if (section === 'xp_pro_context' && element) {
-    // xp_pro_context est géré différemment (voir plus bas)
-    return;
-  } else if (config.type === 'bulk') {
-    items = config.getItems();
-    endpoint = config.endpoint();
-    if (items.length === 0) return;
-  }
-
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-  if (config.type.startsWith('bulk')) {
+
+  if (config.type === 'xp_pro_step2' && element) {
+    const expIndex = element.dataset.expIndex;
+    const data = config.getItems(expIndex);
+    if (!data) return;
+
+    endpoint = config.endpoint(expIndex);
+    formData.append('context', data.context);
+    formData.append('env_tech', JSON.stringify(data.env_tech));
+    formData.append('realizations', JSON.stringify(data.description));
+  } else if (config.type === 'bulk') {
+    const items = config.getItems();
+    endpoint = config.endpoint();
+    if (items.length === 0) return;
     formData.append('items', JSON.stringify(items));
+  } else {
+    return;
   }
 
   try {
     // Montrer le feedback si c'est un click-save
     let btn = null;
-    if (showFeedback && section !== 'xp_pro_realization') {
-      btn = document.querySelector(`[data-section="${section.replace('main_skills_', '')}"][data-candidat-pk="${CANDIDAT_PK}"].btn-main-skills-save`)
-         || document.querySelector(`[data-candidat-pk="${CANDIDAT_PK}"].btn-poste-cible-save`);
+    if (showFeedback) {
+      if (section === 'xp_pro_step2' && element) {
+        btn = element.querySelector('.btn-xp-pro-step2-save');
+      } else if (section === 'poste_cible') {
+        btn = document.querySelector('.btn-poste-cible-save');
+      } else if (section === 'skills_cible') {
+        btn = document.querySelector('.btn-skills-cible-save');
+      } else if (section === 'main_skills_bullet') {
+        btn = document.querySelector('.btn-main-skills-save[data-section="bullet"]');
+      } else if (section === 'main_skills_table') {
+        btn = document.querySelector('.btn-main-skills-save[data-section="table"]');
+      }
       if (btn) {
-        const textSpan = btn.querySelector('.btn-save-text');
+        const textSpan = btn.querySelector('.btn-save-text') || btn;
         textSpan.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
         btn.disabled = true;
-      }
-    } else if (showFeedback && section === 'xp_pro_realization' && element) {
-      btn = element.closest('.xp-pro-section')?.querySelector('.btn-xp-pro-realization-save');
-      if (btn) {
-        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
-        btn.disabled = true;
+        if (showFeedback) {
+          console.log(`[SAVING] Enregistrement en cours pour ${section}...`);
+        }
       }
     }
 
@@ -1466,28 +1825,58 @@ async function saveData(section, showFeedback = false, element = null) {
       body: formData,
     });
 
-    if (response.ok && showFeedback && btn) {
-      const textSpan = btn.querySelector('.btn-save-text') || btn;
-      textSpan.innerHTML = '<i class="bi bi-check-lg"></i> Enregistré !';
-      btn.disabled = false;
-      setTimeout(() => {
-        if (section === 'xp_pro_realization') {
-          btn.innerHTML = 'Enregistrer réalisations';
-        } else {
-          textSpan.innerHTML = 'Enregistrer';
-        }
-      }, 2000);
-    }
+    if (response.ok) {
+      if (showFeedback && btn) {
+        console.log(`[SUCCESS] ${section} enregistrée avec succès !`);
+        const textSpan = btn.querySelector('.btn-save-text') || btn;
+        // Sauvegarder les classes initiales du bouton
+        const initialClasses = btn.className;
 
-    // Marquer comme clean
-    if (section === 'xp_pro_realization' && element) {
-      const expIndex = element.dataset.targetIndex || element.dataset.expIndex;
-      dirtyState[section][expIndex] = false;
+        // Feedback de succès
+        textSpan.innerHTML = '<i class="bi bi-check-lg"></i> Enregistré !';
+        btn.classList.remove('btn-success', 'btn-primary', 'btn-secondary');
+        btn.classList.add('btn-outline-success');
+
+        // Restaurer après 2 secondes
+        setTimeout(() => {
+          textSpan.innerHTML = '<i class="bi bi-save"></i> Enregistrer';
+          btn.className = initialClasses; // Restaurer les classes initiales
+          btn.disabled = false;
+        }, 2000);
+      }
+
+      // Marquer comme clean
+      if (section === 'xp_pro_step2' && element) {
+        const expIndex = element.dataset.expIndex;
+        dirtyState.xp_pro_step2[expIndex] = false;
+        if (!showFeedback) {
+          console.log(`[AUTO-SAVE SUCCESS] xp_pro_step2[${expIndex}] enregistré automatiquement`);
+        }
+      } else {
+        dirtyState[section] = false;
+        // Mettre à jour les originalTitle pour poste_cible et skills_cible
+        if (section === 'poste_cible') {
+          document.querySelectorAll('#poste-cible-list input[type="text"]').forEach(input => {
+            input.dataset.originalTitle = input.value.trim();
+          });
+        } else if (section === 'skills_cible') {
+          document.querySelectorAll('#skills-cible-list input[type="text"]').forEach(input => {
+            input.dataset.originalTitle = input.value.trim();
+          });
+        }
+        if (!showFeedback) {
+          console.log(`[AUTO-SAVE SUCCESS] ${section} enregistré automatiquement`);
+        }
+      }
     } else {
-      dirtyState[section] = false;
+      console.error(`[ERROR] Erreur lors de la sauvegarde de ${section}: réponse HTTP ${response.status}`);
+      if (showFeedback && btn) {
+        btn.innerHTML = '<i class="bi bi-exclamation-circle"></i> Erreur!';
+        btn.disabled = false;
+      }
     }
   } catch (err) {
-    console.error(`Erreur saveData ${section}:`, err);
+    console.error(`[ERROR] Exception dans saveData ${section}:`, err);
     if (showFeedback && btn) {
       btn.innerHTML = '<i class="bi bi-exclamation-circle"></i> Erreur!';
       btn.disabled = false;
@@ -1497,42 +1886,78 @@ async function saveData(section, showFeedback = false, element = null) {
 
 // Fonction unifiée d'initialisation des handlers
 function initAutosaveHandlers() {
-  // Boutons pour bulk sections
-  document.querySelectorAll('.btn-poste-cible-save, .btn-main-skills-save').forEach(btn => {
+  // Boutons pour bulk sections (poste_cible, skills_cible, main_skills)
+
+  // Bouton poste_cible
+  document.querySelectorAll('.btn-poste-cible-save').forEach(btn => {
+    if (!btn.hasAttribute('data-autosave-initialized')) {
+      btn.addEventListener('click', () => {
+        console.log('[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour poste_cible');
+        saveData('poste_cible', true);
+      });
+      btn.setAttribute('data-autosave-initialized', 'true');
+    }
+  });
+
+  // Bouton skills_cible
+  document.querySelectorAll('.btn-skills-cible-save').forEach(btn => {
+    if (!btn.hasAttribute('data-autosave-initialized')) {
+      btn.addEventListener('click', () => {
+        console.log('[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour skills_cible');
+        saveData('skills_cible', true);
+      });
+      btn.setAttribute('data-autosave-initialized', 'true');
+    }
+  });
+
+  // Boutons main_skills
+  document.querySelectorAll('.btn-main-skills-save').forEach(btn => {
     if (!btn.hasAttribute('data-autosave-initialized')) {
       btn.addEventListener('click', function() {
-        const section = this.className.includes('poste-cible') ? 'poste_cible' : `main_skills_${this.dataset.section}`;
+        const section = `main_skills_${this.dataset.section}`;
+        console.log(`[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour ${section}`);
         saveData(section, true);
       });
       btn.setAttribute('data-autosave-initialized', 'true');
     }
   });
 
-  // Bouton pour xp_pro_realization
-  document.querySelectorAll('.btn-xp-pro-realization-save').forEach(btn => {
-    if (!btn.hasAttribute('data-autosave-initialized')) {
-      btn.addEventListener('click', function() {
-        const expIndex = this.dataset.expIndex;
-        const section = document.getElementById(`realizations-${expIndex}`);
-        saveData('xp_pro_realization', true, section);
+  // Dirty tracking pour poste_cible et skills_cible
+  document.querySelectorAll('#poste-cible-list input[type="text"], #skills-cible-list input[type="text"], #skills-cible-list input[type="checkbox"]').forEach(input => {
+    if (!input.hasAttribute('data-autosave-initialized')) {
+      input.addEventListener('change', function() {
+        if (this.classList.contains('skills-cible-checkbox') || this.dataset.skillsCible) {
+          console.log('[DIRTY] skills_cible marqué comme modifié');
+          dirtyState.skills_cible = true;
+        } else {
+          console.log('[DIRTY] poste_cible marqué comme modifié');
+          dirtyState.poste_cible = true;
+        }
       });
-      btn.setAttribute('data-autosave-initialized', 'true');
+      input.addEventListener('blur', function() {
+        if (this.type === 'text' && this.dataset.skillsCible) {
+          console.log('[DIRTY] skills_cible marqué comme modifié (blur)');
+          dirtyState.skills_cible = true;
+        }
+      });
+      input.setAttribute('data-autosave-initialized', 'true');
     }
   });
 
-  // Dirty tracking pour bulk sections
-  document.querySelectorAll('#poste-cible-list input[type="text"], .main-skills-hierarchy-title, .xp-pro-hierarchy-title').forEach(input => {
+  // Dirty tracking pour main_skills et xp_pro_step2 (réalisations)
+  document.querySelectorAll('.main-skills-hierarchy-title, .xp-pro-hierarchy-title').forEach(input => {
     if (!input.hasAttribute('data-autosave-initialized')) {
       input.addEventListener('change', function() {
         if (this.classList.contains('xp-pro-hierarchy-title')) {
-          const expIndex = this.dataset.targetIndex;
-          if (!dirtyState.xp_pro_realization[expIndex]) {
-            dirtyState.xp_pro_realization[expIndex] = true;
+          const container = this.closest('.xp-pro-step2-container');
+          const expIndex = container?.dataset.expIndex || this.dataset.targetIndex;
+          if (container && !dirtyState.xp_pro_step2[expIndex]) {
+            console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (réalisation)`);
+            dirtyState.xp_pro_step2[expIndex] = true;
           }
-        } else if (this.id?.includes('poste')) {
-          dirtyState.poste_cible = true;
         } else {
           const section = this.dataset.endpointBase === 'bullet' ? 'main_skills_bullet' : 'main_skills_table';
+          console.log(`[DIRTY] ${section} marqué comme modifié`);
           dirtyState[section] = true;
         }
       });
@@ -1540,69 +1965,78 @@ function initAutosaveHandlers() {
     }
   });
 
-  // Auto-save 5s timer pour xp_pro_context (handler distinct pour textarea)
-  document.querySelectorAll('.xp-pro-context').forEach(textarea => {
+  // Auto-save 5s timer pour xp_pro_step2 (contexte, technologies, réalisations)
+  document.querySelectorAll('.xp-pro-step2-context').forEach(textarea => {
     if (!textarea.hasAttribute('data-autosave-initialized')) {
       textarea.addEventListener('input', function() {
-        const expIndex = this.dataset.expIndex;
-        clearTimeout(this.autosaveTimer);
-        this.autosaveTimer = setTimeout(() => saveXpProContext(this), 5000);
+        const container = this.closest('.xp-pro-step2-container');
+        const expIndex = container?.dataset.expIndex;
+        if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
+          console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (contexte)`);
+          dirtyState.xp_pro_step2[expIndex] = true;
+        }
       });
       textarea.setAttribute('data-autosave-initialized', 'true');
     }
   });
 
-  // Boutons pour xp_pro_context
-  document.querySelectorAll('.btn-xp-pro-context-save').forEach(btn => {
-    if (!btn.hasAttribute('data-autosave-initialized')) {
-      btn.addEventListener('click', saveXpProContext);
-      btn.setAttribute('data-autosave-initialized', 'true');
+  // Dirty tracking pour technologies (badges)
+  document.querySelectorAll('.xp-pro-step2-tech-input').forEach(input => {
+    if (!input.hasAttribute('data-autosave-initialized')) {
+      input.addEventListener('input', function() {
+        const container = this.closest('.xp-pro-step2-container');
+        const expIndex = container?.dataset.expIndex;
+        if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
+          console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (technos)`);
+          dirtyState.xp_pro_step2[expIndex] = true;
+        }
+      });
+      input.setAttribute('data-autosave-initialized', 'true');
     }
   });
 }
 
-// Auto-save toutes les 5s (silencieux) pour bulk sections
-setInterval(() => {
-  ['poste_cible', 'main_skills_bullet', 'main_skills_table'].forEach(section => {
-    if (dirtyState[section]) {
-      saveData(section, false);
-    }
-  });
-  // Pour xp_pro_realization (par expérience)
-  Object.entries(dirtyState.xp_pro_realization).forEach(([expIndex, isDirty]) => {
-    if (isDirty) {
-      const section = document.getElementById(`realizations-${expIndex}`);
-      if (section) {
-        saveData('xp_pro_realization', false, section);
-      }
-    }
-  });
-}, 5000);
+// Initialiser le timer au chargement (une seule fois)
+document.addEventListener('DOMContentLoaded', () => {
+  startAutosaveTimer();
+});
 
 // ========================================================================
 // MARK: Initialisation générale
 // ========================================================================
 
+// Helper pour initialiser tous les handlers avec gestion d'erreur
+function initializeAllHandlers(context = 'DOMContentLoaded') {
+  const handlers = [
+    { name: 'initPostesCibleHandlers', fn: initPostesCibleHandlers },
+    { name: 'initSkillsCibleHandlers', fn: initSkillsCibleHandlers },
+    { name: 'initMainSkillsHierarchyHandlers', fn: initMainSkillsHierarchyHandlers },
+    { name: 'initFormationCertificationLangueHandlers', fn: initFormationCertificationLangueHandlers },
+    { name: 'initExperienceHandlers', fn: initExperienceHandlers },
+    { name: 'initXpProHierarchyHandlers', fn: initXpProHierarchyHandlers },
+    { name: 'initXpProStep2Handlers', fn: initXpProStep2Handlers },
+    { name: 'initAutosaveHandlers', fn: initAutosaveHandlers }
+  ];
+
+  handlers.forEach(({ name, fn }) => {
+    try {
+      fn();
+    } catch (err) {
+      console.error(`[${context}] Erreur dans ${name}:`, err);
+    }
+  });
+}
+
 // Initialiser au chargement
 document.addEventListener('DOMContentLoaded', () => {
-  initPostesCibleHandlers();
-  initMainSkillsHierarchyHandlers();
-  initFormationCertificationLangueHandlers();
-  initExperienceHandlers();
-  initXpProHierarchyHandlers();
-  initXpProStep2Handlers();
-  initAutosaveHandlers(); // Unique handler pour auto-save (remplace l'ancien: initSaveButtonHandlers, initPostesCibleDirtyTracking, initMainSkillsDirtyTracking, initXpProContextHandlers)
+  console.log('[DOMContentLoaded] Initialisation des handlers');
+  initializeAllHandlers('DOMContentLoaded');
 });
 
 // Réinitialiser après chaque insertion HTMX
 document.addEventListener('htmx:afterSwap', () => {
-  initPostesCibleHandlers();
-  initMainSkillsHierarchyHandlers();
-  initFormationCertificationLangueHandlers();
-  initExperienceHandlers();
-  initXpProHierarchyHandlers();
-  initXpProStep2Handlers();
-  initAutosaveHandlers(); // Unique handler pour auto-save
+  console.log('[htmx:afterSwap] Réinitialisation des handlers');
+  initializeAllHandlers('htmx:afterSwap');
 });
 </script>
 {% endblock %}

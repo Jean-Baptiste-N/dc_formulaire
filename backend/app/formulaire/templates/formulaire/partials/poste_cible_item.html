@@ -1,5 +1,5 @@
 {% comment %}Partial: une variante de poste cible{% endcomment %}
-<div id="poste-cible-{{ poste_cible.id }}" class="d-flex align-items-center gap-2 mb-2 p-2 border-start border-3" style="border-color: #e9ecef; background-color: #f8f9fa;">
+<div id="poste-cible-{{ poste_cible.id }}" class="d-flex align-items-center gap-2 mb-2 p-2 border-start border-3">
   <input type="radio"
          name="poste_cible_active"
          value="{{ poste_cible.id }}"
@@ -7,7 +7,9 @@
          {% if poste_cible.active %}checked{% endif %}
          data-candidat-pk="{{ candidat.pk }}"
          data-poste-cible="{{ poste_cible.id }}"
-         style="cursor: pointer;">
+         placeholder=""
+         style="cursor: pointer;"
+         title="Sélectionner comme poste cible actif">
   <input type="text"
          class="form-control form-control-sm flex-grow-1"
          value="{{ poste_cible.title }}"
@@ -16,10 +18,10 @@
          data-poste-cible="{{ poste_cible.id }}"
          data-original-title="{{ poste_cible.title }}">
   <button type="button"
-          class="btn btn-sm btn-outline-danger btn-icon poste-cible-delete"
+          class="btn btn-sm btn-outline-danger btn-sm poste-cible-delete"
           data-candidat-pk="{{ candidat.pk }}"
           data-poste-cible="{{ poste_cible.id }}"
           title="Supprimer">
-    <i class="bi bi-x"></i>
+    <i class="bi bi-trash"></i>
   </button>
 </div>

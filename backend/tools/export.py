@@ -39,9 +39,9 @@ def remove_empty_paragraphs(docx_path):
         text = paragraph.text.strip()
 
         if not text:
-            style_name = paragraph.style.name
+            style_name = paragraph.style.name  # type: ignore[union-attr]
             # Supprimer les bullets vides (DC_*_bullet)
-            if '_bullet' in style_name:
+            if '_bullet' in style_name:  # type: ignore[operator]
                 paragraphs_to_remove.append(paragraph._element)
 
     for p_element in reversed(paragraphs_to_remove):
@@ -49,21 +49,24 @@ def remove_empty_paragraphs(docx_path):
 
     doc.save(docx_path)
 
-def main(output_path="outputs/exemple.docx"):
-    with open('inputs/json_exemple.json' ) as json_file:
+def main(input_file="inputs/DC_JNZ_2026_uuid.json", output_path="outputs/exemple.docx"):
+    with open(input_file, encoding='utf-8') as json_file:
         json_data = json.load(json_file)
 
     template = docxtpl.DocxTemplate('templates_docx/template_jinja.docx')
     template.render(json_data)
     template.save(output_path)
+    print(f"✅ Document généré : {output_path}")
 
     # Nettoyage post-génération
     remove_empty_paragraphs(output_path)
+    print(f"✅ Nettoyage terminé : {output_path}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Export formulaire en DOCX')
+    parser.add_argument('-i', '--input', default='inputs/DC_JNZ_2026_uuid.json', help='Fichier JSON source (défaut: inputs/DC_JNZ_2026_uuid.json)')
     parser.add_argument('-o', '--output', default='outputs/exemple.docx', help='Nom du fichier de sortie (défaut: outputs/exemple.docx)')
     args = parser.parse_args()
 
-    main(args.output)
+    main(args.input, args.output)
 

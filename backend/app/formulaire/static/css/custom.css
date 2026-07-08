@@ -8,7 +8,7 @@
    ============================================================================ */
 
 body {
-  background-color: #f8f9fa;
+  background-color: #FFF9EA;
 }
 
 /* ============================================================================
@@ -17,73 +17,158 @@ body {
 
 /* Primary Button */
 .btn-primary {
-  background-color: #0d6efd;
-  border-color: #0d6efd;
+  background-color: #548DD4;
+  border-color: #548DD4;
   font-weight: 500;
 }
 
 .btn-primary:hover {
-  background-color: #0b5ed7;
-  border-color: #0a58ca;
+  background-color: #2E70C2;
+  border-color: #275B9B;
 }
 
 .btn-primary:active {
-  background-color: #0a58ca;
-  border-color: #0a3622;
+  background-color: #2E70C2;
+  border-color: #275B9B;
 }
 
-/* Success Button */
-.btn-success {
-  background-color: #198754;
-  border-color: #198754;
+/* Outline Primary */
+.btn-outline-primary {
+  color: #548DD4;
+  background-color: white;
+  border-color: #548DD4;
   font-weight: 500;
 }
 
-.btn-success:hover {
-  background-color: #157347;
-  border-color: #146c43;
+.btn-outline-primary:hover {
+  color: white;
+  background-color: #2E70C2;
+  border-color: #275B9B;
 }
 
-.btn-success:active {
-  background-color: #146c43;
+.btn-outline-primary:active {
+  color: white;
+  background-color: #2E70C2;
+  border-color: #275B9B;
 }
 
-/* Danger Button */
-.btn-danger {
-  background-color: #dc3545;
-  border-color: #dc3545;
+/* Secondary Button */
+.btn-secondary {
+  background-color: #F69545;
+  border-color: #F69545;
   font-weight: 500;
 }
 
-.btn-danger:hover {
-  background-color: #bb2d3b;
-  border-color: #b02a37;
+.btn-secondary:hover {
+  background-color: #F57C00;
+  border-color: #EF6C00;
+}
+
+.btn-secondary:active {
+  background-color: #F57C00;
+  border-color: #EF6C00;
 }
 
 /* Outline Secondary */
 .btn-outline-secondary {
-  color: #6c757d;
-  border-color: #6c757d;
+  color: #F69545;
+  background-color: white;
+  border-color: #F69545;
+  font-weight: 500;
 }
 
 .btn-outline-secondary:hover {
-  background-color: #6c757d;
-  border-color: #6c757d;
   color: white;
+  background-color: #F57C00;
+  border-color: #EF6C00;
+}
+
+.btn-outline-secondary:active {
+  color: white;
+  background-color: #F57C00;
+  border-color: #EF6C00;
+}
+
+/* Success Button */
+.btn-success {
+  background-color: #48A822;
+  border-color: #48A822;
+  font-weight: 500;
+}
+
+.btn-success:hover {
+  background-color: #3B8B1B;
+  border-color: #307C12;
+}
+
+.btn-success:active {
+  background-color: #3B8B1B;
+  border-color: #307C12;
+}
+
+/* Outline Success */
+.btn-outline-success {
+  color: #48A822;
+  background-color: white;
+  border-color: #48A822;
+  font-weight: 500;
+}
+
+.btn-outline-success:hover {
+  color: white;
+  background-color: #3B8B1B;
+  border-color: #307C12;
+}
+
+.btn-outline-success:active {
+  color: white;
+  background-color: #3B8B1B;
+  border-color: #307C12;
+}
+
+/* Danger Button */
+.btn-danger {
+  background-color: #F03346;
+  border-color: #F03346;
+  font-weight: 500;
+}
+
+.btn-danger:hover {
+  background-color: #BB2D3B;
+  border-color: #B02A37;
+}
+
+/* Outline Danger */
+.btn-outline-danger {
+  color: #F03346;
+  background-color: white;
+  border-color: #F03346;
+  font-weight: 500;
+}
+
+.btn-outline-danger:hover {
+  color: white;
+  background-color: #BB2D3B;
+  border-color: #B02A37;
+}
+
+.btn-outline-danger:active {
+  color: white;
+  background-color: #BB2D3B;
+  border-color: #B02A37;
 }
 
 /* Small Button Sizing */
 .btn-sm {
-  padding: 0.4rem 0.75rem;
+  padding: 0.3rem 0.6rem;
   font-size: 0.875rem;
 }
 
 /* Icon Buttons */
-.btn-icon {
-  padding: 0.2rem 0.4rem;
-  font-size: 0.8rem;
-  line-height: 1;
-}
+/* .btn-icon {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.875rem;
+} */
 
 /* ============================================================================
    MARK: 3. CARDS & SECTIONS
@@ -96,7 +181,13 @@ body {
 }
 
 .card-header {
-  background-color: #f8f9fa;
+  background-color: #f5f5f5;
+  border-bottom: 2px solid #dee2e6;
+  padding: 1rem;
+}
+
+.card-header-create {
+  background-color: #548DD4 !important;
   border-bottom: 2px solid #dee2e6;
   padding: 1rem;
 }
@@ -106,7 +197,7 @@ body {
 }
 
 .section-card {
-  border-left: 4px solid #0d6efd;
+  border-left: 4px solid #548DD4;
 }
 
 /* ============================================================================
@@ -140,7 +231,7 @@ body {
 }
 
 .main_skills_hierarchy-title:focus {
-  border-color: #0d6efd;
+  border-color: #2E70C2;
   box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
@@ -169,7 +260,7 @@ body {
 }
 
 .xp_pro_realization-title:focus {
-  border-color: #0d6efd;
+  border-color: #2E70C2;
   box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
@@ -194,7 +285,7 @@ body {
 }
 
 .form-control:focus {
-  border-color: #80bdff;
+  border-color: #2E70C2;
   box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
 }
 
@@ -202,6 +293,11 @@ body {
   color: #495057;
   font-weight: 500;
   margin-bottom: 0.5rem;
+}
+
+.form-check-input:checked {
+  background-color: #548DD4;
+  border-color: #548DD4;
 }
 
 /* ============================================================================
@@ -214,15 +310,15 @@ body {
 }
 
 .alert-info {
-  background-color: #d1ecf1;
-  border-color: #bee5eb;
-  color: #0c5460;
+  background-color: #e7f2ff;
+  border-color: #d8e9ff;
+  color: #6a7481;
 }
 
-.alert-warning {
-  background-color: #fff3cd;
-  border-color: #ffeeba;
-  color: #856404;
+.alert-xp-pro {
+  background-color: #fff4eb;
+  border-color: #fde6d3;
+  color: #796656;
 }
 
 .alert-success {
@@ -357,12 +453,12 @@ body {
    ============================================================================ */
 
 .navbar-dark {
-  background-color: #0d6efd;
+  background-color: #548DD4 !important;
 }
 
 .navbar-brand {
   font-weight: 600;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
 }
 
 /* ============================================================================
@@ -402,8 +498,11 @@ body {
    ============================================================================ */
 
 .xp-pro-step2-container {
-  background-color: #fff;
-  border-radius: 0.375rem;
+  background-color: #fff4eb;
+  border-color: #fde6d3;
+  color: #796656;
+  border: 1px;
+  border-radius: 0.25rem;
   padding: 1rem;
   margin-bottom: 1rem;
 }
@@ -415,11 +514,25 @@ body {
 }
 
 .xp-pro-step2-context:focus {
-  border-color: #80bdff;
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  border-color: #F69545;
+  box-shadow: 0 0 0 0.2rem rgba(84, 141, 212, 0.25);
 }
 
 /* Technologies - Input & Badges */
+.bg-info {
+  background-color: #548DD4 !important;
+}
+
+.badge.bg-info {
+  background-color: #548DD4 !important;
+  color: white !important;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .xp-pro-step2-tech-input {
   font-size: 0.9rem;
   border-radius: 0.25rem;
@@ -436,7 +549,7 @@ body {
 .btn-xp-pro-step2-tech-add,
 .btn-xp-pro-step2-tech-remove {
   padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
 }
 
 .btn-xp-pro-step2-tech-add {
@@ -478,4 +591,24 @@ body {
 .btn-xp-pro-step2-save:disabled {
   opacity: 0.65;
   cursor: not-allowed;
+}
+
+/* ============================================================================
+   MARK: 14 SKILLS_CIBLE - Compétences cibles (Checkboxes)
+   ============================================================================ */
+
+.skills-cible-checkbox {
+  cursor: pointer;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.skills-cible-checkbox:checked {
+  background-color: #548DD4;
+  border-color: #548DD4;
+}
+
+.skills-cible-checkbox:focus {
+  border-color: #2E70C2;
+  box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
 }
