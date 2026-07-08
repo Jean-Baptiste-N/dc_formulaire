@@ -858,7 +858,6 @@ def experience_add(request, pk):
     tech_list = [_clean_text(t) for t in technologies.split(",") if t.strip()] if technologies else []
 
     # Pré-remplir avec un premier item vide (scaffolding UX)
-    # L'utilisateur ajoutera les réalisations hiérarchiquement après création
     description_array = [{
         "id": _new_id(),
         "title": "",
@@ -881,22 +880,88 @@ def experience_add(request, pk):
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
-        # Pour AJAX: retourner juste le snippet HTML du nouvel élément
+        # Pour AJAX: retourner la section complète avec toutes les sous-sections remplissables
         index = len(dossier["xp_pro"]) - 1
-        context_html = f'<small class="text-muted">{escape(experience["context"])}</small> <br>' if experience.get("context") else ''
-        tech_html = ' '.join([f'<span class="badge bg-secondary">{escape(t)}</span>' for t in tech_list])
-        html = f'''<div class="alert alert-warning mb-3">
-          <div class="d-flex justify-content-between align-items-start">
+        placeholders = _get_placeholders()
+
+        # Générer le HTML des réalisations avec le partial existant
+        realizations_html = ""
+        for realization in experience["description"]:
+            realizations_html += render_to_string(
+                "formulaire/partials/xp_pro_hierarchy_item.html",
+                {
+                    "item": realization,
+                    "exp_index": index,
+                    "depth": 0,
+                    "candidat": candidat,
+                    "xp_pro_placeholders": placeholders.get("xp_pro", {}),
+                }
+            )
+
+        # Tech badges HTML
+        tech_badges_html = ""
+        if tech_list:
+            for tech in tech_list:
+                tech_badges_html += f'<span class="badge bg-info text-dark me-2 mb-2">{escape(tech)}<button type="button" class="btn-xp-pro-step2-tech-remove" data-tech="{escape(tech)}">×</button></span>'
+        else:
+            tech_badges_html = '<span class="text-muted small">Aucune technologie ajoutée</span>'
+
+        # Retourner le HTML complet avec structure xp_pro_step2
+        html = f'''<div class="alert alert-xp-pro mb-3 xp-pro-step2-container" data-exp-index="{index}" data-candidat-pk="{pk}">
+          <div class="d-flex justify-content-between align-items-start mb-2">
             <div style="flex: 1;">
-              <strong>{escape(experience["poste"])}</strong> <strong>chez {escape(experience["company"])}</strong> <br>
-              <small>{escape(experience["date"])}</small> <br>
-              {context_html}
-              {f'<div class="mt-2">{tech_html}</div>' if tech_html else ''}
+              <strong>{escape(experience["date"])} : {escape(experience["poste"])}</strong> chez <strong>{escape(experience["company"])}</strong><br>
             </div>
-            <button type="button" class="btn btn-sm btn-outline-danger btn-experience-remove"
+            <button type="button" class="btn btn-sm btn-danger btn-experience-remove"
                     data-candidat-pk="{pk}"
-                    data-exp-index="{index}" style="margin-left: 10px;">
+                    data-exp-index="{index}">
               <i class="bi bi-trash"></i>
+            </button>
+          </div>
+
+          <!-- Contexte -->
+          <div class="mb-4">
+            <label class="form-label small fw-semibold"><i class="bi bi-list-check"></i> Contexte de l'expérience</label>
+            <textarea class="form-control xp-pro-step2-context"
+                      placeholder="{escape(placeholders['experiences']['context'])}"
+                      rows="2">{escape(experience.get('context', ''))}</textarea>
+          </div>
+
+          <!-- Technologies -->
+          <div class="mb-4">
+            <label class="form-label small fw-semibold"><i class="bi bi-list-check"></i> Technologies utilisées</label>
+            <div class="input-group input-group-sm mb-2">
+              <input type="text"
+                      class="form-control xp-pro-step2-tech-input"
+                      placeholder="ex: Python, Django, PostgreSQL... (séparées par des virgules)"
+                      data-separator=",">
+              <button class="btn btn-outline-success btn-sm btn-xp-pro-step2-tech-add" type="button">
+                <i class="bi bi-plus-lg"></i>
+              </button>
+            </div>
+            <div class="xp-pro-step2-tech-badges">
+              {tech_badges_html}
+            </div>
+          </div>
+
+          <!-- Réalisations -->
+          <div class="mb-4">
+            <label class="form-label small fw-semibold"><i class="bi bi-list-check"></i> Réalisations</label>
+            <div id="realizations-{index}" class="xp-pro-step2-realizations ps-2">
+              {realizations_html}
+            </div>
+          </div>
+
+          <!-- Boutons -->
+          <div class="d-flex gap-2 align-items-center pt-3 border-top">
+            <button type="button" class="btn btn-sm btn-secondary btn-xp-pro-step2-add-realization">
+              <i class="bi bi-plus-lg"></i> Ajouter une Activité
+            </button>
+            <button type="button"
+                    class="btn btn-sm btn-success btn-xp-pro-step2-save"
+                    data-exp-index="{index}"
+                    data-candidat-pk="{pk}">
+              <i class="bi bi-check-lg"></i> Enregistrer
             </button>
           </div>
         </div>'''
@@ -1098,6 +1163,8 @@ def xp_pro_step2_update(request, pk, exp_index):
             # Essayer de parser comme JSON (array)
             if env_tech_raw.startswith("["):
                 env_tech_list = json.loads(env_tech_raw)
+                # Nettoyer chaque tech après parse JSON (supprime les guillemets d'échappement)
+                env_tech_list = [_clean_text(tech) if isinstance(tech, str) else tech for tech in env_tech_list if tech]
             else:
                 # Sinon, parser comme chaîne comma-separated
                 env_tech_list = [_clean_text(tech.strip()) for tech in env_tech_raw.split(",") if tech.strip()]

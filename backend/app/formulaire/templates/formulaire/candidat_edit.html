@@ -431,7 +431,7 @@
     <div id="experiences-list">
       {% if candidat.dossier.xp_pro %}
         {% for exp in candidat.dossier.xp_pro %}
-          <div class="alert alert-xp-pro mb-3">
+          <div class="alert alert-xp-pro mb-3 xp-pro-step2-container" data-exp-index="{{ forloop.counter0 }}" data-candidat-pk="{{ candidat.pk }}">
             <div class="d-flex justify-content-between align-items-start mb-2">
               <div style="flex: 1;">
                 <strong>{{ exp.date }} : {{ exp.poste }}</strong> chez <strong>{{ exp.company }}</strong><br>
@@ -1487,6 +1487,36 @@ function initXpProStep2Handlers() {
     }
   });
 
+  // Context textarea - mark dirty on change
+  document.querySelectorAll('.xp-pro-step2-context').forEach(textarea => {
+    if (!textarea.hasAttribute('data-listener-initialized')) {
+      textarea.addEventListener('input', function(e) {
+        const container = this.closest('.xp-pro-step2-container');
+        const expIndex = container.dataset.expIndex;
+        console.log(`[DIRTY] Utilisateur modifie le contexte pour xp_pro_step2[${expIndex}]`);
+        if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
+        dirtyState.xp_pro_step2[expIndex] = true;
+      });
+      textarea.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Tech input - mark dirty on change
+  document.querySelectorAll('.xp-pro-step2-tech-input').forEach(input => {
+    if (!input.hasAttribute('data-listener-initialized')) {
+      input.addEventListener('input', function(e) {
+        const container = this.closest('.xp-pro-step2-container');
+        const expIndex = container.dataset.expIndex;
+        if (this.value.trim()) {
+          console.log(`[DIRTY] Utilisateur ajoute une technologie pour xp_pro_step2[${expIndex}]`);
+          if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
+          dirtyState.xp_pro_step2[expIndex] = true;
+        }
+      });
+      input.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
   // Bouton Ajouter technologie
   document.querySelectorAll('.btn-xp-pro-step2-tech-add').forEach(btn => {
     if (!btn.hasAttribute('data-listener-initialized')) {
@@ -1519,6 +1549,7 @@ function addXpProStep2Technology(e) {
   e.preventDefault();
   const btn = e.target.closest('.btn-xp-pro-step2-tech-add');
   const container = btn.closest('.xp-pro-step2-container');
+  const expIndex = container.dataset.expIndex;
   const input = container.querySelector('.xp-pro-step2-tech-input');
   const badgesDiv = container.querySelector('.xp-pro-step2-tech-badges');
 
@@ -1526,9 +1557,12 @@ function addXpProStep2Technology(e) {
   if (techs.length === 0) return;
 
   techs.forEach(tech => {
+    // Nettoyer les guillemets d'échappement si présents
+    const cleanedTech = tech.replace(/^\"|\"$/g, '');
+    console.log(`[DIRTY] Utilisateur ajoute la technologie: ${cleanedTech} (xp_pro_step2[${expIndex}])`);
     const badge = document.createElement('span');
     badge.className = 'badge bg-info text-dark me-2 mb-2';
-    badge.innerHTML = `${tech} <button type="button" class="btn-xp-pro-step2-tech-remove" data-tech="${tech}" style="border: none; background: none; color: inherit; cursor: pointer; margin-left: 5px;">×</button>`;
+    badge.innerHTML = `${cleanedTech} <button type="button" class="btn-xp-pro-step2-tech-remove" data-tech="${cleanedTech}" style="border: none; background: none; color: inherit; cursor: pointer; margin-left: 5px;">×</button>`;
 
     const removeBtn = badge.querySelector('.btn-xp-pro-step2-tech-remove');
     removeBtn.addEventListener('click', removeXpProStep2Technology);
@@ -1537,10 +1571,8 @@ function addXpProStep2Technology(e) {
   });
 
   input.value = '';
-  const expIndex = container?.dataset.expIndex;
-  if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
-    dirtyState.xp_pro_step2[expIndex] = true;
-  }
+  if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
+  dirtyState.xp_pro_step2[expIndex] = true;
 }
 
 function removeXpProStep2Technology(e) {
@@ -1552,10 +1584,10 @@ function removeXpProStep2Technology(e) {
     const expIndex = container?.dataset.expIndex;
     console.log(`[DELETE] Utilisateur supprime la technologie: ${tech} (xp_pro_step2[${expIndex}])`);
     badge.remove();
-    console.log(`[DELETE SUCCESS] Technologie ${tech} supprimée, xp_pro_step2[${expIndex}] marqué comme modifié`);
-    if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
-      dirtyState.xp_pro_step2[expIndex] = true;
-    }
+    console.log(`[DELETE SUCCESS] Technologie ${tech} supprimée`);
+    console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié`);
+    if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
+    dirtyState.xp_pro_step2[expIndex] = true;
   }
 }
 
@@ -1565,6 +1597,8 @@ function addXpProStep2Realization(e) {
   const container = btn.closest('.xp-pro-step2-container');
   const expIndex = container.dataset.expIndex;
   const candidatPk = container.dataset.candidatPk;
+
+  console.log(`[DIRTY] Utilisateur ajoute une réalisation pour xp_pro_step2[${expIndex}]`);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
@@ -1578,9 +1612,8 @@ function addXpProStep2Realization(e) {
     const realizationsDiv = container.querySelector(`#realizations-${expIndex}`);
     realizationsDiv.insertAdjacentHTML('beforeend', html);
     initXpProHierarchyHandlers();
-    if (!dirtyState.xp_pro_step2[expIndex]) {
-      dirtyState.xp_pro_step2[expIndex] = true;
-    }
+    if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
+    dirtyState.xp_pro_step2[expIndex] = true;
   })
   .catch(err => console.error('Erreur addXpProStep2Realization:', err));
 }
@@ -1589,7 +1622,8 @@ function addXpProStep2Realization(e) {
 
 function buildXpProStep2RealizationTree(container) {
   const items = [];
-  // Les items root sont les divs avec id="item-xxx" qui sont des enfants directs de .xp-pro-step2-realizations
+  // Chercher tous les items avec classe xp-pro-hierarchy-item qui sont des enfants directs
+  if (!container) return items;
   container.querySelectorAll(':scope > .xp-pro-hierarchy-item').forEach(itemDiv => {
     const item = buildXpProStep2SingleItem(itemDiv);
     if (item) items.push(item);
@@ -1677,11 +1711,12 @@ const autosaveConfig = {
       const techBadges = container.querySelectorAll('.badge');
       const envTech = Array.from(techBadges)
         .map(badge => badge.textContent.replace('×', '').trim())
+        .map(tech => tech.replace(/^"|"$/g, '')) // Enlever les guillemets d'échappement
         .filter(t => t);
       const realizationsDiv = container.querySelector('.xp-pro-step2-realizations');
       const realizations = buildXpProStep2RealizationTree(realizationsDiv);
 
-      return { context, env_tech: envTech, realizations };
+      return { context, env_tech: envTech, description: realizations };
     },
     endpoint: (expIndex) => `/candidat/${CANDIDAT_PK}/experience/${expIndex}/step2-update/`,
     type: 'xp_pro_step2'
@@ -1744,7 +1779,7 @@ async function saveData(section, showFeedback = false, element = null) {
     endpoint = config.endpoint(expIndex);
     formData.append('context', data.context);
     formData.append('env_tech', JSON.stringify(data.env_tech));
-    formData.append('realizations', JSON.stringify(data.realizations));
+    formData.append('realizations', JSON.stringify(data.description));
   } else if (config.type === 'bulk') {
     const items = config.getItems();
     endpoint = config.endpoint();
