@@ -210,7 +210,7 @@
   </div>
   <div class="card-body">
     <!-- Formulaire d'ajout -->
-    <form method="post" action="{% url 'formulaire:formation_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
+    <form id="formation-add-form" method="post" action="{% url 'formulaire:formation_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
       {% csrf_token %}
       <p class="text-muted small mb-3">Remplissez les champs pour indiquer une formation suivie et cliquez sur ajouter. Répétez l'action pour chaque formation</p>
       <div class="row g-3">
@@ -278,7 +278,7 @@
   </div>
   <div class="card-body">
     <!-- Formulaire d'ajout -->
-    <form method="post" action="{% url 'formulaire:certification_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
+    <form id="certification-add-form" method="post" action="{% url 'formulaire:certification_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
       {% csrf_token %}
       <p class="text-muted small mb-3">Remplissez les champs pour indiquer une certification obtenue et cliquez sur ajouter. Répétez l'action pour chaque certification</p>
       <div class="row g-3">
@@ -340,7 +340,7 @@
   </div>
   <div class="card-body">
     <!-- Formulaire d'ajout -->
-    <form method="post" action="{% url 'formulaire:langue_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
+    <form id="langue-add-form" method="post" action="{% url 'formulaire:langue_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
       {% csrf_token %}
       <p class="text-muted small mb-3">Remplissez les champs pour indiquer une langue comprise et parlée et cliquez sur ajouter. Répétez l'action pour chaque langue</p>
       <div class="row g-3">
@@ -397,7 +397,7 @@
   </div>
   <div class="card-body">
     <!-- Formulaire d'ajout -->
-    <form method="post" action="{% url 'formulaire:experience_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
+    <form id="experience-add-form" method="post" action="{% url 'formulaire:experience_add' candidat.pk %}" class="mb-4 pb-4 border-bottom">
       {% csrf_token %}
       <p class="text-muted small mb-3">Remplissez les champs pour indiquer une expérience professionnelle. Répétez l'action pour chaque expérience</p>
       <div class="row g-3">
@@ -834,6 +834,10 @@ function addMainSkillsHierarchyParentItem(e) {
   const btn = e.target.closest('.btn-main-skills-hierarchy-add-root');
   const section = btn.dataset.section; // 'bullet' ou 'table'
   const candidatPk = btn.dataset.candidatPk;
+  const dirtyKey = `main_skills_${section}`;
+
+  console.log(`[DIRTY] ${dirtyKey} marqué comme modifié (ajout domaine)`);
+  dirtyState[dirtyKey] = true;
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
@@ -869,12 +873,16 @@ function addMainSkillsHierarchyChildItem(e) {
   const childDepth = depth + 1;
 
   const section = endpointBase.replace('main_skills_', ''); // 'bullet' ou 'table'
+  const dirtyKey = `main_skills_${section}`;
 
   // Refuser si on dépasse la limite de profondeur (max 2 niveaux: 0, 1)
   if (childDepth > 1) {
     alert(`⚠️ Limite de profondeur atteinte (2 niveaux maximum)`);
     return;
   }
+
+  console.log(`[DIRTY] ${dirtyKey} marqué comme modifié (ajout sous-domaine)`);
+  dirtyState[dirtyKey] = true;
 
   const formData = new FormData();
   formData.append('parent_id', itemId);
@@ -904,11 +912,16 @@ function updateMainSkillsHierarchyItem(e) {
   const input = e.target;
   const itemId = input.dataset.itemId;
   const endpointBase = input.dataset.endpointBase;
+  const title = input.value.trim();
 
   const section = endpointBase.replace('main_skills_', '');
+  const dirtyKey = `main_skills_${section}`;
+
+  console.log(`[DIRTY] ${dirtyKey} marqué comme modifié (modification titre: ${title})`);
+  dirtyState[dirtyKey] = true;
 
   const formData = new FormData();
-  formData.append('title', input.value);
+  formData.append('title', title);
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
   fetch(`/candidat/${CANDIDAT_PK}/main_skills/${section}/item/${itemId}/mettre-a-jour/`, {
@@ -935,6 +948,9 @@ function deleteMainSkillsHierarchyItem(e) {
 
   if (confirm(message)) {
     console.log(`[DELETE] Utilisateur supprime ${section}: ${title}`);
+    const dirtyKey = `main_skills_${section}`;
+    dirtyState[dirtyKey] = true;
+
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
@@ -946,14 +962,268 @@ function deleteMainSkillsHierarchyItem(e) {
       console.log(`[DELETE SUCCESS] ${section} ${title} supprimé avec succès, section marqué comme modifié`);
       const itemDiv = document.getElementById(`item-${itemId}`);
       if (itemDiv) itemDiv.remove();
-      // Marquer comme modifié
-      const dirtyKey = `main_skills_${section}`;
-      if (!dirtyState[dirtyKey]) {
-        dirtyState[dirtyKey] = true;
-      }
     })
     .catch(err => console.error(`[ERROR] Exception lors de la suppression ${section}:`, err));
   }
+}
+
+// ========================================================================
+// MARK: FORMATION/CERTIFICATION/LANGUE HANDLERS - Delete buttons
+// ========================================================================
+
+function initFormationCertificationLangueHandlers() {
+  // Formation add form submit - AJAX
+  const formationForm = document.querySelector('#formation-add-form');
+  if (formationForm && !formationForm.hasAttribute('data-listener-initialized')) {
+    formationForm.addEventListener('submit', addFormation);
+    formationForm.setAttribute('data-listener-initialized', 'true');
+  }
+
+  // Certification add form submit - AJAX
+  const certificationForm = document.querySelector('#certification-add-form');
+  if (certificationForm && !certificationForm.hasAttribute('data-listener-initialized')) {
+    certificationForm.addEventListener('submit', addCertification);
+    certificationForm.setAttribute('data-listener-initialized', 'true');
+  }
+
+  // Langue add form submit - AJAX
+  const langueForm = document.querySelector('#langue-add-form');
+  if (langueForm && !langueForm.hasAttribute('data-listener-initialized')) {
+    langueForm.addEventListener('submit', addLangue);
+    langueForm.setAttribute('data-listener-initialized', 'true');
+  }
+
+  // Formation delete
+  document.querySelectorAll('.btn-formation-remove').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', removeFormation);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Certification delete
+  document.querySelectorAll('.btn-certification-remove').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', removeCertification);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+
+  // Langue delete
+  document.querySelectorAll('.btn-langue-remove').forEach(btn => {
+    if (!btn.hasAttribute('data-listener-initialized')) {
+      btn.addEventListener('click', removeLangue);
+      btn.setAttribute('data-listener-initialized', 'true');
+    }
+  });
+}
+
+// ========================================================================
+// MARK: FORMATIONS / CERTIFICATIONS / LANGUES ADD HANDLERS (AJAX)
+// ========================================================================
+
+function addFormation(e) {
+  e.preventDefault();
+  const form = e.target;
+  const candidatPk = form.action.split('/')[3]; // Extraire PK de l'URL
+  const title = form.querySelector('input[name="title"]').value.trim();
+
+  console.log(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour formation: ${title}`);
+
+  const formData = new FormData(form);
+
+  fetch(form.action, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      return r.text();
+    } else {
+      console.error(`[ERROR] Erreur ajout formation: réponse HTTP ${r.status}`);
+      throw new Error(`HTTP ${r.status}`);
+    }
+  })
+  .then(html => {
+    console.log(`[SUCCESS] Formation ${title} ajoutée avec succès`);
+    const listDiv = document.getElementById('formations-list');
+    const emptyMsg = listDiv.querySelector('.text-muted');
+    if (emptyMsg) {
+      emptyMsg.remove();
+    }
+    listDiv.insertAdjacentHTML('beforeend', html);
+    form.reset();
+    initFormationCertificationLangueHandlers();
+  })
+  .catch(err => console.error(`[ERROR] Exception lors de l'ajout formation:`, err));
+}
+
+function addCertification(e) {
+  e.preventDefault();
+  const form = e.target;
+  const candidatPk = form.action.split('/')[3]; // Extraire PK de l'URL
+  const title = form.querySelector('input[name="title"]').value.trim();
+
+  console.log(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour certification: ${title}`);
+
+  const formData = new FormData(form);
+
+  fetch(form.action, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      return r.text();
+    } else {
+      console.error(`[ERROR] Erreur ajout certification: réponse HTTP ${r.status}`);
+      throw new Error(`HTTP ${r.status}`);
+    }
+  })
+  .then(html => {
+    console.log(`[SUCCESS] Certification ${title} ajoutée avec succès`);
+    const listDiv = document.getElementById('certifications-list');
+    const emptyMsg = listDiv.querySelector('.text-muted');
+    if (emptyMsg) {
+      emptyMsg.remove();
+    }
+    listDiv.insertAdjacentHTML('beforeend', html);
+    form.reset();
+    initFormationCertificationLangueHandlers();
+  })
+  .catch(err => console.error(`[ERROR] Exception lors de l'ajout certification:`, err));
+}
+
+function addLangue(e) {
+  e.preventDefault();
+  const form = e.target;
+  const candidatPk = form.action.split('/')[3]; // Extraire PK de l'URL
+  const title = form.querySelector('input[name="title"]').value.trim();
+
+  console.log(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour langue: ${title}`);
+
+  const formData = new FormData(form);
+
+  fetch(form.action, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      return r.text();
+    } else {
+      console.error(`[ERROR] Erreur ajout langue: réponse HTTP ${r.status}`);
+      throw new Error(`HTTP ${r.status}`);
+    }
+  })
+  .then(html => {
+    console.log(`[SUCCESS] Langue ${title} ajoutée avec succès`);
+    const listDiv = document.getElementById('langues-list');
+    const emptyMsg = listDiv.querySelector('.text-muted');
+    if (emptyMsg) {
+      emptyMsg.remove();
+    }
+    listDiv.insertAdjacentHTML('beforeend', html);
+    form.reset();
+    initFormationCertificationLangueHandlers();
+  })
+  .catch(err => console.error(`[ERROR] Exception lors de l'ajout langue:`, err));
+}
+
+function removeFormation(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-formation-remove');
+  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette formation';
+  if (!confirm(`Supprimer la formation: ${title} ?\n\nCette action est irréversible.`)) {
+    return;
+  }
+  const candidatPk = btn.dataset.candidatPk;
+  const formationIndex = btn.dataset.formationIndex;
+  console.log(`[DELETE] Utilisateur supprime la formation: ${title}`);
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/formation/${formationIndex}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      console.log(`[DELETE SUCCESS] Formation ${title} supprimée avec succès`);
+      const formationDiv = btn.closest('.alert.alert-info');
+      if (formationDiv) {
+        formationDiv.remove();
+      }
+    } else {
+      console.error(`[ERROR] Erreur suppression formation: réponse HTTP ${r.status}`);
+    }
+  })
+  .catch(err => console.error(`[ERROR] Exception lors de la suppression formation:`, err));
+}
+
+function removeCertification(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-certification-remove');
+  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette certification';
+  if (!confirm(`Supprimer la certification: ${title} ?\n\nCette action est irréversible.`)) {
+    return;
+  }
+  const candidatPk = btn.dataset.candidatPk;
+  const certificationIndex = btn.dataset.certificationIndex;
+  console.log(`[DELETE] Utilisateur supprime la certification: ${title}`);
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/certification/${certificationIndex}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      console.log(`[DELETE SUCCESS] Certification ${title} supprimée avec succès`);
+      const certDiv = btn.closest('.alert.alert-info');
+      if (certDiv) {
+        certDiv.remove();
+      }
+    } else {
+      console.error(`[ERROR] Erreur suppression certification: réponse HTTP ${r.status}`);
+    }
+  })
+  .catch(err => console.error(`[ERROR] Exception lors de la suppression certification:`, err));
+}
+
+function removeLangue(e) {
+  e.preventDefault();
+  const btn = e.target.closest('.btn-langue-remove');
+  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette langue';
+  if (!confirm(`Supprimer la langue: ${title} ?\n\nCette action est irréversible.`)) {
+    return;
+  }
+  const candidatPk = btn.dataset.candidatPk;
+  const langueIndex = btn.dataset.langueIndex;
+  console.log(`[DELETE] Utilisateur supprime la langue: ${title}`);
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/langue/${langueIndex}/supprimer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      console.log(`[DELETE SUCCESS] Langue ${title} supprimée avec succès`);
+      const langueDiv = btn.closest('.alert.alert-info');
+      if (langueDiv) {
+        langueDiv.remove();
+      }
+    } else {
+      console.error(`[ERROR] Erreur suppression langue: réponse HTTP ${r.status}`);
+    }
+  })
+  .catch(err => console.error('Erreur removeLangue:', err));
 }
 
 // ========================================================================
@@ -1107,12 +1377,58 @@ function deleteXpProHierarchyItem(e) {
 // ========================================================================
 
 function initExperienceHandlers() {
+  // Experience add form submit - AJAX
+  const experienceForm = document.querySelector('#experience-add-form');
+  if (experienceForm && !experienceForm.hasAttribute('data-listener-initialized')) {
+    experienceForm.addEventListener('submit', addExperience);
+    experienceForm.setAttribute('data-listener-initialized', 'true');
+  }
+
   document.querySelectorAll('.btn-experience-remove').forEach(btn => {
     if (!btn.hasAttribute('data-listener-initialized')) {
       btn.addEventListener('click', removeExperience);
       btn.setAttribute('data-listener-initialized', 'true');
     }
   });
+}
+
+function addExperience(e) {
+  e.preventDefault();
+  const form = e.target;
+  const poste = form.querySelector('input[name="poste"]').value.trim();
+  const company = form.querySelector('input[name="company"]').value.trim();
+
+  console.log(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour expérience: ${poste} chez ${company}`);
+
+  const formData = new FormData(form);
+
+  fetch(form.action, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (r.ok) {
+      return r.text();
+    } else {
+      console.error(`[ERROR] Erreur ajout expérience: réponse HTTP ${r.status}`);
+      throw new Error(`HTTP ${r.status}`);
+    }
+  })
+  .then(html => {
+    console.log(`[SUCCESS] Expérience ${poste} chez ${company} ajoutée avec succès`);
+    const listDiv = document.getElementById('experiences-list');
+    const emptyMsg = listDiv.querySelector('.text-muted');
+    if (emptyMsg) {
+      emptyMsg.remove();
+    }
+    listDiv.insertAdjacentHTML('beforeend', html);
+    form.reset();
+    initExperienceHandlers();
+    // Réinitialiser aussi les handlers xp_pro
+    initXpProHierarchyHandlers();
+    initXpProStep2Handlers();
+  })
+  .catch(err => console.error(`[ERROR] Exception lors de l'ajout expérience:`, err));
 }
 
 function removeExperience(e) {
@@ -1141,7 +1457,7 @@ function removeExperience(e) {
     if (r.ok) {
       console.log(`[DELETE SUCCESS] Expérience ${poste}${subtitle} supprimée avec succès`);
       // Remove the experience card from the DOM
-      const expDiv = btn.closest('.alert.alert-warning');
+      const expDiv = btn.closest('.alert.alert-xp-pro');
       if (expDiv) {
         expDiv.remove();
       }
@@ -1150,159 +1466,6 @@ function removeExperience(e) {
     }
   })
   .catch(err => console.error(`[ERROR] Exception lors de la suppression expérience:`, err));
-}
-
-// ========================================================================
-// MARK: FORMATION/CERTIFICATION/LANGUE HANDLERS - Delete buttons
-// ========================================================================
-
-function initFormationCertificationLangueHandlers() {
-  // Formation delete
-  document.querySelectorAll('.btn-formation-remove').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', removeFormation);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Formation add form submit
-  const formationForm = document.querySelector('form[action*="formation_add"]');
-  if (formationForm && !formationForm.hasAttribute('data-listener-initialized')) {
-    formationForm.addEventListener('submit', (e) => {
-      console.log('[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour formation');
-    });
-    formationForm.setAttribute('data-listener-initialized', 'true');
-  }
-
-  // Certification add form submit
-  const certificationForm = document.querySelector('form[action*="certification_add"]');
-  if (certificationForm && !certificationForm.hasAttribute('data-listener-initialized')) {
-    certificationForm.addEventListener('submit', (e) => {
-      console.log('[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour certification');
-    });
-    certificationForm.setAttribute('data-listener-initialized', 'true');
-  }
-
-  // Langue add form submit
-  const langueForm = document.querySelector('form[action*="langue_add"]');
-  if (langueForm && !langueForm.hasAttribute('data-listener-initialized')) {
-    langueForm.addEventListener('submit', (e) => {
-      console.log('[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour langue');
-    });
-    langueForm.setAttribute('data-listener-initialized', 'true');
-  }
-
-  // Certification delete
-  document.querySelectorAll('.btn-certification-remove').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', removeCertification);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Langue delete
-  document.querySelectorAll('.btn-langue-remove').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', removeLangue);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-}
-
-function removeFormation(e) {
-  e.preventDefault();
-  const btn = e.target.closest('.btn-formation-remove');
-  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette formation';
-  if (!confirm(`Supprimer la formation: ${title} ?\n\nCette action est irréversible.`)) {
-    return;
-  }
-  const candidatPk = btn.dataset.candidatPk;
-  const formationIndex = btn.dataset.formationIndex;
-  console.log(`[DELETE] Utilisateur supprime la formation: ${title}`);
-
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/formation/${formationIndex}/supprimer/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(r => {
-    if (r.ok) {
-      console.log(`[DELETE SUCCESS] Formation ${title} supprimée avec succès`);
-      const formationDiv = btn.closest('.alert.alert-info');
-      if (formationDiv) {
-        formationDiv.remove();
-      }
-    } else {
-      console.error(`[ERROR] Erreur suppression formation: réponse HTTP ${r.status}`);
-    }
-  })
-  .catch(err => console.error(`[ERROR] Exception lors de la suppression formation:`, err));
-}
-
-function removeCertification(e) {
-  e.preventDefault();
-  const btn = e.target.closest('.btn-certification-remove');
-  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette certification';
-  if (!confirm(`Supprimer la certification: ${title} ?\n\nCette action est irréversible.`)) {
-    return;
-  }
-  const candidatPk = btn.dataset.candidatPk;
-  const certificationIndex = btn.dataset.certificationIndex;
-  console.log(`[DELETE] Utilisateur supprime la certification: ${title}`);
-
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/certification/${certificationIndex}/supprimer/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(r => {
-    if (r.ok) {
-      console.log(`[DELETE SUCCESS] Certification ${title} supprimée avec succès`);
-      const certDiv = btn.closest('.alert.alert-success');
-      if (certDiv) {
-        certDiv.remove();
-      }
-    } else {
-      console.error(`[ERROR] Erreur suppression certification: réponse HTTP ${r.status}`);
-    }
-  })
-  .catch(err => console.error(`[ERROR] Exception lors de la suppression certification:`, err));
-}
-
-function removeLangue(e) {
-  e.preventDefault();
-  const btn = e.target.closest('.btn-langue-remove');
-  const title = btn.closest('.alert')?.querySelector('strong')?.textContent || 'cette langue';
-  if (!confirm(`Supprimer la langue: ${title} ?\n\nCette action est irréversible.`)) {
-    return;
-  }
-  const candidatPk = btn.dataset.candidatPk;
-  const langueIndex = btn.dataset.langueIndex;
-  console.log(`[DELETE] Utilisateur supprime la langue: ${title}`);
-
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/langue/${langueIndex}/supprimer/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(r => {
-    if (r.ok) {
-      console.log(`[DELETE SUCCESS] Langue ${title} supprimée avec succès`);
-      const langueDiv = btn.closest('.alert.alert-info');
-      if (langueDiv) {
-        langueDiv.remove();
-      }
-    } else {
-      console.error(`[ERROR] Erreur suppression langue: réponse HTTP ${r.status}`);
-    }
-  })
-  .catch(err => console.error('Erreur removeLangue:', err));
 }
 
 // ========================================================================

@@ -10,6 +10,7 @@ from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.utils.html import escape
 from django.views.decorators.http import require_POST
 
 from .forms import CandidatInfoForm
@@ -677,6 +678,25 @@ def formation_add(request, pk):
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
+        # Pour AJAX: retourner juste le snippet HTML du nouvel élément
+        index = len(dossier["formations"]) - 1
+        desc_html = f'<br><small class="text-muted">{escape(formation["description"])}</small>' if formation.get("description", "").strip() else ''
+        html = f'''<div class="alert alert-info mb-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{escape(formation["date"])} - {escape(formation["title"])}</strong> <br>
+              <small>{escape(formation["school"])}</small>
+              {desc_html}
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-formation-remove"
+                    data-candidat-pk="{pk}"
+                    data-formation-index="{index}">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>'''
+        return HttpResponse(html)
+
     return redirect("formulaire:candidat_edit", pk=pk)
 
 @require_POST
@@ -722,6 +742,24 @@ def certification_add(request, pk):
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
+        # Pour AJAX: retourner juste le snippet HTML du nouvel élément
+        index = len(dossier["certifications"]) - 1
+        desc_html = f'<br><small class="text-muted">{escape(certification["description"])}</small>' if certification.get("description", "").strip() else ''
+        html = f'''<div class="alert alert-info mb-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{escape(certification["date"])} - {escape(certification["title"])}</strong>
+              {desc_html}
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-certification-remove"
+                    data-candidat-pk="{pk}"
+                    data-certification-index="{index}">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>'''
+        return HttpResponse(html)
+
     return redirect("formulaire:candidat_edit", pk=pk)
 
 @require_POST
@@ -765,6 +803,24 @@ def langue_add(request, pk):
         dossier["langues"].append(langue)
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
+
+        # Pour AJAX: retourner juste le snippet HTML du nouvel élément
+        index = len(dossier["langues"]) - 1
+        desc_html = f'<br><small class="text-muted">{escape(langue["description"])}</small>' if langue.get("description", "").strip() else ''
+        html = f'''<div class="alert alert-info mb-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{escape(langue["title"])}</strong>
+              {desc_html}
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-langue-remove"
+                    data-candidat-pk="{pk}"
+                    data-langue-index="{index}">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>'''
+        return HttpResponse(html)
 
     return redirect("formulaire:candidat_edit", pk=pk)
 
@@ -824,6 +880,27 @@ def experience_add(request, pk):
         dossier["xp_pro"].append(experience)
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
+
+        # Pour AJAX: retourner juste le snippet HTML du nouvel élément
+        index = len(dossier["xp_pro"]) - 1
+        context_html = f'<small class="text-muted">{escape(experience["context"])}</small> <br>' if experience.get("context") else ''
+        tech_html = ' '.join([f'<span class="badge bg-secondary">{escape(t)}</span>' for t in tech_list])
+        html = f'''<div class="alert alert-warning mb-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <div style="flex: 1;">
+              <strong>{escape(experience["poste"])}</strong> <strong>chez {escape(experience["company"])}</strong> <br>
+              <small>{escape(experience["date"])}</small> <br>
+              {context_html}
+              {f'<div class="mt-2">{tech_html}</div>' if tech_html else ''}
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-experience-remove"
+                    data-candidat-pk="{pk}"
+                    data-exp-index="{index}" style="margin-left: 10px;">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>'''
+        return HttpResponse(html)
 
     return redirect("formulaire:candidat_edit", pk=pk)
 
