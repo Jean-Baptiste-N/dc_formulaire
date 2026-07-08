@@ -593,23 +593,13 @@ function addPostesCible(e) {
 
 function activatePostesCible(e) {
   const radio = e.target;
-  const candidatPk = radio.dataset.candidatPk;
-  const posteCibleId = radio.dataset.posteCible;
-
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/activer/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .catch(err => console.error('Erreur activatePostesCible:', err));
+  const posteCibleTitle = radio.closest('.list-group-item')?.querySelector('input')?.value || 'ce poste';
+  console.log(`[DIRTY] poste_cible marqué comme modifié (activation: ${posteCibleTitle})`);
+  dirtyState.poste_cible = true;
 }
 
 function updatePostesCible(e) {
   const input = e.target;
-  const candidatPk = input.dataset.candidatPk;
-  const posteCibleId = input.dataset.posteCible;
   const title = input.value.trim();
 
   // Ne faire la requête que si le titre a changé
@@ -617,27 +607,19 @@ function updatePostesCible(e) {
     return;
   }
 
-  const formData = new FormData();
-  formData.append('title', title);
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/mettre-a-jour/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(() => {
-    input.dataset.originalTitle = title;
-  })
-  .catch(err => console.error('Erreur updatePostesCible:', err));
+  console.log(`[DIRTY] poste_cible marqué comme modifié (mise à jour titre: ${title})`);
+  dirtyState.poste_cible = true;
 }
 
 function deletePostesCible(e) {
   e.preventDefault();
+  const btn = e.target.closest('.poste-cible-delete');
+  const posteCibleTitle = btn.closest('.list-group-item')?.querySelector('input')?.value || 'ce poste';
   if (!confirm('Supprimer cette variante de poste ?')) {
     return;
   }
+  console.log(`[DELETE] Utilisateur supprime le poste cible: ${posteCibleTitle}`);
 
-  const btn = e.target.closest('.poste-cible-delete');
   const candidatPk = btn.dataset.candidatPk;
   const posteCibleId = btn.dataset.posteCible;
 
@@ -649,6 +631,7 @@ function deletePostesCible(e) {
     body: formData,
   })
   .then(() => {
+    console.log(`[DELETE SUCCESS] Poste cible ${posteCibleTitle} supprimé avec succès, section marqué comme modifié`);
     const itemDiv = document.getElementById(`poste-cible-${posteCibleId}`);
     if (itemDiv) {
       itemDiv.remove();
@@ -658,8 +641,12 @@ function deletePostesCible(e) {
     if (listDiv.children.length === 0) {
       listDiv.innerHTML = '<p class="text-muted fst-italic">Aucune variante ajoutée</p>';
     }
+    // Marquer comme modifié
+    if (!dirtyState['poste_cible']) {
+      dirtyState['poste_cible'] = true;
+    }
   })
-  .catch(err => console.error('Erreur deletePostesCible:', err));
+  .catch(err => console.error(`[ERROR] Exception lors de la suppression poste cible:`, err));
 }
 
 // ========================================================================
@@ -766,11 +753,13 @@ function updateSkillsCible(e) {
 
 function deleteSkillsCible(e) {
   e.preventDefault();
+  const btn = e.target.closest('.skills-cible-delete');
+  const skillsCibleTitle = btn.closest('.list-group-item')?.querySelector('input')?.value || 'cette compétence';
   if (!confirm('Supprimer cette compétence cible ?')) {
     return;
   }
+  console.log(`[DELETE] Utilisateur supprime la compétence cible: ${skillsCibleTitle}`);
 
-  const btn = e.target.closest('.skills-cible-delete');
   const candidatPk = btn.dataset.candidatPk;
   const skillsCibleId = btn.dataset.skillsCible;
 
@@ -782,6 +771,7 @@ function deleteSkillsCible(e) {
     body: formData,
   })
   .then(() => {
+    console.log(`[DELETE SUCCESS] Compétence cible ${skillsCibleTitle} supprimée avec succès, section marqué comme modifié`);
     const itemDiv = document.getElementById(`skills-cible-${skillsCibleId}`);
     if (itemDiv) {
       itemDiv.remove();
@@ -791,8 +781,12 @@ function deleteSkillsCible(e) {
     if (listDiv.children.length === 0) {
       listDiv.innerHTML = '<p class="text-muted fst-italic">Aucune compétence cible ajoutée</p>';
     }
+    // Marquer comme modifié
+    if (!dirtyState['skills_cible']) {
+      dirtyState['skills_cible'] = true;
+    }
   })
-  .catch(err => console.error('Erreur deleteSkillsCible:', err));
+  .catch(err => console.error(`[ERROR] Exception lors de la suppression compétence cible:`, err));
 }
 
 // ========================================================================
@@ -933,13 +927,14 @@ function deleteMainSkillsHierarchyItem(e) {
   const depth = parseInt(btn.dataset.depth || '0');
   const item = document.getElementById(`item-${itemId}`);
   const title = item?.querySelector('.main-skills-hierarchy-title')?.value || 'cet élément';
+  const section = endpointBase.replace('main_skills_', '');
 
   const message = depth === 0
     ? `Supprimer le domaine de compétences: ${title} ?\n\nCela supprimera aussi tous les sous-domaines et est irréversible.`
     : `Supprimer: ${title} et ses enfants ?\n\nCette action est irréversible.`;
 
   if (confirm(message)) {
-    const section = endpointBase.replace('main_skills_', '');
+    console.log(`[DELETE] Utilisateur supprime ${section}: ${title}`);
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
@@ -948,10 +943,16 @@ function deleteMainSkillsHierarchyItem(e) {
       body: formData,
     })
     .then(() => {
+      console.log(`[DELETE SUCCESS] ${section} ${title} supprimé avec succès, section marqué comme modifié`);
       const itemDiv = document.getElementById(`item-${itemId}`);
       if (itemDiv) itemDiv.remove();
+      // Marquer comme modifié
+      const dirtyKey = `main_skills_${section}`;
+      if (!dirtyState[dirtyKey]) {
+        dirtyState[dirtyKey] = true;
+      }
     })
-    .catch(err => console.error('Erreur deleteMainSkillsHierarchyItem:', err));
+    .catch(err => console.error(`[ERROR] Exception lors de la suppression ${section}:`, err));
   }
 }
 
@@ -1080,6 +1081,7 @@ function deleteXpProHierarchyItem(e) {
     : `Supprimer: ${title} et ses enfants ?\n\nCette action est irréversible.`;
 
   if (confirm(message)) {
+    console.log(`[DELETE] Utilisateur supprime réalisation: ${title} (xp_pro_step2[${expIndex}])`);
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
@@ -1088,10 +1090,15 @@ function deleteXpProHierarchyItem(e) {
       body: formData,
     })
     .then(() => {
+      console.log(`[DELETE SUCCESS] Réalisation ${title} supprimée, xp_pro_step2[${expIndex}] marqué comme modifié`);
       const itemDiv = document.getElementById(`item-${itemId}`);
       if (itemDiv) itemDiv.remove();
+      // Marquer comme modifié
+      if (!dirtyState.xp_pro_step2[expIndex]) {
+        dirtyState.xp_pro_step2[expIndex] = true;
+      }
     })
-    .catch(err => console.error('Erreur deleteXpProHierarchyItem:', err));
+    .catch(err => console.error(`[ERROR] Exception lors de la suppression réalisation:`, err));
   }
 }
 
@@ -1118,6 +1125,8 @@ function removeExperience(e) {
   if (!confirm(`Supprimer l'expérience: ${poste}${subtitle} ?\n\nCette action supprimera aussi toutes les réalisations associées et est irréversible.`)) {
     return;
   }
+  console.log(`[DELETE] Utilisateur supprime l'expérience: ${poste}${subtitle}`);
+
   const candidatPk = btn.dataset.candidatPk;
   const expIndex = btn.dataset.expIndex;
 
@@ -1130,16 +1139,17 @@ function removeExperience(e) {
   })
   .then(r => {
     if (r.ok) {
+      console.log(`[DELETE SUCCESS] Expérience ${poste}${subtitle} supprimée avec succès`);
       // Remove the experience card from the DOM
       const expDiv = btn.closest('.alert.alert-warning');
       if (expDiv) {
         expDiv.remove();
       }
     } else {
-      console.error('Erreur suppression expérience:', r.status);
+      console.error(`[ERROR] Erreur suppression expérience: réponse HTTP ${r.status}`);
     }
   })
-  .catch(err => console.error('Erreur removeExperience:', err));
+  .catch(err => console.error(`[ERROR] Exception lors de la suppression expérience:`, err));
 }
 
 // ========================================================================
@@ -1154,6 +1164,33 @@ function initFormationCertificationLangueHandlers() {
       btn.setAttribute('data-listener-initialized', 'true');
     }
   });
+
+  // Formation add form submit
+  const formationForm = document.querySelector('form[action*="formation_add"]');
+  if (formationForm && !formationForm.hasAttribute('data-listener-initialized')) {
+    formationForm.addEventListener('submit', (e) => {
+      console.log('[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour formation');
+    });
+    formationForm.setAttribute('data-listener-initialized', 'true');
+  }
+
+  // Certification add form submit
+  const certificationForm = document.querySelector('form[action*="certification_add"]');
+  if (certificationForm && !certificationForm.hasAttribute('data-listener-initialized')) {
+    certificationForm.addEventListener('submit', (e) => {
+      console.log('[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour certification');
+    });
+    certificationForm.setAttribute('data-listener-initialized', 'true');
+  }
+
+  // Langue add form submit
+  const langueForm = document.querySelector('form[action*="langue_add"]');
+  if (langueForm && !langueForm.hasAttribute('data-listener-initialized')) {
+    langueForm.addEventListener('submit', (e) => {
+      console.log('[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour langue');
+    });
+    langueForm.setAttribute('data-listener-initialized', 'true');
+  }
 
   // Certification delete
   document.querySelectorAll('.btn-certification-remove').forEach(btn => {
@@ -1181,6 +1218,7 @@ function removeFormation(e) {
   }
   const candidatPk = btn.dataset.candidatPk;
   const formationIndex = btn.dataset.formationIndex;
+  console.log(`[DELETE] Utilisateur supprime la formation: ${title}`);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
@@ -1191,15 +1229,16 @@ function removeFormation(e) {
   })
   .then(r => {
     if (r.ok) {
+      console.log(`[DELETE SUCCESS] Formation ${title} supprimée avec succès`);
       const formationDiv = btn.closest('.alert.alert-info');
       if (formationDiv) {
         formationDiv.remove();
       }
     } else {
-      console.error('Erreur suppression formation:', r.status);
+      console.error(`[ERROR] Erreur suppression formation: réponse HTTP ${r.status}`);
     }
   })
-  .catch(err => console.error('Erreur removeFormation:', err));
+  .catch(err => console.error(`[ERROR] Exception lors de la suppression formation:`, err));
 }
 
 function removeCertification(e) {
@@ -1211,6 +1250,7 @@ function removeCertification(e) {
   }
   const candidatPk = btn.dataset.candidatPk;
   const certificationIndex = btn.dataset.certificationIndex;
+  console.log(`[DELETE] Utilisateur supprime la certification: ${title}`);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
@@ -1221,15 +1261,16 @@ function removeCertification(e) {
   })
   .then(r => {
     if (r.ok) {
+      console.log(`[DELETE SUCCESS] Certification ${title} supprimée avec succès`);
       const certDiv = btn.closest('.alert.alert-success');
       if (certDiv) {
         certDiv.remove();
       }
     } else {
-      console.error('Erreur suppression certification:', r.status);
+      console.error(`[ERROR] Erreur suppression certification: réponse HTTP ${r.status}`);
     }
   })
-  .catch(err => console.error('Erreur removeCertification:', err));
+  .catch(err => console.error(`[ERROR] Exception lors de la suppression certification:`, err));
 }
 
 function removeLangue(e) {
@@ -1241,6 +1282,7 @@ function removeLangue(e) {
   }
   const candidatPk = btn.dataset.candidatPk;
   const langueIndex = btn.dataset.langueIndex;
+  console.log(`[DELETE] Utilisateur supprime la langue: ${title}`);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
@@ -1251,12 +1293,13 @@ function removeLangue(e) {
   })
   .then(r => {
     if (r.ok) {
+      console.log(`[DELETE SUCCESS] Langue ${title} supprimée avec succès`);
       const langueDiv = btn.closest('.alert.alert-info');
       if (langueDiv) {
         langueDiv.remove();
       }
     } else {
-      console.error('Erreur suppression langue:', r.status);
+      console.error(`[ERROR] Erreur suppression langue: réponse HTTP ${r.status}`);
     }
   })
   .catch(err => console.error('Erreur removeLangue:', err));
@@ -1274,6 +1317,7 @@ function initXpProStep2Handlers() {
         e.preventDefault();
         const container = this.closest('.xp-pro-step2-container');
         const expIndex = container.dataset.expIndex;
+        console.log(`[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour xp_pro_step2[${expIndex}]`);
         saveData('xp_pro_step2', true, container);
       });
       btn.setAttribute('data-listener-initialized', 'true');
@@ -1340,9 +1384,12 @@ function removeXpProStep2Technology(e) {
   e.preventDefault();
   const badge = e.target.closest('.badge');
   if (badge) {
-    badge.remove();
+    const tech = badge.textContent.replace('×', '').trim();
     const container = e.target.closest('.xp-pro-step2-container');
     const expIndex = container?.dataset.expIndex;
+    console.log(`[DELETE] Utilisateur supprime la technologie: ${tech} (xp_pro_step2[${expIndex}])`);
+    badge.remove();
+    console.log(`[DELETE SUCCESS] Technologie ${tech} supprimée, xp_pro_step2[${expIndex}] marqué comme modifié`);
     if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
       dirtyState.xp_pro_step2[expIndex] = true;
     }
@@ -1478,7 +1525,7 @@ const autosaveConfig = {
   }
 };
 
-// Tracking des sections modifiées (dirty state)
+// Tracking des sections modifiés (dirty state)
 const dirtyState = {
   poste_cible: false,
   skills_cible: false,
@@ -1486,6 +1533,36 @@ const dirtyState = {
   main_skills_table: false,
   xp_pro_step2: {} // Keyed by expIndex (consolide contexte + techno + réalisations)
 };
+
+// Timer global d'auto-save (créé une seule fois au chargement)
+let autosaveTimer = null;
+
+function startAutosaveTimer() {
+  if (autosaveTimer) {
+    console.log('[AUTO-SAVE] Timer déjà actif');
+    return; // Timer déjà actif
+  }
+
+  console.log('[AUTO-SAVE] Démarrage du timer 5s');
+  autosaveTimer = setInterval(() => {
+    ['poste_cible', 'skills_cible', 'main_skills_bullet', 'main_skills_table'].forEach(section => {
+      if (dirtyState[section]) {
+        console.log(`[AUTO-SAVE] Sauvegarde de ${section} après 5s d'inactivité`);
+        saveData(section, false);
+      }
+    });
+    // Pour xp_pro_step2 (contexte + technos + réalisations, par expérience)
+    Object.entries(dirtyState.xp_pro_step2).forEach(([expIndex, isDirty]) => {
+      if (isDirty) {
+        console.log(`[AUTO-SAVE] Sauvegarde de xp_pro_step2[${expIndex}] après 5s d'inactivité`);
+        const container = document.querySelector(`.xp-pro-step2-container[data-exp-index="${expIndex}"]`);
+        if (container) {
+          saveData('xp_pro_step2', false, container);
+        }
+      }
+    });
+  }, 5000); // 5 secondes
+}
 
 // Fonction unifiée pour sauvegarder les données
 async function saveData(section, showFeedback = false, element = null) {
@@ -1520,15 +1597,22 @@ async function saveData(section, showFeedback = false, element = null) {
     if (showFeedback) {
       if (section === 'xp_pro_step2' && element) {
         btn = element.querySelector('.btn-xp-pro-step2-save');
-      } else {
-        btn = document.querySelector(`[data-section="${section.replace('main_skills_', '')}"][data-candidat-pk="${CANDIDAT_PK}"].btn-main-skills-save`)
-           || document.querySelector(`[data-candidat-pk="${CANDIDAT_PK}"].btn-poste-cible-save`)
-           || document.querySelector(`.btn-${section}-save`);
+      } else if (section === 'poste_cible') {
+        btn = document.querySelector('.btn-poste-cible-save');
+      } else if (section === 'skills_cible') {
+        btn = document.querySelector('.btn-skills-cible-save');
+      } else if (section === 'main_skills_bullet') {
+        btn = document.querySelector('.btn-main-skills-save[data-section="bullet"]');
+      } else if (section === 'main_skills_table') {
+        btn = document.querySelector('.btn-main-skills-save[data-section="table"]');
       }
       if (btn) {
         const textSpan = btn.querySelector('.btn-save-text') || btn;
         textSpan.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
         btn.disabled = true;
+        if (showFeedback) {
+          console.log(`[SAVING] Enregistrement en cours pour ${section}...`);
+        }
       }
     }
 
@@ -1539,6 +1623,7 @@ async function saveData(section, showFeedback = false, element = null) {
 
     if (response.ok) {
       if (showFeedback && btn) {
+        console.log(`[SUCCESS] ${section} enregistrée avec succès !`);
         const textSpan = btn.querySelector('.btn-save-text') || btn;
         // Sauvegarder les classes initiales du bouton
         const initialClasses = btn.className;
@@ -1560,12 +1645,34 @@ async function saveData(section, showFeedback = false, element = null) {
       if (section === 'xp_pro_step2' && element) {
         const expIndex = element.dataset.expIndex;
         dirtyState.xp_pro_step2[expIndex] = false;
+        if (!showFeedback) {
+          console.log(`[AUTO-SAVE SUCCESS] xp_pro_step2[${expIndex}] enregistré automatiquement`);
+        }
       } else {
         dirtyState[section] = false;
+        // Mettre à jour les originalTitle pour poste_cible et skills_cible
+        if (section === 'poste_cible') {
+          document.querySelectorAll('#poste-cible-list input[type="text"]').forEach(input => {
+            input.dataset.originalTitle = input.value.trim();
+          });
+        } else if (section === 'skills_cible') {
+          document.querySelectorAll('#skills-cible-list input[type="text"]').forEach(input => {
+            input.dataset.originalTitle = input.value.trim();
+          });
+        }
+        if (!showFeedback) {
+          console.log(`[AUTO-SAVE SUCCESS] ${section} enregistré automatiquement`);
+        }
+      }
+    } else {
+      console.error(`[ERROR] Erreur lors de la sauvegarde de ${section}: réponse HTTP ${response.status}`);
+      if (showFeedback && btn) {
+        btn.innerHTML = '<i class="bi bi-exclamation-circle"></i> Erreur!';
+        btn.disabled = false;
       }
     }
   } catch (err) {
-    console.error(`Erreur saveData ${section}:`, err);
+    console.error(`[ERROR] Exception dans saveData ${section}:`, err);
     if (showFeedback && btn) {
       btn.innerHTML = '<i class="bi bi-exclamation-circle"></i> Erreur!';
       btn.disabled = false;
@@ -1576,37 +1683,56 @@ async function saveData(section, showFeedback = false, element = null) {
 // Fonction unifiée d'initialisation des handlers
 function initAutosaveHandlers() {
   // Boutons pour bulk sections (poste_cible, skills_cible, main_skills)
-  document.querySelectorAll('.btn-poste-cible-save, .btn-skills-cible-save, .btn-main-skills-save').forEach(btn => {
+
+  // Bouton poste_cible
+  document.querySelectorAll('.btn-poste-cible-save').forEach(btn => {
+    if (!btn.hasAttribute('data-autosave-initialized')) {
+      btn.addEventListener('click', () => {
+        console.log('[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour poste_cible');
+        saveData('poste_cible', true);
+      });
+      btn.setAttribute('data-autosave-initialized', 'true');
+    }
+  });
+
+  // Bouton skills_cible
+  document.querySelectorAll('.btn-skills-cible-save').forEach(btn => {
+    if (!btn.hasAttribute('data-autosave-initialized')) {
+      btn.addEventListener('click', () => {
+        console.log('[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour skills_cible');
+        saveData('skills_cible', true);
+      });
+      btn.setAttribute('data-autosave-initialized', 'true');
+    }
+  });
+
+  // Boutons main_skills
+  document.querySelectorAll('.btn-main-skills-save').forEach(btn => {
     if (!btn.hasAttribute('data-autosave-initialized')) {
       btn.addEventListener('click', function() {
-        let section;
-        if (this.className.includes('poste-cible')) {
-          section = 'poste_cible';
-        } else if (this.className.includes('skills-cible')) {
-          section = 'skills_cible';
-        } else {
-          section = `main_skills_${this.dataset.section}`;
-        }
+        const section = `main_skills_${this.dataset.section}`;
+        console.log(`[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour ${section}`);
         saveData(section, true);
       });
       btn.setAttribute('data-autosave-initialized', 'true');
     }
   });
 
-
-
   // Dirty tracking pour poste_cible et skills_cible
   document.querySelectorAll('#poste-cible-list input[type="text"], #skills-cible-list input[type="text"], #skills-cible-list input[type="checkbox"]').forEach(input => {
     if (!input.hasAttribute('data-autosave-initialized')) {
       input.addEventListener('change', function() {
         if (this.classList.contains('skills-cible-checkbox') || this.dataset.skillsCible) {
+          console.log('[DIRTY] skills_cible marqué comme modifié');
           dirtyState.skills_cible = true;
         } else {
+          console.log('[DIRTY] poste_cible marqué comme modifié');
           dirtyState.poste_cible = true;
         }
       });
       input.addEventListener('blur', function() {
         if (this.type === 'text' && this.dataset.skillsCible) {
+          console.log('[DIRTY] skills_cible marqué comme modifié (blur)');
           dirtyState.skills_cible = true;
         }
       });
@@ -1622,10 +1748,12 @@ function initAutosaveHandlers() {
           const container = this.closest('.xp-pro-step2-container');
           const expIndex = container?.dataset.expIndex || this.dataset.targetIndex;
           if (container && !dirtyState.xp_pro_step2[expIndex]) {
+            console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (réalisation)`);
             dirtyState.xp_pro_step2[expIndex] = true;
           }
         } else {
           const section = this.dataset.endpointBase === 'bullet' ? 'main_skills_bullet' : 'main_skills_table';
+          console.log(`[DIRTY] ${section} marqué comme modifié`);
           dirtyState[section] = true;
         }
       });
@@ -1640,6 +1768,7 @@ function initAutosaveHandlers() {
         const container = this.closest('.xp-pro-step2-container');
         const expIndex = container?.dataset.expIndex;
         if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
+          console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (contexte)`);
           dirtyState.xp_pro_step2[expIndex] = true;
         }
       });
@@ -1654,6 +1783,7 @@ function initAutosaveHandlers() {
         const container = this.closest('.xp-pro-step2-container');
         const expIndex = container?.dataset.expIndex;
         if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
+          console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (technos)`);
           dirtyState.xp_pro_step2[expIndex] = true;
         }
       });
@@ -1662,23 +1792,10 @@ function initAutosaveHandlers() {
   });
 }
 
-// Auto-save toutes les 5s (silencieux) pour bulk sections
-setInterval(() => {
-  ['poste_cible', 'skills_cible', 'main_skills_bullet', 'main_skills_table'].forEach(section => {
-    if (dirtyState[section]) {
-      saveData(section, false);
-    }
-  });
-  // Pour xp_pro_step2 (contexte + technos + réalisations, par expérience)
-  Object.entries(dirtyState.xp_pro_step2).forEach(([expIndex, isDirty]) => {
-    if (isDirty) {
-      const container = document.querySelector(`.xp-pro-step2-container[data-exp-index="${expIndex}"]`);
-      if (container) {
-        saveData('xp_pro_step2', false, container);
-      }
-    }
-  });
-}, 5000);
+// Initialiser le timer au chargement (une seule fois)
+document.addEventListener('DOMContentLoaded', () => {
+  startAutosaveTimer();
+});
 
 // ========================================================================
 // MARK: Initialisation générale
