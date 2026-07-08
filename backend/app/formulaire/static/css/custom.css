@@ -8,7 +8,7 @@
    ============================================================================ */
 
 body {
-  background-color: #FFF1E5;
+  background-color: #FFF9EA;
 }
 
 /* ============================================================================
@@ -181,7 +181,7 @@ body {
 }
 
 .card-header {
-  background-color: #f8f9fa;
+  background-color: #548DD4 !important;
   border-bottom: 2px solid #dee2e6;
   padding: 1rem;
 }
@@ -225,7 +225,7 @@ body {
 }
 
 .main_skills_hierarchy-title:focus {
-  border-color: #0d6efd;
+  border-color: #2E70C2;
   box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
@@ -254,7 +254,7 @@ body {
 }
 
 .xp_pro_realization-title:focus {
-  border-color: #0d6efd;
+  border-color: #2E70C2;
   box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
@@ -279,7 +279,7 @@ body {
 }
 
 .form-control:focus {
-  border-color: #80bdff;
+  border-color: #2E70C2;
   box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
 }
 
@@ -447,12 +447,12 @@ body {
    ============================================================================ */
 
 .navbar-dark {
-  background-color: #0d6efd;
+  background-color: #548DD4 !important;
 }
 
 .navbar-brand {
   font-weight: 600;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
 }
 
 /* ============================================================================
@@ -505,7 +505,7 @@ body {
 }
 
 .xp-pro-step2-context:focus {
-  border-color: #548DD4;
+  border-color: #2E70C2;
   box-shadow: 0 0 0 0.2rem rgba(84, 141, 212, 0.25);
 }
 
@@ -595,6 +595,6 @@ body {
 }
 
 .skills-cible-checkbox:focus {
-  border-color: #80bdff;
+  border-color: #2E70C2;
   box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
 }
