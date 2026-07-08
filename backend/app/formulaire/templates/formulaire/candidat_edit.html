@@ -1331,8 +1331,8 @@ function updateXpProHierarchyItem(e) {
   const expIndex = input.dataset.targetIndex;
 
   // Marquer comme dirty pour auto-save 5s
-  if (!dirtyState.xp_pro_realization[expIndex]) {
-    dirtyState.xp_pro_realization[expIndex] = true;
+  if (!dirtyState.xp_pro_step2[expIndex]) {
+    dirtyState.xp_pro_step2[expIndex] = true;
   }
 }
 
@@ -1364,9 +1364,9 @@ function deleteXpProHierarchyItem(e) {
       const itemDiv = document.getElementById(`item-${itemId}`);
       if (itemDiv) itemDiv.remove();
       // Marquer comme modifié
-      if (!dirtyState.xp_pro_step2[expIndex]) {
-        dirtyState.xp_pro_step2[expIndex] = true;
-      }
+      if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
+      if (!dirtyState.xp_pro_step2[expIndex]) dirtyState.xp_pro_step2[expIndex] = true;
+      else if (typeof dirtyState.xp_pro_step2[expIndex] === 'object') dirtyState.xp_pro_step2[expIndex].dirty = true;
     })
     .catch(err => console.error(`[ERROR] Exception lors de la suppression réalisation:`, err));
   }
@@ -1555,6 +1555,10 @@ function addXpProStep2Technology(e) {
 
   const techs = input.value.split(',').map(t => t.trim()).filter(t => t);
   if (techs.length === 0) return;
+
+  // Supprimer le texte "Aucune technologie ajoutée" si c'est le premier badge
+  const emptyMsg = badgesDiv.querySelector('.text-muted');
+  if (emptyMsg) emptyMsg.remove();
 
   techs.forEach(tech => {
     // Nettoyer les guillemets d'échappement si présents
@@ -1759,7 +1763,7 @@ function startAutosaveTimer() {
         }
       }
     });
-  }, 5000); // 5 secondes
+  }, 12000); // 12 secondes
 }
 
 // Fonction unifiée pour sauvegarder les données

@@ -498,8 +498,11 @@ body {
    ============================================================================ */
 
 .xp-pro-step2-container {
-  background-color: #fff;
-  border-radius: 0.375rem;
+  background-color: #fff4eb;
+  border-color: #fde6d3;
+  color: #796656;
+  border: 1px;
+  border-radius: 0.25rem;
   padding: 1rem;
   margin-bottom: 1rem;
 }
@@ -511,7 +514,7 @@ body {
 }
 
 .xp-pro-step2-context:focus {
-  border-color: #2E70C2;
+  border-color: #F69545;
   box-shadow: 0 0 0 0.2rem rgba(84, 141, 212, 0.25);
 }
 
