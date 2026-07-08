@@ -4,10 +4,11 @@ import uuid
 from pathlib import Path
 import io
 import tempfile
+from typing import Tuple, Literal, Optional
 from docxtpl import DocxTemplate
 
 from django.conf import settings
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils.html import escape
@@ -25,6 +26,30 @@ logger = logging.getLogger(__name__)
 
 def _new_id():
     return str(uuid.uuid4())
+
+def get_candidat_or_redirect(pk_or_slug, index=0) -> Tuple[Literal['success', 'redirect', 'not_found'], Optional[Candidat]]:
+    """Lookup candidat par slug ou pk. Si accès via pk, redirige vers slug.
+
+    Pour les slugs avec doublons, utiliser le paramètre 'index' pour accéder au Nth candidat.
+    """
+    # Essayer de lookup par slug d'abord
+    candidates = Candidat.objects.filter(slug=pk_or_slug).all()
+    if candidates:
+        # Vérifier l'index
+        if index < 0 or index >= len(candidates):
+            return ('not_found', None)
+        candidat = candidates[index]
+        return ('success', candidat)
+
+    # Sinon, essayer par pk (UUID)
+    try:
+        candidat = Candidat.objects.get(pk=pk_or_slug)
+        # Si on a trouvé via pk et qu'il a un slug différent, il faudra rediriger
+        if candidat.slug and candidat.slug != pk_or_slug:
+            return ('redirect', candidat)  # Signal de redirection
+        return ('success', candidat)
+    except Candidat.DoesNotExist:
+        return ('not_found', None)
 
 def _clean_text(text):
     """Wrapper pour compatibilité avec le code existant."""
@@ -202,8 +227,22 @@ def candidat_create(request):
 # Candidat edit (main form)
 # ---------------------------------------------------------------------------
 
-def candidat_edit(request, pk):
-    candidat = get_object_or_404(Candidat, pk=pk)
+def candidat_edit(request, pk=None, slug=None):
+    identifier = slug or pk
+    index = int(request.GET.get('index', 0))
+    status, candidat = get_candidat_or_redirect(identifier, index=index)
+
+    if status == 'not_found':
+        raise Http404(f"Candidat not found: {identifier}")
+
+    assert candidat is not None, f"Candidat should not be None (status={status})"
+
+    # Si on accède via pk et le candidat a un slug différent, rediriger vers slug
+    if status == 'redirect' and candidat.slug:
+        url = f'/candidat/{candidat.slug}/modifier/'
+        if index > 0:
+            url += f'?index={index}'
+        return redirect(url)
 
     # Synchro du header et initialisation des defaults (poste_cible)
     # À faire en premier, avant toute autre logique
@@ -261,8 +300,23 @@ def candidat_edit(request, pk):
 # Candidat detail (visualisation)
 # ---------------------------------------------------------------------------
 
-def candidat_detail(request, pk):
-    candidat = get_object_or_404(Candidat, pk=pk)
+def candidat_detail(request, pk=None, slug=None):
+    identifier = slug or pk
+    index = int(request.GET.get('index', 0))
+    status, candidat = get_candidat_or_redirect(identifier, index=index)
+
+    if status == 'not_found':
+        raise Http404(f"Candidat not found: {identifier}")
+
+    assert candidat is not None, f"Candidat should not be None (status={status})"
+
+    # Si on accède via pk et le candidat a un slug différent, rediriger vers slug
+    if status == 'redirect' and candidat.slug:
+        url = f'/candidat/{candidat.slug}/detail/'
+        if index > 0:
+            url += f'?index={index}'
+        return redirect(url)
+
     return render(request, "formulaire/candidat_detail.html", {"candidat": candidat})
 
 # ============================================================================
@@ -1133,7 +1187,6 @@ def xp_pro_realization_delete(request, pk, exp_index, item_id):
         return HttpResponse(f"Erreur: {e}", status=400)
 
 @require_POST
-@require_POST
 def xp_pro_step2_update(request, pk, exp_index):
     """
     Met à jour les 3 sections de la 2e étape du workflow xp_pro:
@@ -1216,8 +1269,23 @@ def xp_pro_step2_bulk_update(request, pk, exp_index):
 # MARK: 10. DOCX EXPORT
 # ============================================================================
 
-def candidat_export_docx(request, pk):
-    candidat = get_object_or_404(Candidat, pk=pk)
+def candidat_export_docx(request, pk=None, slug=None):
+    identifier = slug or pk
+    index = int(request.GET.get('index', 0))
+    status, candidat = get_candidat_or_redirect(identifier, index=index)
+
+    if status == 'not_found':
+        raise Http404(f"Candidat not found: {identifier}")
+
+    assert candidat is not None, f"Candidat should not be None (status={status})"
+
+    # Si on accède via pk et le candidat a un slug différent, rediriger vers slug
+    if status == 'redirect' and candidat.slug:
+        url = f'/candidat/{candidat.slug}/export/'
+        if index > 0:
+            url += f'?index={index}'
+        return redirect(url)
+
     template_path = Path(settings.DOCX_TEMPLATE_PATH)
 
     if not template_path.exists():

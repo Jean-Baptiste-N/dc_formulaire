@@ -10,9 +10,16 @@ urlpatterns = [
     # ========================================================================
     path("", views.candidat_list, name="candidat_list"),
     path("candidat/nouveau/", views.candidat_create, name="candidat_create"),
-    path("candidat/<uuid:pk>/", views.candidat_detail, name="candidat_detail"),
+
+    # Routes avec UUID (héritées)
+    path("candidat/<uuid:pk>/detail/", views.candidat_detail, name="candidat_detail"),
     path("candidat/<uuid:pk>/modifier/", views.candidat_edit, name="candidat_edit"),
     path("candidat/<uuid:pk>/export/", views.candidat_export_docx, name="candidat_export"),
+
+    # Routes avec SLUG (affichées au user)
+    path("candidat/<slug:slug>/detail/", views.candidat_detail, name="candidat_detail_slug"),
+    path("candidat/<slug:slug>/modifier/", views.candidat_edit, name="candidat_edit_slug"),
+    path("candidat/<slug:slug>/export/", views.candidat_export_docx, name="candidat_export_slug"),
 
     # ========================================================================
     # 2.1 POSTES CIBLES - Add, Delete, Activate, Update
