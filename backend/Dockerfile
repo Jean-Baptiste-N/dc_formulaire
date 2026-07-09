@@ -39,4 +39,4 @@ RUN apt-get update && apt-get install -y curl && \
 
 # Use entrypoint to run the application
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8001", "--workers", "2", "--timeout", "300"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8001", "--workers", "4", "--timeout", "600", "--access-logfile", "-", "--error-logfile", "-"]
