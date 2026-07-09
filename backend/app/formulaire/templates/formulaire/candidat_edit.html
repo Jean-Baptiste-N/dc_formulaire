@@ -595,9 +595,30 @@ function addPostesCible(e) {
 
 function activatePostesCible(e) {
   const radio = e.target;
-  const posteCibleTitle = radio.closest('.list-group-item')?.querySelector('input')?.value || 'ce poste';
-  console.log(`[DIRTY] poste_cible marqué comme modifié (activation: ${posteCibleTitle})`);
-  dirtyState.poste_cible = true;
+  const posteCibleId = radio.value;
+  const posteCibleTitle = radio.closest('[id^="poste-cible-"]')?.querySelector('input[type="text"]')?.value || 'ce poste';
+  
+  const candidatPk = radio.dataset.candidatPk;
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/activer/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then(r => {
+    if (!r.ok) {
+      throw new Error(`HTTP ${r.status}`);
+    }
+    console.log(`[SUCCESS] Poste cible ${posteCibleTitle} activé avec succès`);
+    dirtyState.poste_cible = true;
+  })
+  .catch(err => {
+    console.error(`[ERROR] Erreur lors de l'activation du poste cible:`, err);
+    // Revert the radio on error
+    radio.checked = false;
+  });
 }
 
 function updatePostesCible(e) {
@@ -1049,7 +1070,7 @@ function addFormation(e) {
   .then(html => {
     console.log(`[SUCCESS] Formation ${title} ajoutée avec succès`);
     const listDiv = document.getElementById('formations-list');
-    const emptyMsg = listDiv.querySelector('.text-muted');
+    const emptyMsg = listDiv.querySelector('p.text-muted');
     if (emptyMsg) {
       emptyMsg.remove();
     }
@@ -1085,7 +1106,7 @@ function addCertification(e) {
   .then(html => {
     console.log(`[SUCCESS] Certification ${title} ajoutée avec succès`);
     const listDiv = document.getElementById('certifications-list');
-    const emptyMsg = listDiv.querySelector('.text-muted');
+    const emptyMsg = listDiv.querySelector('p.text-muted');
     if (emptyMsg) {
       emptyMsg.remove();
     }
@@ -1121,7 +1142,7 @@ function addLangue(e) {
   .then(html => {
     console.log(`[SUCCESS] Langue ${title} ajoutée avec succès`);
     const listDiv = document.getElementById('langues-list');
-    const emptyMsg = listDiv.querySelector('.text-muted');
+    const emptyMsg = listDiv.querySelector('p.text-muted');
     if (emptyMsg) {
       emptyMsg.remove();
     }
