@@ -2,7 +2,6 @@ services:
 
   web:
     build: ./backend
-    user: "${UID:-1000}:${GID:-1000}"  # Ajouter cette ligne
     ports:
       - "8001:8001"
     volumes:

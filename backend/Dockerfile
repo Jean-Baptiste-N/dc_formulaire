@@ -23,6 +23,9 @@ COPY app/ .
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+# Create staticfiles directory with proper permissions
+RUN mkdir -p /app/staticfiles && chmod -R 755 /app/staticfiles
+
 #  Expose port 8001 for the application
 EXPOSE 8001
 
@@ -36,4 +39,4 @@ RUN apt-get update && apt-get install -y curl && \
 
 # Use entrypoint to run the application
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8001", "--workers", "2", "--timeout", "300"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8001", "--workers", "4", "--timeout", "600", "--access-logfile", "-", "--error-logfile", "-"]
