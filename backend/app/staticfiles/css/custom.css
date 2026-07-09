@@ -1,0 +1,614 @@
+/* ============================================================================
+   CUSTOM CSS - DC Formulaire
+   Surcharge et extension des styles Bootstrap
+   ============================================================================ */
+
+/* ============================================================================
+   MARK: 1. BODY & LAYOUT
+   ============================================================================ */
+
+body {
+  background-color: #FFF9EA;
+}
+
+/* ============================================================================
+   MARK: 2. BUTTONS - Customization
+   ============================================================================ */
+
+/* Primary Button */
+.btn-primary {
+  background-color: #548DD4;
+  border-color: #548DD4;
+  font-weight: 500;
+}
+
+.btn-primary:hover {
+  background-color: #2E70C2;
+  border-color: #275B9B;
+}
+
+.btn-primary:active {
+  background-color: #2E70C2;
+  border-color: #275B9B;
+}
+
+/* Outline Primary */
+.btn-outline-primary {
+  color: #548DD4;
+  background-color: white;
+  border-color: #548DD4;
+  font-weight: 500;
+}
+
+.btn-outline-primary:hover {
+  color: white;
+  background-color: #2E70C2;
+  border-color: #275B9B;
+}
+
+.btn-outline-primary:active {
+  color: white;
+  background-color: #2E70C2;
+  border-color: #275B9B;
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background-color: #F69545;
+  border-color: #F69545;
+  font-weight: 500;
+}
+
+.btn-secondary:hover {
+  background-color: #F57C00;
+  border-color: #EF6C00;
+}
+
+.btn-secondary:active {
+  background-color: #F57C00;
+  border-color: #EF6C00;
+}
+
+/* Outline Secondary */
+.btn-outline-secondary {
+  color: #F69545;
+  background-color: white;
+  border-color: #F69545;
+  font-weight: 500;
+}
+
+.btn-outline-secondary:hover {
+  color: white;
+  background-color: #F57C00;
+  border-color: #EF6C00;
+}
+
+.btn-outline-secondary:active {
+  color: white;
+  background-color: #F57C00;
+  border-color: #EF6C00;
+}
+
+/* Success Button */
+.btn-success {
+  background-color: #48A822;
+  border-color: #48A822;
+  font-weight: 500;
+}
+
+.btn-success:hover {
+  background-color: #3B8B1B;
+  border-color: #307C12;
+}
+
+.btn-success:active {
+  background-color: #3B8B1B;
+  border-color: #307C12;
+}
+
+/* Outline Success */
+.btn-outline-success {
+  color: #48A822;
+  background-color: white;
+  border-color: #48A822;
+  font-weight: 500;
+}
+
+.btn-outline-success:hover {
+  color: white;
+  background-color: #3B8B1B;
+  border-color: #307C12;
+}
+
+.btn-outline-success:active {
+  color: white;
+  background-color: #3B8B1B;
+  border-color: #307C12;
+}
+
+/* Danger Button */
+.btn-danger {
+  background-color: #F03346;
+  border-color: #F03346;
+  font-weight: 500;
+}
+
+.btn-danger:hover {
+  background-color: #BB2D3B;
+  border-color: #B02A37;
+}
+
+/* Outline Danger */
+.btn-outline-danger {
+  color: #F03346;
+  background-color: white;
+  border-color: #F03346;
+  font-weight: 500;
+}
+
+.btn-outline-danger:hover {
+  color: white;
+  background-color: #BB2D3B;
+  border-color: #B02A37;
+}
+
+.btn-outline-danger:active {
+  color: white;
+  background-color: #BB2D3B;
+  border-color: #B02A37;
+}
+
+/* Small Button Sizing */
+.btn-sm {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.875rem;
+}
+
+/* Icon Buttons */
+/* .btn-icon {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.875rem;
+} */
+
+/* ============================================================================
+   MARK: 3. CARDS & SECTIONS
+   ============================================================================ */
+
+.card {
+  border-radius: 0.375rem;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+  background-color: #f5f5f5;
+  border-bottom: 2px solid #dee2e6;
+  padding: 1rem;
+}
+
+.card-header-create {
+  background-color: #548DD4 !important;
+  border-bottom: 2px solid #dee2e6;
+  padding: 1rem;
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+.section-card {
+  border-left: 4px solid #548DD4;
+}
+
+/* ============================================================================
+   MARK: 4. HIERARCHIES & ITEM ROWS
+   ============================================================================ */
+
+.item-row {
+  border-left: 3px solid #6c757d;
+  margin-left: 1rem;
+  padding-left: 0.75rem;
+}
+
+.sous-item-row {
+  border-left: 2px solid #adb5bd;
+  margin-left: 2.5rem;
+  padding-left: 0.5rem;
+}
+
+/* Main Skills Hierarchy */
+.main_skills_hierarchy-item {
+  padding: 8px;
+  border-left: 2px solid #dee2e6;
+}
+
+.main_skills_hierarchy-row {
+  gap: 0.5rem;
+}
+
+.main_skills_hierarchy-title {
+  font-size: 0.95rem;
+}
+
+.main_skills_hierarchy-title:focus {
+  border-color: #2E70C2;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.main_skills_hierarchy-zone {
+  margin-left: 1rem;
+  padding-left: 0.5rem;
+  border-left: 1px dashed #dee2e6;
+}
+
+.main_skills_hierarchy-item.ms-4 {
+  margin-left: 1rem;
+}
+
+/* XP Pro Realization Hierarchy */
+.xp_pro_realization-item {
+  padding: 8px;
+  border-left: 2px solid #dee2e6;
+}
+
+.xp_pro_realization-row {
+  gap: 0.5rem;
+}
+
+.xp_pro_realization-title {
+  font-size: 0.95rem;
+}
+
+.xp_pro_realization-title:focus {
+  border-color: #2E70C2;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.xp_pro_realization-zone {
+  margin-left: 1rem;
+  padding-left: 0.5rem;
+  border-left: 1px dashed #dee2e6;
+}
+
+.xp_pro_realization-item.ms-4 {
+  margin-left: 1rem;
+}
+
+/* ============================================================================
+   MARK: 5. FORMS
+   ============================================================================ */
+
+.form-control {
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  font-size: 0.95rem;
+}
+
+.form-control:focus {
+  border-color: #2E70C2;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.form-label {
+  color: #495057;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.form-check-input:checked {
+  background-color: #548DD4;
+  border-color: #548DD4;
+}
+
+/* ============================================================================
+   MARK: 6. ALERTS & MESSAGES
+   ============================================================================ */
+
+.alert {
+  border-radius: 0.25rem;
+  border: 1px solid transparent;
+}
+
+.alert-info {
+  background-color: #e7f2ff;
+  border-color: #d8e9ff;
+  color: #6a7481;
+}
+
+.alert-xp-pro {
+  background-color: #fff4eb;
+  border-color: #fde6d3;
+  color: #796656;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}
+
+/* ============================================================================
+   MARK: 7. HTMX INDICATORS
+   ============================================================================ */
+
+.htmx-indicator {
+  display: none;
+}
+
+.htmx-request .htmx-indicator {
+  display: inline-block;
+}
+
+.htmx-request.htmx-indicator {
+  display: inline-block;
+}
+
+/* ============================================================================
+   MARK: 8. UTILITIES
+   ============================================================================ */
+
+.text-muted {
+  color: #6c757d;
+}
+
+.text-danger {
+  color: #dc3545;
+}
+
+.fw-semibold {
+  font-weight: 600;
+}
+
+.fw-bold {
+  font-weight: 700;
+}
+
+.fst-italic {
+  font-style: italic;
+}
+
+.border-top {
+  border-top: 1px solid #dee2e6;
+}
+
+.border-start {
+  border-left: 1px solid #dee2e6;
+}
+
+.border-2 {
+  border-width: 2px;
+}
+
+/* ============================================================================
+   MARK: 9. SPACING OVERRIDES
+   ============================================================================ */
+
+.mb-3 {
+  margin-bottom: 1rem;
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem;
+}
+
+.mt-3 {
+  margin-top: 1rem;
+}
+
+.mt-4 {
+  margin-top: 1.5rem;
+}
+
+.ms-2 {
+  margin-left: 0.5rem;
+}
+
+.ms-4 {
+  margin-left: 1.5rem;
+}
+
+.ps-3 {
+  padding-left: 1rem;
+}
+
+.pb-4 {
+  padding-bottom: 1.5rem;
+}
+
+.pb-5 {
+  padding-bottom: 3rem;
+}
+
+/* ============================================================================
+   MARK: 10. RESPONSIVE LAYOUT
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .btn-sm {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8125rem;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  .item-row {
+    margin-left: 0.5rem;
+  }
+
+  .sous-item-row {
+    margin-left: 1.5rem;
+  }
+}
+
+/* ============================================================================
+   MARK: 11. NAVBAR
+   ============================================================================ */
+
+.navbar-dark {
+  background-color: #548DD4 !important;
+}
+
+.navbar-brand {
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+/* ============================================================================
+   MARK: 12. CONTAINERS
+   ============================================================================ */
+
+.container {
+  max-width: 1200px;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.justify-content-between {
+  justify-content: space-between;
+}
+
+.justify-content-end {
+  justify-content: flex-end;
+}
+
+.align-items-center {
+  align-items: center;
+}
+
+.align-items-start {
+  align-items: flex-start;
+}
+
+.gap-3 {
+  gap: 1rem;
+}
+
+/* ============================================================================
+   MARK: 13. XP_PRO STEP 2 - CONTEXTE / TECHNOLOGIES / RÉALISATIONS
+   ============================================================================ */
+
+.xp-pro-step2-container {
+  background-color: #fff4eb;
+  border-color: #fde6d3;
+  color: #796656;
+  border: 1px;
+  border-radius: 0.25rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.xp-pro-step2-context {
+  min-height: 80px;
+  font-size: 0.95rem;
+  border-radius: 0.25rem;
+}
+
+.xp-pro-step2-context:focus {
+  border-color: #F69545;
+  box-shadow: 0 0 0 0.2rem rgba(84, 141, 212, 0.25);
+}
+
+/* Technologies - Input & Badges */
+.bg-info {
+  background-color: #548DD4 !important;
+}
+
+.badge.bg-info {
+  background-color: #548DD4 !important;
+  color: white !important;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.xp-pro-step2-tech-input {
+  font-size: 0.9rem;
+  border-radius: 0.25rem;
+}
+
+.xp-pro-step2-tech-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-height: 32px;
+  padding: 0.5rem;
+}
+
+.btn-xp-pro-step2-tech-add,
+.btn-xp-pro-step2-tech-remove {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9rem;
+}
+
+.btn-xp-pro-step2-tech-add {
+  border-radius: 0.25rem;
+}
+
+.btn-xp-pro-step2-tech-remove {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  margin-left: 0.25rem;
+  padding: 0;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.btn-xp-pro-step2-tech-remove:hover {
+  opacity: 0.7;
+}
+
+/* Réalisations */
+.xp-pro-step2-realizations {
+  margin-top: 0.5rem;
+  padding-left: 0.5rem;
+  border-left: 2px solid #e9ecef;
+}
+
+.btn-xp-pro-step2-add-realization {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Save Button */
+.btn-xp-pro-step2-save {
+  min-width: 120px;
+}
+
+.btn-xp-pro-step2-save:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ============================================================================
+   MARK: 14 SKILLS_CIBLE - Compétences cibles (Checkboxes)
+   ============================================================================ */
+
+.skills-cible-checkbox {
+  cursor: pointer;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.skills-cible-checkbox:checked {
+  background-color: #548DD4;
+  border-color: #548DD4;
+}
+
+.skills-cible-checkbox:focus {
+  border-color: #2E70C2;
+  box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+}
