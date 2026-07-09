@@ -23,6 +23,9 @@ COPY app/ .
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+# Create staticfiles directory with proper permissions
+RUN mkdir -p /app/staticfiles && chmod -R 755 /app/staticfiles
+
 #  Expose port 8001 for the application
 EXPOSE 8001
 
