@@ -1049,7 +1049,7 @@ function addFormation(e) {
   .then(html => {
     console.log(`[SUCCESS] Formation ${title} ajoutée avec succès`);
     const listDiv = document.getElementById('formations-list');
-    const emptyMsg = listDiv.querySelector('.text-muted');
+    const emptyMsg = listDiv.querySelector('p.text-muted');
     if (emptyMsg) {
       emptyMsg.remove();
     }
@@ -1085,7 +1085,7 @@ function addCertification(e) {
   .then(html => {
     console.log(`[SUCCESS] Certification ${title} ajoutée avec succès`);
     const listDiv = document.getElementById('certifications-list');
-    const emptyMsg = listDiv.querySelector('.text-muted');
+    const emptyMsg = listDiv.querySelector('p.text-muted');
     if (emptyMsg) {
       emptyMsg.remove();
     }
@@ -1121,7 +1121,7 @@ function addLangue(e) {
   .then(html => {
     console.log(`[SUCCESS] Langue ${title} ajoutée avec succès`);
     const listDiv = document.getElementById('langues-list');
-    const emptyMsg = listDiv.querySelector('.text-muted');
+    const emptyMsg = listDiv.querySelector('p.text-muted');
     if (emptyMsg) {
       emptyMsg.remove();
     }
