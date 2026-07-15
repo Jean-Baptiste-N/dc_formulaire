@@ -1117,19 +1117,35 @@ def xp_pro_realization_add(request, pk, exp_index):
                 return HttpResponse("Limite de profondeur atteinte (3 niveaux de détails maximum)", status=400)
 
         if parent_id:
-            logger.info(f"Cherche parent_id={parent_id} dans exp {exp_index}")
-            logger.info(f"Items en base avec IDs: {[item.get('id') for item in experience['description']]}")
-            parent = _find_xp_pro_item_recursive(experience["description"], parent_id)
-            if parent:
-                if "description" not in parent:
-                    parent["description"] = []
-                parent["description"].append(new_item)
-                logger.info(f"Parent trouvé! Nouvel item ajouté sous {parent.get('id')}")
-            else:
-                logger.error(f"❌ Parent {parent_id} non trouvé!")
-                logger.error(f"   Tous les IDs disponibles: {[item.get('id') for item in experience['description']]}")
-                logger.error(f"   Cherchait dans: {experience['description']}")
+            logger.info(f"[XP_PRO] Cherche parent_id={parent_id[:8]}... dans exp {exp_index}")
+            logger.info(f"[XP_PRO] IDs racine disponibles: {[item.get('id')[:8]+'...' for item in experience['description']]}")
+
+            # Utiliser la même approche que main_skills pour la cohérence
+            parent_list, parent_idx = _find_xp_pro_parent_and_index(experience["description"], parent_id)
+
+            if parent_list is None:
+                logger.error(f"[XP_PRO] ❌ Parent {parent_id[:8]}... NON TROUVÉ!")
+                logger.error(f"[XP_PRO] IDs disponibles (racine uniquement): {[item.get('id')[:8]+'...' for item in experience['description']]}")
+
+                # Afficher tous les IDs de la structure complète pour debug
+                def collect_all_ids(items, depth=0):
+                    ids = []
+                    for item in items:
+                        ids.append(f"{'  ' * depth}├─ {item.get('id')[:8]}...")
+                        if "description" in item and isinstance(item["description"], list):
+                            ids.extend(collect_all_ids(item["description"], depth + 1))
+                    return ids
+
+                all_ids = collect_all_ids(experience["description"])
+                logger.error(f"[XP_PRO] Hiérarchie complète:\n{chr(10).join(all_ids)}")
+
                 return HttpResponse(f"Parent introuvable (cherchait {parent_id[:8]}...)", status=404)
+
+            parent = parent_list[parent_idx]
+            if "description" not in parent:
+                parent["description"] = []
+            parent["description"].append(new_item)
+            logger.info(f"[XP_PRO] ✓ Parent trouvé! Item ajouté sous {parent.get('title', 'N/A')[:20]}")
         else:
             # C'est un item racine
             experience["description"].append(new_item)
