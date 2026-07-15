@@ -3,8 +3,14 @@
 {% block title %}{{ candidat }} – Détail – DC Formulaire{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h3"><i class="bi bi-person-lines-fill"></i> {{ candidat }}</h1>
+<!-- Header avec actions -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-1"><i class="bi bi-person-circle"></i> {{ candidat.prenom }} {{ candidat.nom }}</h1>
+    {% if candidat.trigramme %}
+      <p class="text-muted mb-0"><small><strong>{{ candidat.trigramme }}</strong></small></p>
+    {% endif %}
+  </div>
   <div>
     <a href="{% url 'formulaire:candidat_edit' candidat.pk %}" class="btn btn-outline-primary me-2">
       <i class="bi bi-pencil"></i> Modifier
@@ -18,44 +24,308 @@
   </div>
 </div>
 
+<!-- ============================================================================
+     SECTION 1: INFOS DE BASE
+     ============================================================================ -->
 <div class="card shadow-sm mb-4">
+  <div class="card-header bg-light">
+    <h2 class="h6 mb-0"><i class="bi bi-info-circle"></i> Informations</h2>
+  </div>
   <div class="card-body">
-    <dl class="row mb-0">
-      <dt class="col-sm-2">Nom</dt>
-      <dd class="col-sm-10">{{ candidat.nom }}</dd>
-      <dt class="col-sm-2">Prénom</dt>
-      <dd class="col-sm-10">{{ candidat.prenom }}</dd>
-      <dt class="col-sm-2">Email</dt>
-      <dd class="col-sm-10">{{ candidat.email }}</dd>
-    </dl>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <p class="text-muted small mb-1">Email</p>
+        <p class="mb-0"><a href="mailto:{{ candidat.email }}">{{ candidat.email }}</a></p>
+      </div>
+      <div class="col-md-4">
+        <p class="text-muted small mb-1">Poste actuel</p>
+        <p class="mb-0">{{ candidat.poste|default:"—" }}</p>
+      </div>
+      <div class="col-md-4">
+        <p class="text-muted small mb-1">Expérience</p>
+        <p class="mb-0">{{ candidat.xp_duration|default:"—" }} {% if candidat.xp_duration %}ans{% endif %}</p>
+      </div>
+    </div>
   </div>
 </div>
 
-<h2 class="h5 mb-3"><i class="bi bi-list-nested"></i> Parcours professionnel</h2>
-
-{% for section in candidat.get_sections %}
-  <div class="card shadow-sm mb-3 section-card">
-    <div class="card-header fw-semibold bg-light">
-      {{ section.titre|default:"(Sans titre)" }}
+<!-- ============================================================================
+     SECTION 2: POSTES CIBLES ET COMPÉTENCES CIBLÉES
+     ============================================================================ -->
+<div class="row g-4 mb-4">
+  <!-- Postes cibles -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-light">
+        <h2 class="h6 mb-0"><i class="bi bi-briefcase-fill"></i> Postes cibles</h2>
+      </div>
+      <div class="card-body">
+        {% if candidat.dossier.poste_cible %}
+          <div class="d-flex flex-wrap gap-2">
+            {% for poste in candidat.dossier.poste_cible %}
+              <span class="badge {% if poste.active %}bg-primary{% else %}bg-secondary{% endif %}">
+                {{ poste.title }}
+              </span>
+            {% endfor %}
+          </div>
+          <p class="text-muted small mt-2 mb-0">
+            <i class="bi bi-info-circle"></i>
+            {{ candidat.dossier.poste_cible|length }} poste{{ candidat.dossier.poste_cible|length|pluralize }}
+          </p>
+        {% else %}
+          <p class="text-muted fst-italic mb-0">Aucun poste cible défini</p>
+        {% endif %}
+      </div>
     </div>
-    <ul class="list-group list-group-flush">
-      {% for poste in section.postes %}
-        <li class="list-group-item">
-          <span class="me-2">•</span>{{ poste.texte|default:"(vide)" }}
-          {% if poste.sous_postes %}
-            <ul class="mt-1 ps-3">
-              {% for sous_poste in poste.sous_postes %}
-                <li class="text-muted">{{ sous_poste.texte|default:"(vide)" }}</li>
-              {% endfor %}
-            </ul>
-          {% endif %}
-        </li>
-      {% empty %}
-        <li class="list-group-item text-muted fst-italic">Aucun élément dans cette section.</li>
-      {% endfor %}
-    </ul>
   </div>
-{% empty %}
-  <div class="alert alert-info">Aucun parcours saisi.</div>
-{% endfor %}
+
+  <!-- Compétences ciblées -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-light">
+        <h2 class="h6 mb-0"><i class="bi bi-star-fill"></i> Compétences ciblées</h2>
+      </div>
+      <div class="card-body">
+        {% if candidat.dossier.skills_cible %}
+          <div class="d-flex flex-wrap gap-2">
+            {% for skill in candidat.dossier.skills_cible %}
+              {% if skill.active %}
+                <span class="badge bg-success">{{ skill.title }}</span>
+              {% endif %}
+            {% empty %}
+              <p class="text-muted fst-italic mb-0">Aucune compétence ciblée active</p>
+            {% endfor %}
+          </div>
+          {% if candidat.dossier.skills_cible|length > 0 %}
+            <p class="text-muted small mt-2 mb-0">
+              <i class="bi bi-info-circle"></i>
+              {% with active_skills=candidat.dossier.skills_cible|dictsort:"active"|length %}
+                {{ candidat.dossier.skills_cible|length }} total
+              {% endwith %}
+            </p>
+          {% endif %}
+        {% else %}
+          <p class="text-muted fst-italic mb-0">Aucune compétence ciblée</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================================
+     SECTION 3: PARCOURS PROFESSIONNEL
+     ============================================================================ -->
+<div class="mb-4">
+  <h2 class="h5 mb-3"><i class="bi bi-briefcase"></i> Parcours professionnel</h2>
+
+  {% if candidat.dossier.xp_pro %}
+    {% for exp in candidat.dossier.xp_pro %}
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-light">
+          <div class="row align-items-center">
+            <div class="col">
+              <p class="mb-0 fw-semibold">{{ exp.company }}</p>
+              <p class="mb-0 small text-muted">{{ exp.poste }}</p>
+            </div>
+            <div class="col-auto">
+              <span class="badge bg-info">{{ exp.date }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Contexte -->
+          {% if exp.context %}
+            <div class="mb-3">
+              <p class="text-muted small mb-1"><strong>Contexte</strong></p>
+              <p class="small mb-0">{{ exp.context }}</p>
+            </div>
+          {% endif %}
+
+          <!-- Technologies -->
+          {% if exp.env_tech %}
+            <div class="mb-3">
+              <p class="text-muted small mb-1"><strong>Environnement technique</strong></p>
+              <div class="d-flex flex-wrap gap-1">
+                {% for tech in exp.env_tech %}
+                  <span class="badge bg-secondary">{{ tech }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+
+          <!-- Réalisations hiérarchiques -->
+          {% if exp.description %}
+            <div>
+              <p class="text-muted small mb-2"><strong>Réalisations</strong></p>
+              <div class="ms-2">
+                {% include "formulaire/partials/detail_hierarchy.html" with items=exp.description %}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-info"><i class="bi bi-info-circle"></i> Aucune expérience professionnelle enregistrée</div>
+  {% endif %}
+</div>
+
+<!-- ============================================================================
+     SECTION 4: FORMATIONS
+     ============================================================================ -->
+<div class="mb-4">
+  <h2 class="h5 mb-3"><i class="bi bi-mortarboard"></i> Formations</h2>
+
+  {% if candidat.dossier.formations %}
+    <div class="row g-3">
+      {% for formation in candidat.dossier.formations %}
+        <div class="col-md-6">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-light">
+              <div class="row align-items-center">
+                <div class="col">
+                  <p class="mb-0 fw-semibold">{{ formation.title }}</p>
+                  <p class="mb-0 small text-muted">{{ formation.school }}</p>
+                </div>
+                <div class="col-auto">
+                  {% if formation.date %}
+                    <span class="badge bg-info">{{ formation.date }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              {% if formation.description %}
+                <p class="small mb-0">{{ formation.description }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info"><i class="bi bi-info-circle"></i> Aucune formation enregistrée</div>
+  {% endif %}
+</div>
+
+<!-- ============================================================================
+     SECTION 4bis: CERTIFICATIONS
+     ============================================================================ -->
+<div class="mb-4">
+  <h2 class="h5 mb-3"><i class="bi bi-award"></i> Certifications</h2>
+
+  {% if candidat.dossier.certifications %}
+    <div class="row g-3">
+      {% for cert in candidat.dossier.certifications %}
+        <div class="col-md-6">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-light">
+              <div class="row align-items-center">
+                <div class="col">
+                  <p class="mb-0 fw-semibold">{{ cert.title }}</p>
+                </div>
+                <div class="col-auto">
+                  {% if cert.date %}
+                    <span class="badge bg-info">{{ cert.date }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              {% if cert.description %}
+                <p class="small mb-0">{{ cert.description }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info"><i class="bi bi-info-circle"></i> Aucune certification enregistrée</div>
+  {% endif %}
+</div>
+
+<!-- ============================================================================
+     SECTION 5: COMPÉTENCES PRINCIPALES
+     ============================================================================ -->
+<div class="mb-4">
+  <h2 class="h5 mb-3"><i class="bi bi-gem"></i> Compétences principales</h2>
+
+  {% if candidat.dossier.main_skills.bullet or candidat.dossier.main_skills.table %}
+    <!-- Bullets en 2 colonnes -->
+    {% if candidat.dossier.main_skills.bullet %}
+      <div class="row g-3 mb-4">
+        {% for category in candidat.dossier.main_skills.bullet %}
+          <div class="col-md-6">
+            <div class="card shadow-sm">
+              <div class="card-header bg-light">
+                <h3 class="h6 mb-0">{{ category.title }}</h3>
+              </div>
+              <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                  {% include "formulaire/partials/detail_skills_list.html" with items=category.description %}
+                </ul>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Table en 4 colonnes -->
+    {% if candidat.dossier.main_skills.table %}
+      <div class="row g-3">
+        {% for category in candidat.dossier.main_skills.table %}
+          <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+              <div class="card-header bg-light">
+                <h3 class="h6 mb-0">{{ category.title }}</h3>
+              </div>
+              <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                  {% include "formulaire/partials/detail_skills_list.html" with items=category.description %}
+                </ul>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="alert alert-info"><i class="bi bi-info-circle"></i> Aucune compétence enregistrée</div>
+  {% endif %}
+</div>
+
+<!-- ============================================================================
+     SECTION 6: LANGUES
+     ============================================================================ -->
+<div class="mb-4">
+  <h2 class="h5 mb-3"><i class="bi bi-globe"></i> Langues</h2>
+
+  {% if candidat.dossier.langues %}
+    <div class="row g-2">
+      {% for langue in candidat.dossier.langues %}
+        <div class="col-md-3">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <p class="fw-semibold mb-1">{{ langue.title }}</p>
+              {% if langue.description %}
+                <p class="small text-muted mb-0">{{ langue.description }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info"><i class="bi bi-info-circle"></i> Aucune langue enregistrée</div>
+  {% endif %}
+</div>
+
+<!-- Informations de mise à jour -->
+<div class="text-center text-muted small mt-5 pt-3 border-top">
+  <p class="mb-1">Mise à jour : {{ candidat.updated_at|date:"d/m/Y à H:i" }}</p>
+  <p class="mb-0">Créé : {{ candidat.created_at|date:"d/m/Y" }}</p>
+</div>
+
 {% endblock %}

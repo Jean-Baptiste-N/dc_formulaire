@@ -1,0 +1,15 @@
+{# Affiche récursivement une liste de compétences #}
+{# Usage: {% include "...detail_skills_list.html" with items=category.description %} #}
+
+{% for item in items %}
+  <li class="mb-1">
+    <small class="{% if item.description %}fw-semibold{% endif %}">
+      {{ item.title }}
+    </small>
+    {% if item.description %}
+      <ul class="list-unstyled ps-3 mt-1 mb-2">
+        {% include "formulaire/partials/detail_skills_list.html" with items=item.description %}
+      </ul>
+    {% endif %}
+  </li>
+{% endfor %}
