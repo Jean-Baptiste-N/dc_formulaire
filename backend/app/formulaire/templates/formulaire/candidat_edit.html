@@ -492,7 +492,7 @@
               </label>
               <div id="realizations-{{ forloop.counter0 }}" class="xp-pro-step2-realizations ps-2">
                 {% for realization in exp.description %}
-                {% include "formulaire/partials/xp_pro_hierarchy_item.html" with item=realization exp_index=forloop.counter0 depth=0 candidat=candidat xp_pro_placeholders=placeholders.xp_pro %}
+                {% include "formulaire/partials/xp_pro_hierarchy_item.html" with item=realization exp_index=forloop.parentloop.counter0 depth=0 candidat=candidat xp_pro_placeholders=placeholders.xp_pro %}
                 {% endfor %}
               </div>
             </div>
