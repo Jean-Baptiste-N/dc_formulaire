@@ -63,7 +63,7 @@
         {% if candidat.dossier.poste_cible %}
           <div class="d-flex flex-wrap gap-2">
             {% for poste in candidat.dossier.poste_cible %}
-              <span class="badge {% if poste.active %}bg-primary{% else %}bg-secondary{% endif %}">
+              <span class="badge {% if poste.active %}bg-success{% else %}bg-secondary{% endif %}">
                 {{ poste.title }}
               </span>
             {% endfor %}
@@ -89,19 +89,15 @@
         {% if candidat.dossier.skills_cible %}
           <div class="d-flex flex-wrap gap-2">
             {% for skill in candidat.dossier.skills_cible %}
-              {% if skill.active %}
-                <span class="badge bg-success">{{ skill.title }}</span>
-              {% endif %}
-            {% empty %}
-              <p class="text-muted fst-italic mb-0">Aucune compétence ciblée active</p>
+              <span class="badge {% if skill.active %}bg-success{% else %}bg-secondary{% endif %}">
+                {{ skill.title }}
+              </span>
             {% endfor %}
           </div>
           {% if candidat.dossier.skills_cible|length > 0 %}
             <p class="text-muted small mt-2 mb-0">
               <i class="bi bi-info-circle"></i>
-              {% with active_skills=candidat.dossier.skills_cible|dictsort:"active"|length %}
-                {{ candidat.dossier.skills_cible|length }} total
-              {% endwith %}
+              {{ active_skills_count }} actif{{ active_skills_count|pluralize }} sur {{ candidat.dossier.skills_cible|length }} au total
             </p>
           {% endif %}
         {% else %}

@@ -317,7 +317,14 @@ def candidat_detail(request, pk=None, slug=None):
             url += f'?index={index}'
         return redirect(url)
 
-    return render(request, "formulaire/candidat_detail.html", {"candidat": candidat})
+    # Compter les compétences ciblées actives
+    skills_cible = candidat.dossier.get('skills_cible', []) if candidat.dossier else []
+    active_skills_count = sum(1 for skill in skills_cible if skill.get('active', False))
+
+    return render(request, "formulaire/candidat_detail.html", {
+        "candidat": candidat,
+        "active_skills_count": active_skills_count,
+    })
 
 # ============================================================================
 # MARK: 2.1 POSTES CIBLES - Add, Delete, Activate, Update

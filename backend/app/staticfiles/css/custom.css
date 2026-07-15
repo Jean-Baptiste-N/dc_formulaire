@@ -161,7 +161,7 @@ body {
 /* Small Button Sizing */
 .btn-sm {
   padding: 0.3rem 0.6rem;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
 }
 
 /* Icon Buttons */
@@ -526,7 +526,7 @@ body {
 .badge.bg-info {
   background-color: #548DD4 !important;
   color: white !important;
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   padding: 0.25rem 0.5rem !important;
   display: inline-flex;
   align-items: center;
@@ -612,3 +612,13 @@ body {
   border-color: #2E70C2;
   box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
 }
+
+.bg-primary {
+  background-color: #548DD4 !important;
+}
+
+.bg-success {
+  background-color: #48A822 !important;
+}
+
+
