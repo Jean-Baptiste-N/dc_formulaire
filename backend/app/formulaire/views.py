@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST
 
 from .forms import CandidatInfoForm
 from .models import Candidat
-from .utils import clean_text, remove_empty_paragraphs
+from .utils import clean_text, remove_empty_paragraphs, sort_dossier_items
 
 logger = logging.getLogger(__name__)
 
@@ -267,7 +267,11 @@ def candidat_edit(request, pk=None, slug=None):
                 _ensure_hierarchy_ids(candidat.dossier["main_skills"]["table"])
                 ids_added = True
 
-    # Sauvegarder si des IDs ont été ajoutés (migration data)
+        # Trier les items par date (anti-chronologique)
+        candidat.dossier = sort_dossier_items(candidat.dossier)
+        ids_added = True  # Marquer comme modifié pour sauvegarder
+
+    # Sauvegarder si des IDs ont été ajoutés ou des tris effectués (migration data)
     if ids_added:
         candidat.save(update_fields=["dossier"])
 
@@ -316,6 +320,10 @@ def candidat_detail(request, pk=None, slug=None):
         if index > 0:
             url += f'?index={index}'
         return redirect(url)
+
+    # Trier les items par date (anti-chronologique) au chargement
+    if candidat.dossier:
+        candidat.dossier = sort_dossier_items(candidat.dossier)
 
     # Compter les compétences ciblées actives
     skills_cible = candidat.dossier.get('skills_cible', []) if candidat.dossier else []
@@ -736,11 +744,21 @@ def formation_add(request, pk):
         if "formations" not in dossier:
             dossier["formations"] = []
         dossier["formations"].append(formation)
+
+        # Trier les formations en anti-chronologique après l'ajout
+        dossier = sort_dossier_items(dossier)
+
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
+        # Trouver le nouvel index après le tri
+        new_index = next(
+            (i for i, f in enumerate(dossier["formations"])
+             if f.get("title") == formation["title"] and f.get("date") == formation["date"]),
+            len(dossier["formations"]) - 1
+        )
+
         # Pour AJAX: retourner juste le snippet HTML du nouvel élément
-        index = len(dossier["formations"]) - 1
         desc_html = f'<br><small class="text-muted">{escape(formation["description"])}</small>' if formation.get("description", "").strip() else ''
         html = f'''<div class="alert alert-info mb-2">
           <div class="d-flex justify-content-between align-items-center">
@@ -751,7 +769,7 @@ def formation_add(request, pk):
             </div>
             <button type="button" class="btn btn-sm btn-outline-danger btn-formation-remove"
                     data-candidat-pk="{pk}"
-                    data-formation-index="{index}">
+                    data-formation-index="{new_index}">
               <i class="bi bi-trash"></i>
             </button>
           </div>
@@ -800,11 +818,21 @@ def certification_add(request, pk):
         if "certifications" not in dossier:
             dossier["certifications"] = []
         dossier["certifications"].append(certification)
+
+        # Trier les certifications en anti-chronologique après l'ajout
+        dossier = sort_dossier_items(dossier)
+
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
+        # Trouver le nouvel index après le tri
+        new_index = next(
+            (i for i, c in enumerate(dossier["certifications"])
+             if c.get("title") == certification["title"] and c.get("date") == certification["date"]),
+            len(dossier["certifications"]) - 1
+        )
+
         # Pour AJAX: retourner juste le snippet HTML du nouvel élément
-        index = len(dossier["certifications"]) - 1
         desc_html = f'<br><small class="text-muted">{escape(certification["description"])}</small>' if certification.get("description", "").strip() else ''
         html = f'''<div class="alert alert-info mb-2">
           <div class="d-flex justify-content-between align-items-center">
@@ -814,7 +842,7 @@ def certification_add(request, pk):
             </div>
             <button type="button" class="btn btn-sm btn-outline-danger btn-certification-remove"
                     data-candidat-pk="{pk}"
-                    data-certification-index="{index}">
+                    data-certification-index="{new_index}">
               <i class="bi bi-trash"></i>
             </button>
           </div>
@@ -938,21 +966,36 @@ def experience_add(request, pk):
         if "xp_pro" not in dossier:
             dossier["xp_pro"] = []
         dossier["xp_pro"].append(experience)
+
+        # Trier les expériences en anti-chronologique après l'ajout
+        dossier = sort_dossier_items(dossier)
+
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
+        # Trouver le nouvel index après le tri
+        new_index = next(
+            (i for i, exp in enumerate(dossier["xp_pro"])
+             if exp.get("company") == experience["company"] and
+                exp.get("poste") == experience["poste"] and
+                exp.get("date") == experience["date"]),
+            len(dossier["xp_pro"]) - 1
+        )
+
+        # Récupérer l'expérience au nouvel index pour générer le HTML
+        current_experience = dossier["xp_pro"][new_index]
+
         # Pour AJAX: retourner la section complète avec toutes les sous-sections remplissables
-        index = len(dossier["xp_pro"]) - 1
         placeholders = _get_placeholders()
 
         # Générer le HTML des réalisations avec le partial existant
         realizations_html = ""
-        for realization in experience["description"]:
+        for realization in current_experience["description"]:
             realizations_html += render_to_string(
                 "formulaire/partials/xp_pro_hierarchy_item.html",
                 {
                     "item": realization,
-                    "exp_index": index,
+                    "exp_index": new_index,
                     "depth": 0,
                     "candidat": candidat,
                     "xp_pro_placeholders": placeholders.get("xp_pro", {}),
@@ -961,21 +1004,21 @@ def experience_add(request, pk):
 
         # Tech badges HTML
         tech_badges_html = ""
-        if tech_list:
-            for tech in tech_list:
+        if current_experience["env_tech"]:
+            for tech in current_experience["env_tech"]:
                 tech_badges_html += f'<span class="badge bg-info text-dark me-2 mb-2">{escape(tech)}<button type="button" class="btn-xp-pro-step2-tech-remove" data-tech="{escape(tech)}">×</button></span>'
         else:
             tech_badges_html = '<span class="text-muted small">Aucune technologie ajoutée</span>'
 
         # Retourner le HTML complet avec structure xp_pro_step2
-        html = f'''<div class="alert alert-xp-pro mb-3 xp-pro-step2-container" data-exp-index="{index}" data-candidat-pk="{pk}">
+        html = f'''<div class="alert alert-xp-pro mb-3 xp-pro-step2-container" data-exp-index="{new_index}" data-candidat-pk="{pk}">
           <div class="d-flex justify-content-between align-items-start mb-2">
             <div style="flex: 1;">
-              <strong>{escape(experience["date"])} : {escape(experience["poste"])}</strong> chez <strong>{escape(experience["company"])}</strong><br>
+              <strong>{escape(current_experience["date"])} : {escape(current_experience["poste"])}</strong> chez <strong>{escape(current_experience["company"])}</strong><br>
             </div>
             <button type="button" class="btn btn-sm btn-danger btn-experience-remove"
                     data-candidat-pk="{pk}"
-                    data-exp-index="{index}">
+                    data-exp-index="{new_index}">
               <i class="bi bi-trash"></i>
             </button>
           </div>
@@ -985,7 +1028,7 @@ def experience_add(request, pk):
             <label class="form-label small fw-semibold"><i class="bi bi-list-check"></i> Contexte de l'expérience</label>
             <textarea class="form-control xp-pro-step2-context"
                       placeholder="{escape(placeholders['experiences']['context'])}"
-                      rows="2">{escape(experience.get('context', ''))}</textarea>
+                      rows="2">{escape(current_experience.get('context', ''))}</textarea>
           </div>
 
           <!-- Technologies -->
@@ -1008,7 +1051,7 @@ def experience_add(request, pk):
           <!-- Réalisations -->
           <div class="mb-4">
             <label class="form-label small fw-semibold"><i class="bi bi-list-check"></i> Réalisations</label>
-            <div id="realizations-{index}" class="xp-pro-step2-realizations ps-2">
+            <div id="realizations-{new_index}" class="xp-pro-step2-realizations ps-2">
               {realizations_html}
             </div>
           </div>
@@ -1020,7 +1063,7 @@ def experience_add(request, pk):
             </button>
             <button type="button"
                     class="btn btn-sm btn-success btn-xp-pro-step2-save"
-                    data-exp-index="{index}"
+                    data-exp-index="{new_index}"
                     data-candidat-pk="{pk}">
               <i class="bi bi-check-lg"></i> Enregistrer
             </button>
