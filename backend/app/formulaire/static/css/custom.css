@@ -659,3 +659,37 @@ body {
   background-color: #e8f4f8;
   border-left-color: #17a2b8;
 }
+
+/* ============================================================================
+   MARK: 16. HIERARCHY ITEMS - Nested structures (main_skills, xp_pro)
+   ============================================================================ */
+
+/* Root-level items (depth 0): draggable with grab cursor and background */
+.hierarchy-item-root {
+  cursor: grab;
+  background-color: #f9f9f9;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border-radius: 0.25rem;
+}
+
+/* Nested items (depth > 0): indented with left border separator */
+.hierarchy-item-nested {
+  padding-left: 0.75rem;
+  border-left: 2px solid #e9ecef;
+}
+
+/* Grip icon for dragging (depth 0 items only) */
+.hierarchy-grip {
+  cursor: grab;
+  color: #ccc;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* Input field for item titles - takes remaining space */
+.hierarchy-input-title {
+  flex: 1;
+}

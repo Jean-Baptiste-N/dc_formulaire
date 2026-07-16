@@ -204,13 +204,13 @@ def _ensure_order_indexes(dossier):
     """
     if not isinstance(dossier, dict):
         return dossier
-    
+
     # 1. skills_cible
     if "skills_cible" in dossier and isinstance(dossier["skills_cible"], list):
         for i, skill in enumerate(dossier["skills_cible"]):
             if "order_index" not in skill:
                 skill["order_index"] = i + 1
-    
+
     # 2. main_skills bullet et table (level 0 only)
     if "main_skills" in dossier and isinstance(dossier["main_skills"], dict):
         for section in ["bullet", "table"]:
@@ -218,7 +218,7 @@ def _ensure_order_indexes(dossier):
                 for i, item in enumerate(dossier["main_skills"][section]):
                     if "order_index" not in item:
                         item["order_index"] = i + 1
-    
+
     # 3. xp_pro descriptions (level 0 only)
     if "xp_pro" in dossier and isinstance(dossier["xp_pro"], list):
         for exp in dossier["xp_pro"]:
@@ -226,7 +226,7 @@ def _ensure_order_indexes(dossier):
                 for i, activity in enumerate(exp["description"]):
                     if "order_index" not in activity:
                         activity["order_index"] = i + 1
-    
+
     return dossier
 
 # ============================================================================
@@ -586,22 +586,46 @@ def skills_cible_update(request, pk, skills_cible_id):
 
 @require_POST
 def skills_cible_bulk_update(request, pk):
-    """Met à jour les titres de plusieurs compétences cibles (bulk update)."""
+    """
+    Met à jour les titres de plusieurs compétences cibles (bulk update).
+    Accepte aussi optionnellement les nouveaux order_index si fournis (via drag-drop).
+    """
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
     try:
         items = json.loads(request.POST.get("items", "[]"))
+        order_updates = json.loads(request.POST.get("order_updates", "[]"))  # Optionnel: si drag-drop
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
     if "skills_cible" in dossier:
+        # 1. Mettre à jour titres et active
         for item in items:
             for sc in dossier["skills_cible"]:
                 if sc["id"] == item.get("id"):
                     sc["title"] = _clean_text(item.get("title", ""))
                     sc["active"] = item.get("active", False)
+                    # Si un order_index est fourni dans item, l'utiliser
+                    if "order_index" in item:
+                        sc["order_index"] = int(item.get("order_index", 1))
                     break
+
+        # 2. Si order_updates fournis (cas du drag-drop reorder), les appliquer
+        if order_updates:
+            for update in order_updates:
+                skill_id = update.get("skill_id")
+                new_order = int(update.get("order_index", 1))
+                for skill in dossier["skills_cible"]:
+                    if skill.get("id") == skill_id:
+                        skill["order_index"] = new_order
+                        break
+
+            # Trier et renuméroter
+            dossier["skills_cible"] = sorted(dossier["skills_cible"], key=lambda x: x.get("order_index", 999))
+            for i, skill in enumerate(dossier["skills_cible"], start=1):
+                skill["order_index"] = i
+
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
@@ -672,7 +696,8 @@ def main_skills_hierarchy_add(request, pk, section):
     new_item = {
         "id": _new_id(),
         "title": "",
-        "description": []
+        "description": [],
+        "order_index": len(dossier["main_skills"][section]) + 1
     }
 
     dossier["main_skills"][section].append(new_item)
@@ -720,7 +745,8 @@ def main_skills_hierarchy_add_child(request, pk, section):
         new_child = {
             "id": _new_id(),
             "title": "",
-            "description": []
+            "description": [],
+            "order_index": len(parent.get("description", [])) + 1
         }
 
         parent["description"].append(new_child)
@@ -806,12 +832,16 @@ def _find_main_skills_hierarchy_parent_and_index(items, item_id):
 
 @require_POST
 def main_skills_hierarchy_bulk_update(request, pk, section):
-    """Met à jour les titres de plusieurs items main_skills (bulk update)."""
+    """
+    Met à jour les titres de plusieurs items main_skills (bulk update).
+    Accepte aussi optionnellement les nouveaux order_index (depth 0 only) si fournis (via drag-drop).
+    """
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
     try:
         items = json.loads(request.POST.get("items", "[]"))
+        order_updates = json.loads(request.POST.get("order_updates", "[]"))  # Optionnel: si drag-drop
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
@@ -824,12 +854,31 @@ def main_skills_hierarchy_bulk_update(request, pk, section):
             for update_item in items_to_update:
                 if item.get("id") == update_item.get("id"):
                     item["title"] = _clean_text(update_item.get("title", ""))
+                    # Si order_index fourni et c'est un item de depth 0, l'utiliser
+                    if "order_index" in update_item:
+                        item["order_index"] = int(update_item.get("order_index", 1))
                     break
             # Récursion sur les enfants
             if "description" in item and isinstance(item["description"], list):
                 update_items_recursive(item["description"], items_to_update)
 
     update_items_recursive(dossier["main_skills"][section], items)
+
+    # Si order_updates fournis (cas du drag-drop reorder, depth 0 only), les appliquer
+    if order_updates:
+        for update in order_updates:
+            item_id = update.get("item_id")
+            new_order = int(update.get("order_index", 1))
+            for item in dossier["main_skills"][section]:
+                if item.get("id") == item_id:
+                    item["order_index"] = new_order
+                    break
+
+        # Trier depth 0 et renuméroter
+        dossier["main_skills"][section] = sorted(dossier["main_skills"][section], key=lambda x: x.get("order_index", 999))
+        for i, item in enumerate(dossier["main_skills"][section], start=1):
+            item["order_index"] = i
+
     candidat.dossier = dossier
     candidat.save(update_fields=["dossier"])
 
@@ -1417,12 +1466,6 @@ def xp_pro_realization_add(request, pk, exp_index):
         elif not isinstance(experience["description"], list):
             experience["description"] = []
 
-        new_item = {
-            "id": _new_id(),
-            "title": "",
-            "description": []
-        }
-
         # Vérifier si c'est un sous-item (a un parent_id)
         parent_id = request.POST.get("parent_id")
         requested_depth = request.POST.get("depth")
@@ -1433,6 +1476,7 @@ def xp_pro_realization_add(request, pk, exp_index):
             if requested_depth > 3:
                 return HttpResponse("Limite de profondeur atteinte (3 niveaux de détails maximum)", status=400)
 
+        # Déterminer l'order_index pour le nouvel item
         if parent_id:
             logger.info(f"[XP_PRO] Cherche parent_id={parent_id[:8]}... dans exp {exp_index}")
             logger.info(f"[XP_PRO] IDs racine disponibles: {[item.get('id')[:8]+'...' for item in experience['description']]}")
@@ -1461,10 +1505,24 @@ def xp_pro_realization_add(request, pk, exp_index):
             parent = parent_list[parent_idx]
             if "description" not in parent:
                 parent["description"] = []
+
+            # Créer le nouvel item enfant avec order_index
+            new_item = {
+                "id": _new_id(),
+                "title": "",
+                "description": [],
+                "order_index": len(parent["description"]) + 1
+            }
             parent["description"].append(new_item)
             logger.info(f"[XP_PRO] ✓ Parent trouvé! Item ajouté sous {parent.get('title', 'N/A')[:20]}")
         else:
-            # C'est un item racine
+            # C'est un item racine - créer avec order_index
+            new_item = {
+                "id": _new_id(),
+                "title": "",
+                "description": [],
+                "order_index": len(experience["description"]) + 1
+            }
             experience["description"].append(new_item)
 
         candidat.dossier = dossier

@@ -638,4 +638,55 @@ body {
   background-color: #48A822 !important;
 }
 
+/* ============================================================================
+   MARK: 15 SORTABLEJS - Drag-and-drop animations
+   ============================================================================ */
 
+.sortable-ghost {
+  opacity: 0.4;
+  background-color: #f0f0f0;
+}
+
+.sortable-drag {
+  opacity: 0.9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.sortable-ghost.xp-pro-hierarchy-item,
+.sortable-ghost.main-skills-hierarchy-item,
+.sortable-ghost[data-skills-cible-id] {
+  background-color: #e8f4f8;
+  border-left-color: #17a2b8;
+}
+
+/* ============================================================================
+   MARK: 16. HIERARCHY ITEMS - Nested structures (main_skills, xp_pro)
+   ============================================================================ */
+
+/* Root-level items (depth 0): draggable with grab cursor and background */
+.hierarchy-item-root {
+  cursor: grab;
+  background-color: #f9f9f9;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+/* Nested items (depth > 0): indented with left border separator */
+.hierarchy-item-nested {
+  padding-left: 0.75rem;
+  border-left: 2px solid #e9ecef;
+}
+
+/* Grip icon for dragging (depth 0 items only) */
+.hierarchy-grip {
+  cursor: grab;
+  color: #ccc;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* Input field for item titles - takes remaining space */
+.hierarchy-input-title {
+  flex: 1;
+}

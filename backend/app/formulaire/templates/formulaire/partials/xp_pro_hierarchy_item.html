@@ -1,31 +1,30 @@
 {# Template récursif pour afficher les réalisations hiérarchiques (xp_pro) avec structure title/description #}
 {% load custom_filters %}
 <div id="item-{{ item.id }}"
-     class="xp-pro-hierarchy-item mb-2 {% if depth > 0 %}ms-4{% endif %}"
+     class="xp-pro-hierarchy-item mb-2 {% if depth > 0 %}ms-4 hierarchy-item-nested{% else %}hierarchy-item-root{% endif %}"
      data-item-id="{{ item.id }}"
      data-realisation-id="{{ item.id }}"
      data-depth="{{ depth }}"
      data-max-depth="3"
-     {% if depth == 0 %}data-order-index="{{ item.order_index|default:forloop.counter }}" data-original-order="{{ item.order_index|default:forloop.counter }}" style="cursor: grab; background-color: #f9f9f9; padding: 0.5rem; border-radius: 0.25rem;"{% endif %}>
+     {% if depth == 0 %}data-order-index="{{ item.order_index|default:1 }}" data-original-order="{{ item.order_index|default:1 }}"{% endif %}>
 
   <div class="xp-pro-hierarchy-row d-flex gap-2 align-items-start">
 
     {# Grip handle for depth=0 only #}
     {% if depth == 0 %}
-    <i class="bi bi-grip-vertical" style="cursor: grab; color: #ccc; flex-shrink: 0; align-self: center;"></i>
+    <i class="bi bi-grip-vertical hierarchy-grip"></i>
     {% endif %}
 
     {# Champ de texte pour le titre #}
     <input type="text"
-           class="form-control form-control-sm xp-pro-hierarchy-title"
+           class="form-control form-control-sm xp-pro-hierarchy-title hierarchy-input-title"
            value="{{ item.title }}"
            placeholder="{{ xp_pro_placeholders|get_item:depth|default:'Détail' }}"
            data-item-id="{{ item.id }}"
            data-target-index="{{ exp_index }}"
            data-endpoint-base="xp_pro"
            data-depth="{{ depth }}"
-           name="title"
-           style="flex: 1;">
+           name="title">
 
     {# Bouton ajouter sous-item (seulement si depth < 3 pour max 3 niveaux de détails) #}
     {% if depth < 3 %}
