@@ -435,11 +435,20 @@
     <div id="experiences-list">
       {% if candidat.dossier.xp_pro %}
         {% for exp in candidat.dossier.xp_pro %}
-          <div class="alert alert-xp-pro mb-3 xp-pro-step2-container" data-exp-index="{{ forloop.counter0 }}" data-candidat-pk="{{ candidat.pk }}">
-            <div class="d-flex justify-content-between align-items-start mb-2">
+          <div class="alert alert-xp-pro mb-3 xp-pro-step2-container" data-exp-id="{{ exp.id }}" data-exp-index="{{ forloop.counter0 }}" data-candidat-pk="{{ candidat.pk }}">
+            <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
               <div style="flex: 1;">
                 <strong>{{ exp.date }} : {{ exp.poste }}</strong> chez <strong>{{ exp.company }}</strong><br>
               </div>
+              <input type="number"
+                     class="form-control form-control-sm xp-pro-order-index"
+                     value="{{ exp.order_index|default:forloop.counter }}"
+                     min="1"
+                     data-exp-id="{{ exp.id }}"
+                     data-exp-index="{{ forloop.counter0 }}"
+                     data-candidat-pk="{{ candidat.pk }}"
+                     data-original-index="{{ exp.order_index|default:forloop.counter }}"
+                     title="Ordre d'affichage">
               <button type="button" class="btn btn-sm btn-danger btn-experience-remove"
                       data-candidat-pk="{{ candidat.pk }}"
                       data-exp-index="{{ forloop.counter0 }}">
@@ -601,7 +610,7 @@ function activatePostesCible(e) {
   const radio = e.target;
   const posteCibleId = radio.value;
   const posteCibleTitle = radio.closest('[id^="poste-cible-"]')?.querySelector('input[type="text"]')?.value || 'ce poste';
-  
+
   const candidatPk = radio.dataset.candidatPk;
 
   const formData = new FormData();
@@ -1495,20 +1504,87 @@ function removeExperience(e) {
   .catch(err => console.error(`[ERROR] Exception lors de la suppression expérience:`, err));
 }
 
+
 // ========================================================================
 // MARK: XP_PRO STEP 2 HANDLERS - Unified handler for contexte + technologies + realizations
 // ========================================================================
 
 function initXpProStep2Handlers() {
-  // Bouton Enregistrer (utilise le système auto-save unifié)
+  // Bouton Enregistrer (traite TOUS les order_index modifiés en UNE SEULE requête atomique)
   document.querySelectorAll('.btn-xp-pro-step2-save').forEach(btn => {
     if (!btn.hasAttribute('data-listener-initialized')) {
       btn.addEventListener('click', function(e) {
         e.preventDefault();
         const container = this.closest('.xp-pro-step2-container');
-        const expIndex = container.dataset.expIndex;
-        console.log(`[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour xp_pro_step2[${expIndex}]`);
-        saveData('xp_pro_step2', true, container);
+        const candidatPk = container.dataset.candidatPk;
+        console.log(`[CLICK-SAVE] Utilisateur clique sur "Enregistrer"`);
+
+        // 1. SCANNER TOUS les order_index modifiés sur la page entière
+        const orderInputsModifiés = [];
+        document.querySelectorAll('.xp-pro-order-index').forEach(input => {
+          const newOrderIndex = parseInt(input.value);
+          const originalIndex = parseInt(input.dataset.originalIndex);
+          const expId = input.dataset.expId;
+
+          if (newOrderIndex !== originalIndex) {
+            orderInputsModifiés.push({
+              exp_id: expId,
+              order_index: newOrderIndex,
+              input: input
+            });
+            console.log(`[CLICK-SAVE] Order modifié détecté: expId=${expId}: ${originalIndex} → ${newOrderIndex}`);
+          }
+        });
+
+        // 2. Sauvegarder TOUS les order_index modifiés EN UNE SEULE REQUÊTE ATOMIQUE
+        if (orderInputsModifiés.length > 0) {
+          console.log(`[CLICK-SAVE] ${orderInputsModifiés.length} order_index(es) à sauvegarder (requête atomique)`);
+
+          // Préparer le payload sans l'objet input
+          const payload = {
+            updates: orderInputsModifiés.map(item => ({
+              exp_id: item.exp_id,
+              order_index: item.order_index
+            }))
+          };
+
+          fetch(`/candidat/${candidatPk}/experience/ordre-update-batch/`, {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              console.log(`[CLICK-SAVE] ✓ TOUS les order_index ont été sauvegardés atomiquement:`, data.results);
+              // Mettre à jour les data-original-index avec les nouveaux indices
+              orderInputsModifiés.forEach(item => {
+                const newPos = data.results[item.exp_id];
+                if (newPos) {
+                  item.input.dataset.originalIndex = newPos;
+                  item.input.value = newPos;
+                  console.log(`[CLICK-SAVE] ✓ Mis à jour input pour expId=${item.exp_id}: ${newPos}`);
+                }
+              });
+            } else {
+              console.error(`[ERROR] Erreur sauvegarde batch order_index:`, data.error);
+            }
+          })
+          .catch(err => console.error(`[ERROR] Exception lors du save batch order_index:`, err));
+
+          // Après que les order_index sont sauvés, sauvegarder les données xp_pro_step2
+          setTimeout(() => {
+            console.log(`[CLICK-SAVE] Sauvegarde xp_pro_step2 après batch order_index`);
+            saveData('xp_pro_step2', true, container);
+          }, 200);
+        } else {
+          // Pas de changement d'order_index, sauvegarder juste xp_pro_step2
+          console.log(`[CLICK-SAVE] Pas de changement d'order_index, sauvegarde xp_pro_step2 uniquement`);
+          saveData('xp_pro_step2', true, container);
+        }
       });
       btn.setAttribute('data-listener-initialized', 'true');
     }
