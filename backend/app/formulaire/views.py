@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST
 
 from .forms import CandidatInfoForm
 from .models import Candidat
-from .utils import clean_text, remove_empty_paragraphs, sort_dossier_items
+from .utils import clean_text, remove_empty_paragraphs, sort_dossier_items, sort_xp_pro_by_order_index
 
 logger = logging.getLogger(__name__)
 
@@ -255,21 +255,33 @@ def candidat_edit(request, pk=None, slug=None):
         if "xp_pro" in candidat.dossier:
             for exp in candidat.dossier["xp_pro"]:
                 if "description" in exp:
-                    _ensure_realization_ids(exp["description"])
+                    exp["description"] = _ensure_realization_ids(exp["description"])
+                    ids_added = True
+                # Ajouter id s'il n'existe pas (migration)
+                if not exp.get("id"):
+                    exp["id"] = _new_id()
+                    ids_added = True
+                # Ajouter order_index s'il n'existe pas (migration)
+                if "order_index" not in exp:
+                    exp["order_index"] = len(candidat.dossier["xp_pro"])
                     ids_added = True
 
         # Enrichir main_skills (bullet et table)
         if "main_skills" in candidat.dossier:
             if "bullet" in candidat.dossier["main_skills"]:
-                _ensure_hierarchy_ids(candidat.dossier["main_skills"]["bullet"])
+                candidat.dossier["main_skills"]["bullet"] = _ensure_hierarchy_ids(candidat.dossier["main_skills"]["bullet"])
                 ids_added = True
             if "table" in candidat.dossier["main_skills"]:
-                _ensure_hierarchy_ids(candidat.dossier["main_skills"]["table"])
+                candidat.dossier["main_skills"]["table"] = _ensure_hierarchy_ids(candidat.dossier["main_skills"]["table"])
                 ids_added = True
 
-        # Trier les items par date (anti-chronologique)
+        # Trier les items par date (anti-chronologique) mais PAS xp_pro qui sont triés par order_index
         candidat.dossier = sort_dossier_items(candidat.dossier)
-        ids_added = True  # Marquer comme modifié pour sauvegarder
+
+        # Trier xp_pro par order_index
+        if "xp_pro" in candidat.dossier:
+            candidat.dossier["xp_pro"] = sort_xp_pro_by_order_index(candidat.dossier["xp_pro"])
+            ids_added = True  # Marquer comme modifié pour sauvegarder
 
     # Sauvegarder si des IDs ont été ajoutés ou des tris effectués (migration data)
     if ids_added:
@@ -324,6 +336,20 @@ def candidat_detail(request, pk=None, slug=None):
     # Trier les items par date (anti-chronologique) au chargement
     if candidat.dossier:
         candidat.dossier = sort_dossier_items(candidat.dossier)
+
+        # Trier xp_pro par order_index (ajouter order_index et id s'il manque - migration)
+        if "xp_pro" in candidat.dossier:
+            ids_added = False
+            for i, exp in enumerate(candidat.dossier["xp_pro"]):
+                if not exp.get("id"):
+                    exp["id"] = _new_id()
+                    ids_added = True
+                if "order_index" not in exp:
+                    exp["order_index"] = i
+                    ids_added = True
+            candidat.dossier["xp_pro"] = sort_xp_pro_by_order_index(candidat.dossier["xp_pro"])
+            if ids_added:
+                candidat.save(update_fields=["dossier"])
 
     # Compter les compétences ciblées actives
     skills_cible = candidat.dossier.get('skills_cible', []) if candidat.dossier else []
@@ -953,13 +979,21 @@ def experience_add(request, pk):
         "description": []
     }]
 
+    # Calculer le nouvel order_index (ajouter à la fin avec l'index le plus haut)
+    if "xp_pro" not in dossier:
+        dossier["xp_pro"] = []
+
+    next_order_index = max([exp.get("order_index", 0) for exp in dossier["xp_pro"]], default=0) + 1
+
     experience = {
+        "id": _new_id(),
         "company": _clean_text(request.POST.get("company", "")),
         "poste": _clean_text(request.POST.get("poste", "")),
         "date": _clean_text(request.POST.get("date", "")),
         "context": _clean_text(request.POST.get("context", "")),
         "description": description_array,
         "env_tech": tech_list,
+        "order_index": next_order_index,  # Nouvel ordre pour l'utilisateur
     }
 
     if experience["company"] and experience["poste"]:
@@ -967,7 +1001,8 @@ def experience_add(request, pk):
             dossier["xp_pro"] = []
         dossier["xp_pro"].append(experience)
 
-        # Trier les expériences en anti-chronologique après l'ajout
+        # Trier les expériences par order_index après l'ajout
+        dossier["xp_pro"] = sort_xp_pro_by_order_index(dossier["xp_pro"])
         dossier = sort_dossier_items(dossier)
 
         candidat.dossier = dossier
@@ -1016,11 +1051,22 @@ def experience_add(request, pk):
             <div style="flex: 1;">
               <strong>{escape(current_experience["date"])} : {escape(current_experience["poste"])}</strong> chez <strong>{escape(current_experience["company"])}</strong><br>
             </div>
-            <button type="button" class="btn btn-sm btn-danger btn-experience-remove"
-                    data-candidat-pk="{pk}"
-                    data-exp-index="{new_index}">
-              <i class="bi bi-trash"></i>
-            </button>
+            <div class="d-flex gap-2 align-items-center">
+              <div class="input-group input-group-sm" style="width: 100px;">
+                <span class="input-group-text">#</span>
+                <input type="number"
+                       class="form-control xp-pro-order-index"
+                       min="1"
+                       value="{current_experience.get('order_index', 1)}"
+                       data-exp-index="{new_index}"
+                       data-candidat-pk="{pk}">
+              </div>
+              <button type="button" class="btn btn-sm btn-danger btn-experience-remove"
+                      data-candidat-pk="{pk}"
+                      data-exp-index="{new_index}">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
           </div>
 
           <!-- Contexte -->
@@ -1093,6 +1139,53 @@ def experience_remove(request, pk, index):
         pass
 
     return redirect("formulaire:candidat_edit", pk=pk)
+
+def _ensure_xp_pro_have_ids(dossier):
+    """Assure que toutes les xp_pro ont un 'id'. Migre les anciennes données."""
+    if "xp_pro" not in dossier:
+        return dossier
+    
+    for exp in dossier["xp_pro"]:
+        if not exp.get("id"):
+            exp["id"] = _new_id()
+    
+    return dossier
+
+@require_POST
+def xp_pro_update_order_index_by_id(request, pk, exp_id):
+    """Met à jour l'order_index d'une xp_pro par son ID (au lieu d'index de position)."""
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    # Migrer les anciennes expériences sans ID
+    dossier = _ensure_xp_pro_have_ids(dossier)
+
+    try:
+        new_order_index = int(request.POST.get("order_index", 1))
+
+        if "xp_pro" in dossier:
+            # Chercher l'expérience par son ID unique
+            exp_index = None
+            for i, exp in enumerate(dossier["xp_pro"]):
+                if exp.get("id") == exp_id:
+                    exp_index = i
+                    break
+
+            if exp_index is not None:
+                dossier["xp_pro"][exp_index]["order_index"] = new_order_index
+
+                # Ré-trier les xp_pro par order_index
+                dossier["xp_pro"] = sort_xp_pro_by_order_index(dossier["xp_pro"])
+
+                candidat.dossier = dossier
+                candidat.save(update_fields=["dossier"])
+
+                # Return JSON pour AJAX
+                return JsonResponse({"success": True, "new_order_index": new_order_index})
+    except (ValueError, TypeError):
+        pass
+
+    return JsonResponse({"success": False}, status=400)
 
 def _calculate_xp_pro_depth(items, item_id, current_depth=0):
     """Calcule la profondeur d'un item xp_pro dans la hiérarchie (pour validation)."""

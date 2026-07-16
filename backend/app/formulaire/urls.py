@@ -72,6 +72,7 @@ urlpatterns = [
     # ========================================================================
     path("candidat/<uuid:pk>/experience/ajouter/", views.experience_add, name="experience_add"),
     path("candidat/<uuid:pk>/experience/<int:index>/supprimer/", views.experience_remove, name="experience_remove"),
+    path("candidat/<uuid:pk>/experience/<str:exp_id>/ordre-update-by-id/", views.xp_pro_update_order_index_by_id, name="xp_pro_update_order_index_by_id"),
 
     # ========================================================================
     # 9. XP_PRO BULLETS - 2e étape du workflow (Add, Update, Delete)

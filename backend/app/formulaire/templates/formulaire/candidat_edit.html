@@ -435,11 +435,20 @@
     <div id="experiences-list">
       {% if candidat.dossier.xp_pro %}
         {% for exp in candidat.dossier.xp_pro %}
-          <div class="alert alert-xp-pro mb-3 xp-pro-step2-container" data-exp-index="{{ forloop.counter0 }}" data-candidat-pk="{{ candidat.pk }}">
-            <div class="d-flex justify-content-between align-items-start mb-2">
+          <div class="alert alert-xp-pro mb-3 xp-pro-step2-container" data-exp-id="{{ exp.id }}" data-exp-index="{{ forloop.counter0 }}" data-candidat-pk="{{ candidat.pk }}">
+            <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
               <div style="flex: 1;">
                 <strong>{{ exp.date }} : {{ exp.poste }}</strong> chez <strong>{{ exp.company }}</strong><br>
               </div>
+              <input type="number"
+                     class="form-control form-control-sm xp-pro-order-index"
+                     value="{{ exp.order_index|default:forloop.counter }}"
+                     min="1"
+                     data-exp-id="{{ exp.id }}"
+                     data-exp-index="{{ forloop.counter0 }}"
+                     data-candidat-pk="{{ candidat.pk }}"
+                     data-original-index="{{ exp.order_index|default:forloop.counter }}"
+                     title="Ordre d'affichage">
               <button type="button" class="btn btn-sm btn-danger btn-experience-remove"
                       data-candidat-pk="{{ candidat.pk }}"
                       data-exp-index="{{ forloop.counter0 }}">
@@ -601,7 +610,7 @@ function activatePostesCible(e) {
   const radio = e.target;
   const posteCibleId = radio.value;
   const posteCibleTitle = radio.closest('[id^="poste-cible-"]')?.querySelector('input[type="text"]')?.value || 'ce poste';
-  
+
   const candidatPk = radio.dataset.candidatPk;
 
   const formData = new FormData();
@@ -1495,6 +1504,7 @@ function removeExperience(e) {
   .catch(err => console.error(`[ERROR] Exception lors de la suppression expérience:`, err));
 }
 
+
 // ========================================================================
 // MARK: XP_PRO STEP 2 HANDLERS - Unified handler for contexte + technologies + realizations
 // ========================================================================
@@ -1507,7 +1517,40 @@ function initXpProStep2Handlers() {
         e.preventDefault();
         const container = this.closest('.xp-pro-step2-container');
         const expIndex = container.dataset.expIndex;
+        const candidatPk = container.dataset.candidatPk;
         console.log(`[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour xp_pro_step2[${expIndex}]`);
+
+        // 1. Sauvegarder l'order_index s'il a changé
+        const orderInput = container.querySelector('.xp-pro-order-index');
+        if (orderInput) {
+          const expId = orderInput.dataset.expId;
+          const newOrderIndex = parseInt(orderInput.value);
+          const originalIndex = parseInt(orderInput.dataset.originalIndex);
+
+          if (newOrderIndex !== originalIndex) {
+            console.log(`[CLICK-SAVE] Sauvegarde order_index [expId=${expId}]: ${originalIndex} → ${newOrderIndex}`);
+            fetch(`/candidat/${candidatPk}/experience/${expId}/ordre-update-by-id/`, {
+              method: 'POST',
+              headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: `order_index=${newOrderIndex}`,
+            })
+            .then(r => r.json())
+            .then(data => {
+              if (data.success) {
+                console.log(`[CLICK-SAVE] Order-index sauvegardé avec succès: ${newOrderIndex}`);
+                orderInput.dataset.originalIndex = newOrderIndex;
+              } else {
+                console.error(`[ERROR] Erreur sauvegarde order_index`);
+              }
+            })
+            .catch(err => console.error(`[ERROR] Exception lors du save order_index:`, err));
+          }
+        }
+
+        // 2. Sauvegarder les données xp_pro_step2 (contexte, technologies, réalisations)
         saveData('xp_pro_step2', true, container);
       });
       btn.setAttribute('data-listener-initialized', 'true');

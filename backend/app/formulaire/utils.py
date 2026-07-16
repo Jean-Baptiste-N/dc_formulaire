@@ -260,7 +260,8 @@ def sort_items_by_date_desc(items, date_field="date"):
 
 def sort_dossier_items(dossier):
     """
-    Trie tous les items du dossier par date (formations, certifications, xp_pro).
+    Trie tous les items du dossier par date (formations, certifications).
+    NB: xp_pro ne sont PAS triés car ils ont un ordre personnel défini par l'utilisateur via order_index.
     Modifie le dossier in-place et le retourne.
 
     Args:
@@ -286,11 +287,39 @@ def sort_dossier_items(dossier):
             date_field="date"
         )
 
-    # Trier les expériences professionnelles
-    if "xp_pro" in dossier and isinstance(dossier["xp_pro"], list):
-        dossier["xp_pro"] = sort_items_by_date_desc(
-            dossier["xp_pro"],
-            date_field="date"
-        )
+    # ⚠️ xp_pro ne sont PAS triés - l'utilisateur les ordonne manuellement via order_index
+    # Les xp_pro sont triés par order_index dans les vues si nécessaire
 
     return dossier
+
+
+def sort_xp_pro_by_order_index(xp_pro_list):
+    """
+    Trie les xp_pro par leur order_index en ordre croissant (index 1 en haut).
+    Les xp_pro sans order_index sont placés à la fin.
+
+    Args:
+        xp_pro_list: Liste des xp_pro à trier
+
+    Returns:
+        Liste triée par order_index (croissant)
+    """
+    if not isinstance(xp_pro_list, list):
+        return xp_pro_list
+
+    # Créer une copie
+    sorted_list = xp_pro_list.copy()
+
+    # Trier: d'abord par order_index croissant (les items sans sont à la fin)
+    def get_order_index(item):
+        """Retourne l'order_index ou un très grand nombre s'il n'existe pas."""
+        order_idx = item.get("order_index")
+        if order_idx is None:
+            return float('inf')
+        try:
+            return int(order_idx)
+        except (ValueError, TypeError):
+            return float('inf')
+
+    sorted_list.sort(key=get_order_index)
+    return sorted_list
