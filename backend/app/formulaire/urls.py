@@ -38,6 +38,7 @@ urlpatterns = [
     path("candidat/<uuid:pk>/skills-cible/<str:skills_cible_id>/toggle/", views.skills_cible_toggle, name="skills_cible_toggle"),
     path("candidat/<uuid:pk>/skills-cible/<str:skills_cible_id>/mettre-a-jour/", views.skills_cible_update, name="skills_cible_update"),
     path("candidat/<uuid:pk>/skills-cible/bulk-update/", views.skills_cible_bulk_update, name="skills_cible_bulk_update"),
+    path("candidat/<uuid:pk>/skills-cible-reorder-batch/", views.skills_cible_reorder_batch, name="skills_cible_reorder_batch"),
 
     # ========================================================================
     # 3. MAIN-SKILLS DOMAINES DE COMPÉTENCES - Bullet Section
@@ -48,6 +49,7 @@ urlpatterns = [
     path("candidat/<uuid:pk>/main_skills/<str:section>/item/<str:item_id>/mettre-a-jour/",views.main_skills_hierarchy_update,name="main_skills_hierarchy_update",),
     path("candidat/<uuid:pk>/main_skills/<str:section>/item/<str:item_id>/supprimer/",views.main_skills_hierarchy_delete,name="main_skills_hierarchy_delete",),
     path("candidat/<uuid:pk>/main_skills/<str:section>/bulk-update/",views.main_skills_hierarchy_bulk_update,name="main_skills_hierarchy_bulk_update",),
+    path("candidat/<uuid:pk>/main-skills-reorder-batch/", views.main_skills_reorder_batch, name="main_skills_reorder_batch"),
 
     # ========================================================================
     # 5. FORMATIONS - Add, Remove
@@ -81,5 +83,6 @@ urlpatterns = [
     path("candidat/<uuid:pk>/experience/<int:exp_index>/step2-bulk-update/",views.xp_pro_step2_bulk_update,name="xp_pro_step2_bulk_update",),
     path("candidat/<uuid:pk>/experience/<int:exp_index>/realization/ajouter/",views.xp_pro_realization_add,name="xp_pro_realization_add",),
     path("candidat/<uuid:pk>/experience/<int:exp_index>/realization/<str:item_id>/supprimer/",views.xp_pro_realization_delete,name="xp_pro_realization_delete",),
+    path("candidat/<uuid:pk>/xp-pro-realisation-reorder-batch/", views.xp_pro_realisation_reorder_batch, name="xp_pro_realisation_reorder_batch"),
 ]
 

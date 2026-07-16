@@ -1648,6 +1648,241 @@ function initXpProStep2Handlers() {
 
 // Note: dirty tracking pour xp_pro_step2 est géré dans initAutosaveHandlers()
 
+// ========================================================================
+// MARK: DRAG-AND-DROP SORTABLE HANDLERS (SortableJS)
+// ========================================================================
+
+function initDragAndDropHandlers() {
+  const candidatPk = CANDIDAT_PK;
+
+  // 1. Skills_cible list
+  const skillsCibleList = document.getElementById('skills-cible-list');
+  if (skillsCibleList) {
+    new Sortable(skillsCibleList, {
+      handle: '.bi-grip-vertical',
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
+      onEnd: function(evt) {
+        console.log('[DRAG-DROP] Skills_cible reordered:', evt.oldIndex, '->', evt.newIndex);
+        detectAndSaveSkillsCibleOrder(skillsCibleList, candidatPk);
+      }
+    });
+  }
+
+  // 2. Main_skills bullet list
+  const mainSkillsBulletList = document.getElementById('main_skills_bullet_list');
+  if (mainSkillsBulletList) {
+    new Sortable(mainSkillsBulletList, {
+      handle: '.bi-grip-vertical',
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
+      onEnd: function(evt) {
+        console.log('[DRAG-DROP] Main_skills bullet reordered:', evt.oldIndex, '->', evt.newIndex);
+        detectAndSaveMainSkillsOrder(mainSkillsBulletList, 'bullet', candidatPk);
+      }
+    });
+  }
+
+  // 3. Main_skills table list
+  const mainSkillsTableList = document.getElementById('main_skills_table_list');
+  if (mainSkillsTableList) {
+    new Sortable(mainSkillsTableList, {
+      handle: '.bi-grip-vertical',
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
+      onEnd: function(evt) {
+        console.log('[DRAG-DROP] Main_skills table reordered:', evt.oldIndex, '->', evt.newIndex);
+        detectAndSaveMainSkillsOrder(mainSkillsTableList, 'table', candidatPk);
+      }
+    });
+  }
+
+  // 4. XP_PRO realisations (depth=0 only) - one sortable per experience
+  document.querySelectorAll('.xp-pro-step2-container').forEach(container => {
+    const expIndex = container.getAttribute('data-exp-index');
+    const expId = container.getAttribute('data-exp-id');
+    const realizationsList = container.querySelector('.xp-pro-step2-realizations');
+    
+    if (realizationsList) {
+      new Sortable(realizationsList, {
+        handle: '.bi-grip-vertical',
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        dragClass: 'sortable-drag',
+        onEnd: function(evt) {
+          console.log('[DRAG-DROP] XP_PRO realisations reordered:', evt.oldIndex, '->', evt.newIndex);
+          detectAndSaveXpProRealisationOrder(realizationsList, expId, candidatPk);
+        }
+      });
+    }
+  });
+}
+
+// Helper functions for drag-and-drop reordering
+
+function detectAndSaveSkillsCibleOrder(container, candidatPk) {
+  const items = container.querySelectorAll('[data-skills-cible-id]');
+  const updates = [];
+
+  items.forEach((item, index) => {
+    const skillId = item.getAttribute('data-skills-cible-id');
+    const originalOrder = parseInt(item.getAttribute('data-original-order')) || 0;
+    const newOrder = index + 1;
+
+    if (originalOrder !== newOrder) {
+      updates.push({
+        skill_id: skillId,
+        order_index: newOrder
+      });
+    }
+  });
+
+  if (updates.length > 0) {
+    saveSkillsCibleOrder(updates, candidatPk);
+  }
+}
+
+function detectAndSaveMainSkillsOrder(container, section, candidatPk) {
+  // Sélectionner uniquement les enfants directs (depth=0) du conteneur
+  const items = Array.from(container.children).filter(el => el.hasAttribute('data-item-id'));
+  const updates = [];
+
+  items.forEach((item, index) => {
+    const itemId = item.getAttribute('data-item-id');
+    const originalOrder = parseInt(item.getAttribute('data-original-order')) || 0;
+    const newOrder = index + 1;
+
+    if (originalOrder !== newOrder) {
+      updates.push({
+        item_id: itemId,
+        order_index: newOrder
+      });
+    }
+  });
+
+  if (updates.length > 0) {
+    saveMainSkillsOrder(updates, section, candidatPk);
+  }
+}
+
+function detectAndSaveXpProRealisationOrder(container, expId, candidatPk) {
+  // Sélectionner uniquement les enfants directs (depth=0) du conteneur
+  const items = Array.from(container.children).filter(el => el.hasAttribute('data-realisation-id'));
+  const updates = [];
+
+  items.forEach((item, index) => {
+    const realisationId = item.getAttribute('data-realisation-id');
+    const originalOrder = parseInt(item.getAttribute('data-original-order')) || 0;
+    const newOrder = index + 1;
+
+    if (originalOrder !== newOrder) {
+      updates.push({
+        realisation_id: realisationId,
+        order_index: newOrder
+      });
+    }
+  });
+
+  if (updates.length > 0) {
+    saveXpProRealisationOrder(updates, expId, candidatPk);
+  }
+}
+
+function saveSkillsCibleOrder(updates, candidatPk) {
+  const url = `/candidat/${candidatPk}/skills-cible-reorder-batch/`;
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
+    },
+    body: JSON.stringify({ updates })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      console.log('[SAVED] Skills_cible order saved:', data.results);
+      // Mettre à jour les data-original-order
+      Object.entries(data.results).forEach(([skillId, newOrder]) => {
+        const item = document.querySelector(`[data-skills-cible-id="${skillId}"]`);
+        if (item) {
+          item.setAttribute('data-original-order', newOrder);
+        }
+      });
+    } else {
+      console.error('[ERROR] Failed to save skills_cible order:', data.error);
+    }
+  })
+  .catch(err => console.error('[ERROR] Exception saving skills_cible order:', err));
+}
+
+function saveMainSkillsOrder(updates, section, candidatPk) {
+  const url = `/candidat/${candidatPk}/main-skills-reorder-batch/`;
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
+    },
+    body: JSON.stringify({ section, updates })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      console.log('[SAVED] Main_skills order saved:', data.results);
+      // Mettre à jour les data-original-order
+      Object.entries(data.results).forEach(([itemId, newOrder]) => {
+        const item = document.querySelector(`[data-item-id="${itemId}"]`);
+        if (item) {
+          item.setAttribute('data-original-order', newOrder);
+        }
+      });
+    } else {
+      console.error('[ERROR] Failed to save main_skills order:', data.error);
+    }
+  })
+  .catch(err => console.error('[ERROR] Exception saving main_skills order:', err));
+}
+
+function saveXpProRealisationOrder(updates, expId, candidatPk) {
+  const url = `/candidat/${candidatPk}/xp-pro-realisation-reorder-batch/`;
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
+    },
+    body: JSON.stringify({ exp_id: expId, updates })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      console.log('[SAVED] XP_PRO realisation order saved:', data.results);
+      // Mettre à jour les data-original-order
+      Object.entries(data.results).forEach(([realisationId, newOrder]) => {
+        const item = document.querySelector(`[data-realisation-id="${realisationId}"]`);
+        if (item) {
+          item.setAttribute('data-original-order', newOrder);
+        }
+      });
+    } else {
+      console.error('[ERROR] Failed to save realisation order:', data.error);
+    }
+  })
+  .catch(err => console.error('[ERROR] Exception saving realisation order:', err));
+}
+
+// Note: dirty tracking pour xp_pro_step2 est géré dans initAutosaveHandlers()
+
 function addXpProStep2Technology(e) {
   e.preventDefault();
   const btn = e.target.closest('.btn-xp-pro-step2-tech-add');
@@ -2116,6 +2351,7 @@ function initializeAllHandlers(context = 'DOMContentLoaded') {
     { name: 'initExperienceHandlers', fn: initExperienceHandlers },
     { name: 'initXpProHierarchyHandlers', fn: initXpProHierarchyHandlers },
     { name: 'initXpProStep2Handlers', fn: initXpProStep2Handlers },
+    { name: 'initDragAndDropHandlers', fn: initDragAndDropHandlers },
     { name: 'initAutosaveHandlers', fn: initAutosaveHandlers }
   ];
 

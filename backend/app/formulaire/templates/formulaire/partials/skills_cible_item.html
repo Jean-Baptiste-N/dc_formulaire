@@ -1,5 +1,11 @@
-{% comment %}Partial: une compétence cible (checkbox){% endcomment %}
-<div id="skills-cible-{{ skills_cible.id }}" class="d-flex align-items-center gap-2 mb-2 p-2 border-start border-3">
+{% comment %}Partial: une compétence cible (checkbox) - sortable with drag-and-drop{% endcomment %}
+<div id="skills-cible-{{ skills_cible.id }}" 
+     class="d-flex align-items-center gap-2 mb-2 p-2 border-start border-3"
+     data-skills-cible-id="{{ skills_cible.id }}"
+     data-order-index="{{ skills_cible.order_index|default:forloop.counter }}"
+     data-original-order="{{ skills_cible.order_index|default:forloop.counter }}"
+     style="cursor: grab; background-color: #f9f9f9; border-radius: 0.25rem;">
+  <i class="bi bi-grip-vertical" style="cursor: grab; color: #ccc; flex-shrink: 0;"></i>
   <input type="checkbox"
          name="skills_cible_active"
          class="form-check-input skills-cible-checkbox"
@@ -18,7 +24,8 @@
           class="btn btn-sm btn-outline-danger btn-sm skills-cible-delete"
           data-candidat-pk="{{ candidat.pk }}"
           data-skills-cible="{{ skills_cible.id }}"
-          title="Supprimer">
+          title="Supprimer"
+          style="flex-shrink: 0;">
     <i class="bi bi-trash"></i>
   </button>
 </div>

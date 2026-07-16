@@ -194,6 +194,41 @@ def _ensure_hierarchy_ids(items):
 
     return items
 
+def _ensure_order_indexes(dossier):
+    """
+    Ajoute order_index à TOUS les éléments qui peuvent être réordonnés:
+    - skills_cible
+    - main_skills.bullet (level 0 only)
+    - main_skills.table (level 0 only)
+    - xp_pro[*].description (level 0 only)
+    """
+    if not isinstance(dossier, dict):
+        return dossier
+    
+    # 1. skills_cible
+    if "skills_cible" in dossier and isinstance(dossier["skills_cible"], list):
+        for i, skill in enumerate(dossier["skills_cible"]):
+            if "order_index" not in skill:
+                skill["order_index"] = i + 1
+    
+    # 2. main_skills bullet et table (level 0 only)
+    if "main_skills" in dossier and isinstance(dossier["main_skills"], dict):
+        for section in ["bullet", "table"]:
+            if section in dossier["main_skills"] and isinstance(dossier["main_skills"][section], list):
+                for i, item in enumerate(dossier["main_skills"][section]):
+                    if "order_index" not in item:
+                        item["order_index"] = i + 1
+    
+    # 3. xp_pro descriptions (level 0 only)
+    if "xp_pro" in dossier and isinstance(dossier["xp_pro"], list):
+        for exp in dossier["xp_pro"]:
+            if "description" in exp and isinstance(exp["description"], list):
+                for i, activity in enumerate(exp["description"]):
+                    if "order_index" not in activity:
+                        activity["order_index"] = i + 1
+    
+    return dossier
+
 # ============================================================================
 # MARK: 1. HEADERS & INFOS DU CANDIDAT - List, Create, Edit, Detail
 # ============================================================================
@@ -275,6 +310,10 @@ def candidat_edit(request, pk=None, slug=None):
                 candidat.dossier["main_skills"]["table"] = _ensure_hierarchy_ids(candidat.dossier["main_skills"]["table"])
                 ids_added = True
 
+        # Ajouter order_index à TOUS les éléments réordonnables
+        candidat.dossier = _ensure_order_indexes(candidat.dossier)
+        ids_added = True
+
         # Trier les items par date (anti-chronologique) mais PAS xp_pro qui sont triés par order_index
         candidat.dossier = sort_dossier_items(candidat.dossier)
 
@@ -348,8 +387,15 @@ def candidat_detail(request, pk=None, slug=None):
                     exp["order_index"] = i
                     ids_added = True
             candidat.dossier["xp_pro"] = sort_xp_pro_by_order_index(candidat.dossier["xp_pro"])
-            if ids_added:
-                candidat.save(update_fields=["dossier"])
+            ids_added = True
+
+        # Ajouter order_index à TOUS les éléments réordonnables
+        candidat.dossier = _ensure_order_indexes(candidat.dossier)
+        ids_added = True
+
+        # Sauvegarder si des IDs ou order_index ont été ajoutés
+        if ids_added:
+            candidat.save(update_fields=["dossier"])
 
     # Compter les compétences ciblées actives
     skills_cible = candidat.dossier.get('skills_cible', []) if candidat.dossier else []
@@ -561,6 +607,52 @@ def skills_cible_bulk_update(request, pk):
 
     return JsonResponse({"status": "ok"})
 
+@require_POST
+def skills_cible_reorder_batch(request, pk):
+    """
+    Met à jour les order_index de PLUSIEURS skills_cible en une seule requête atomique.
+    Prend un JSON: {"updates": [{"skill_id": "...", "order_index": 1}, ...]}
+    """
+    import json
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        updates = data.get("updates", [])
+
+        if not updates or "skills_cible" not in dossier:
+            return JsonResponse({"success": False, "error": "No updates or no skills_cible"}, status=400)
+
+        # Appliquer TOUS les changements d'order_index
+        for update in updates:
+            skill_id = update.get("skill_id")
+            new_order_index = int(update.get("order_index", 1))
+
+            for skill in dossier["skills_cible"]:
+                if skill.get("id") == skill_id:
+                    skill["order_index"] = new_order_index
+                    break
+
+        # Trier par order_index, puis renuméroter
+        dossier["skills_cible"] = sorted(dossier["skills_cible"], key=lambda x: x.get("order_index", 999))
+        for i, skill in enumerate(dossier["skills_cible"], start=1):
+            skill["order_index"] = i
+
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+        # Retourner les nouvelles positions
+        result = {}
+        for i, skill in enumerate(dossier["skills_cible"], start=1):
+            result[skill.get("id")] = i
+
+        return JsonResponse({"success": True, "results": result})
+
+    except (json.JSONDecodeError, ValueError, TypeError) as e:
+        logger.error(f"[skills_cible_reorder_batch] Exception: {e}")
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
+
 # ============================================================================
 # MARK: 3.1 MAIN-SKILLS DOMAINES DE COMPÉTENCES - Bullet Section
 # ============================================================================
@@ -742,6 +834,57 @@ def main_skills_hierarchy_bulk_update(request, pk, section):
     candidat.save(update_fields=["dossier"])
 
     return JsonResponse({"status": "ok"})
+
+@require_POST
+def main_skills_reorder_batch(request, pk):
+    """
+    Met à jour les order_index de PLUSIEURS main_skills (bullets ou table).
+    Prend un JSON: {"section": "bullet", "updates": [{"item_id": "...", "order_index": 1}, ...]}
+    Section can be "bullet" or "table"
+    """
+    import json
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        section = data.get("section")  # "bullet" or "table"
+        updates = data.get("updates", [])
+
+        if not section or section not in ["bullet", "table"]:
+            return JsonResponse({"success": False, "error": "Invalid section"}, status=400)
+
+        if not updates or "main_skills" not in dossier or section not in dossier["main_skills"]:
+            return JsonResponse({"success": False, "error": f"No updates or no main_skills.{section}"}, status=400)
+
+        # Appliquer TOUS les changements d'order_index (level 0 only)
+        for update in updates:
+            item_id = update.get("item_id")
+            new_order_index = int(update.get("order_index", 1))
+
+            for item in dossier["main_skills"][section]:
+                if item.get("id") == item_id:
+                    item["order_index"] = new_order_index
+                    break
+
+        # Trier par order_index, puis renuméroter (level 0 only)
+        dossier["main_skills"][section] = sorted(dossier["main_skills"][section], key=lambda x: x.get("order_index", 999))
+        for i, item in enumerate(dossier["main_skills"][section], start=1):
+            item["order_index"] = i
+
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+        # Retourner les nouvelles positions
+        result = {}
+        for i, item in enumerate(dossier["main_skills"][section], start=1):
+            result[item.get("id")] = i
+
+        return JsonResponse({"success": True, "results": result})
+
+    except (json.JSONDecodeError, ValueError, TypeError) as e:
+        logger.error(f"[main_skills_reorder_batch] Exception: {e}")
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
 
 # ============================================================================
 # MARK: 3.2 MAIN-SKILLS OUTILS & LANGAGES - Table Section
@@ -1454,6 +1597,63 @@ def xp_pro_step2_update(request, pk, exp_index):
 def xp_pro_step2_bulk_update(request, pk, exp_index):
     """Unified bulk update for xp_pro step2 (contexte + env_tech + realizations)."""
     return xp_pro_step2_update(request, pk, exp_index)
+
+@require_POST
+def xp_pro_realisation_reorder_batch(request, pk):
+    """
+    Met à jour les order_index de PLUSIEURS réalisations (depth=0 only) dans xp_pro.
+    Prend un JSON: {"exp_id": "...", "updates": [{"realisation_id": "...", "order_index": 1}, ...]}
+    """
+    import json
+    candidat = get_object_or_404(Candidat, pk=pk)
+    dossier = candidat.dossier or _empty_dossier()
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        exp_id = data.get("exp_id")
+        updates = data.get("updates", [])
+
+        if not exp_id or not updates or "xp_pro" not in dossier:
+            return JsonResponse({"success": False, "error": "Missing exp_id or updates"}, status=400)
+
+        # Trouver l'experience
+        target_exp = None
+        for exp in dossier["xp_pro"]:
+            if exp.get("id") == exp_id:
+                target_exp = exp
+                break
+
+        if not target_exp or "description" not in target_exp:
+            return JsonResponse({"success": False, "error": "Experience or description not found"}, status=400)
+
+        # Appliquer TOUS les changements d'order_index (depth=0 only)
+        for update in updates:
+            realisation_id = update.get("realisation_id")
+            new_order_index = int(update.get("order_index", 1))
+
+            for realisation in target_exp["description"]:
+                if realisation.get("id") == realisation_id:
+                    realisation["order_index"] = new_order_index
+                    break
+
+        # Trier par order_index, puis renuméroter (depth=0 only)
+        target_exp["description"] = sorted(target_exp["description"], key=lambda x: x.get("order_index", 999))
+        for i, realisation in enumerate(target_exp["description"], start=1):
+            realisation["order_index"] = i
+
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+        # Retourner les nouvelles positions
+        result = {}
+        for i, realisation in enumerate(target_exp["description"], start=1):
+            result[realisation.get("id")] = i
+
+        return JsonResponse({"success": True, "results": result})
+
+    except (json.JSONDecodeError, ValueError, TypeError) as e:
+        logger.error(f"[xp_pro_realisation_reorder_batch] Exception: {e}")
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
 
 # ============================================================================
 # MARK: 10. DOCX EXPORT

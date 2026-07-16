@@ -638,4 +638,24 @@ body {
   background-color: #48A822 !important;
 }
 
+/* ============================================================================
+   MARK: 15 SORTABLEJS - Drag-and-drop animations
+   ============================================================================ */
 
+.sortable-ghost {
+  opacity: 0.4;
+  background-color: #f0f0f0;
+}
+
+.sortable-drag {
+  opacity: 0.9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.sortable-ghost.xp-pro-hierarchy-item,
+.sortable-ghost.main-skills-hierarchy-item,
+.sortable-ghost[data-skills-cible-id] {
+  background-color: #e8f4f8;
+  border-left-color: #17a2b8;
+}
