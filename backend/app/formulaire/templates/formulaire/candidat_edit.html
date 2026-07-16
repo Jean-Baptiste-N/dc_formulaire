@@ -178,29 +178,6 @@
     <button type="button" class="btn btn-success btn-sm btn-main-skills-save ms-2" data-section="table" data-candidat-pk="{{ candidat.pk }}">
       <i class="bi bi-save"></i> Enregistrer
     </button>
-
-    <!-- Aperçu tableau -->
-    {% comment %} {% if candidat.dossier.main_skills.table %}
-    <div class="mt-4 pt-3 border-top">
-      <h5 class="mb-3">Aperçu du tableau</h5>
-      <table class="table table-sm table-bordered">
-        <tbody>
-          {% for category in candidat.dossier.main_skills.table %}
-          <tr>
-            <td class="fw-bold" style="width: 20%;">{{ category.title }}</td>
-            <td>
-              {% if category.description %}
-                {% for tool in category.description %}
-                  {{ tool.title }}{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% endif %} {% endcomment %}
   </div>
 </div>
 

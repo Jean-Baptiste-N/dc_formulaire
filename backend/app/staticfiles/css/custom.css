@@ -668,7 +668,10 @@ body {
 .hierarchy-item-root {
   cursor: grab;
   background-color: #f9f9f9;
-  padding: 0.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
   border-radius: 0.25rem;
 }
 
@@ -689,4 +692,25 @@ body {
 /* Input field for item titles - takes remaining space */
 .hierarchy-input-title {
   flex: 1;
+}
+
+/* ============================================================================
+   MARK: 17. SKILLS_CIBLE - Draggable skill items
+   ============================================================================ */
+
+/* Root container for skills_cible items */
+.skills-cible-item {
+  cursor: grab;
+  background-color: #f9f9f9;
+  border-radius: 0.25rem;
+}
+
+/* Checkbox for active status */
+.skills-cible-checkbox-input {
+  cursor: pointer;
+}
+
+/* Delete button - no flex shrink */
+.skills-cible-delete-btn {
+  flex-shrink: 0;
 }
