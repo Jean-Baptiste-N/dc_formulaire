@@ -1144,16 +1144,20 @@ def _ensure_xp_pro_have_ids(dossier):
     """Assure que toutes les xp_pro ont un 'id'. Migre les anciennes données."""
     if "xp_pro" not in dossier:
         return dossier
-    
+
     for exp in dossier["xp_pro"]:
         if not exp.get("id"):
             exp["id"] = _new_id()
-    
+
     return dossier
 
 @require_POST
-def xp_pro_update_order_index_by_id(request, pk, exp_id):
-    """Met à jour l'order_index d'une xp_pro par son ID (au lieu d'index de position)."""
+def experience_update_order_index_batch(request, pk):
+    """
+    Met à jour les order_index de PLUSIEURS xp_pro en une seule requête atomique.
+    Prend un JSON: {"updates": [{"exp_id": "...", "order_index": 1}, ...]}
+    """
+    import json
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
@@ -1161,31 +1165,58 @@ def xp_pro_update_order_index_by_id(request, pk, exp_id):
     dossier = _ensure_xp_pro_have_ids(dossier)
 
     try:
-        new_order_index = int(request.POST.get("order_index", 1))
+        # Parser le JSON du body
+        data = json.loads(request.body.decode('utf-8'))
+        updates = data.get("updates", [])
+        logger.info(f"[experience_update_order_index_batch] pk={pk}, {len(updates)} changements")
 
-        if "xp_pro" in dossier:
-            # Chercher l'expérience par son ID unique
-            exp_index = None
-            for i, exp in enumerate(dossier["xp_pro"]):
+        if not updates or "xp_pro" not in dossier:
+            return JsonResponse({"success": False, "error": "No updates or no xp_pro"}, status=400)
+
+        # Appliquer TOUS les changements d'order_index
+        for update in updates:
+            exp_id = update.get("exp_id")
+            new_order_index = int(update.get("order_index", 1))
+
+            for exp in dossier["xp_pro"]:
                 if exp.get("id") == exp_id:
-                    exp_index = i
+                    old_order_index = exp.get("order_index")
+                    exp["order_index"] = new_order_index
+                    logger.info(f"[experience_update_order_index_batch] expId={exp_id[:8]}... ordre: {old_order_index} → {new_order_index}")
                     break
 
-            if exp_index is not None:
-                dossier["xp_pro"][exp_index]["order_index"] = new_order_index
+        # Trier une seule fois
+        dossier["xp_pro"] = sort_xp_pro_by_order_index(dossier["xp_pro"])
 
-                # Ré-trier les xp_pro par order_index
-                dossier["xp_pro"] = sort_xp_pro_by_order_index(dossier["xp_pro"])
+        # Renuméroter une seule fois après TOUS les changements
+        for i, exp in enumerate(dossier["xp_pro"], start=1):
+            exp["order_index"] = i
 
-                candidat.dossier = dossier
-                candidat.save(update_fields=["dossier"])
+        # Debug
+        exp_order_after = [f"{exp.get('company')} (order={exp.get('order_index')})" for exp in dossier["xp_pro"]]
+        logger.info(f"[experience_update_order_index_batch] Ordre final: {exp_order_after}")
 
-                # Return JSON pour AJAX
-                return JsonResponse({"success": True, "new_order_index": new_order_index})
-    except (ValueError, TypeError):
-        pass
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+        logger.info("[experience_update_order_index_batch] ✓ Dossier sauvegardé")
 
-    return JsonResponse({"success": False}, status=400)
+        # Retourner les nouvelles positions
+        result = {}
+        for update in updates:
+            exp_id = update.get("exp_id")
+            for i, exp in enumerate(dossier["xp_pro"]):
+                if exp.get("id") == exp_id:
+                    result[exp_id] = i + 1
+                    break
+
+        return JsonResponse({
+            "success": True,
+            "results": result
+        })
+
+    except (json.JSONDecodeError, ValueError, TypeError) as e:
+        logger.error(f"[experience_update_order_index_batch] Exception: {e}")
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
 
 def _calculate_xp_pro_depth(items, item_id, current_depth=0):
     """Calcule la profondeur d'un item xp_pro dans la hiérarchie (pour validation)."""
