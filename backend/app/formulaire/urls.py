@@ -55,19 +55,19 @@ urlpatterns = [
     # 5. FORMATIONS - Add, Remove
     # ========================================================================
     path("candidat/<uuid:pk>/formation/ajouter/", views.formation_add, name="formation_add"),
-    path("candidat/<uuid:pk>/formation/<int:index>/supprimer/", views.formation_remove, name="formation_remove"),
+    path("candidat/<uuid:pk>/formation/<str:formation_id>/supprimer/", views.formation_remove, name="formation_remove"),
 
     # ========================================================================
     # 6. CERTIFICATIONS - Add, Remove
     # ========================================================================
     path("candidat/<uuid:pk>/certification/ajouter/", views.certification_add, name="certification_add"),
-    path("candidat/<uuid:pk>/certification/<int:index>/supprimer/", views.certification_remove, name="certification_remove"),
+    path("candidat/<uuid:pk>/certification/<str:certification_id>/supprimer/", views.certification_remove, name="certification_remove"),
 
     # ========================================================================
     # 7. LANGUES - Add, Remove
     # ========================================================================
     path("candidat/<uuid:pk>/langue/ajouter/", views.langue_add, name="langue_add"),
-    path("candidat/<uuid:pk>/langue/<int:index>/supprimer/", views.langue_remove, name="langue_remove"),
+    path("candidat/<uuid:pk>/langue/<str:langue_id>/supprimer/", views.langue_remove, name="langue_remove"),
 
     # ========================================================================
     # 8. XP_PRO BLOCS - 1ère étape du workflow (Add, Remove)

@@ -668,10 +668,8 @@ body {
 .hierarchy-item-root {
   cursor: grab;
   background-color: #f9f9f9;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  padding: 0 !important;
+  margin-bottom: 1rem !important;
   border-radius: 0.25rem;
 }
 
@@ -713,4 +711,14 @@ body {
 /* Delete button - no flex shrink */
 .skills-cible-delete-btn {
   flex-shrink: 0;
+}
+
+/* ============================================================================
+   MARK: 18. POSTE_CIBLE - poste items
+   ============================================================================ */
+.poste-cible-item {
+  background-color: #f9f9f9;
+  border-radius: 0.25rem;
+  padding-left: 0.5rem !important;
+  margin-bottom: 0.5rem;
 }

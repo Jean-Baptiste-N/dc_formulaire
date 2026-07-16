@@ -16,7 +16,10 @@ from django.views.decorators.http import require_POST
 
 from .forms import CandidatInfoForm
 from .models import Candidat
-from .utils import clean_text, remove_empty_paragraphs, sort_dossier_items, sort_xp_pro_by_order_index
+from .utils import (
+    clean_text, remove_empty_paragraphs, sort_dossier_items, sort_xp_pro_by_order_index,
+    normalize_item_with_id_and_order, normalize_items_list_with_order
+)
 
 logger = logging.getLogger(__name__)
 
@@ -947,38 +950,34 @@ def main_skills_reorder_batch(request, pk):
 
 @require_POST
 def formation_add(request, pk):
-    """Ajoute une formation."""
+    """Ajoute une formation avec UUID et order_index."""
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
-    formation = {
+    formation = normalize_item_with_id_and_order({
         "title": _clean_text(request.POST.get("title", "")),
         "school": _clean_text(request.POST.get("school", "")),
         "date": _clean_text(request.POST.get("date", "")),
         "description": _clean_text(request.POST.get("description", "")),
-    }
+    }, item_type="formation")
 
     if formation["title"] and formation["school"]:
         if "formations" not in dossier:
             dossier["formations"] = []
         dossier["formations"].append(formation)
 
-        # Trier les formations en anti-chronologique après l'ajout
-        dossier = sort_dossier_items(dossier)
+        # Renormaliser la liste avec order_index recalculés par date
+        dossier["formations"] = normalize_items_list_with_order(
+            dossier["formations"], item_type="formation"
+        )
 
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
-        # Trouver le nouvel index après le tri
-        new_index = next(
-            (i for i, f in enumerate(dossier["formations"])
-             if f.get("title") == formation["title"] and f.get("date") == formation["date"]),
-            len(dossier["formations"]) - 1
-        )
-
         # Pour AJAX: retourner juste le snippet HTML du nouvel élément
+        formation_id = formation["id"]
         desc_html = f'<br><small class="text-muted">{escape(formation["description"])}</small>' if formation.get("description", "").strip() else ''
-        html = f'''<div class="alert alert-info mb-2">
+        html = f'''<div class="alert alert-info mb-2" data-item-id="{formation_id}">
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <strong>{escape(formation["date"])} - {escape(formation["title"])}</strong> <br>
@@ -987,7 +986,7 @@ def formation_add(request, pk):
             </div>
             <button type="button" class="btn btn-sm btn-outline-danger btn-formation-remove"
                     data-candidat-pk="{pk}"
-                    data-formation-index="{new_index}">
+                    data-item-id="{formation_id}">
               <i class="bi bi-trash"></i>
             </button>
           </div>
@@ -997,22 +996,20 @@ def formation_add(request, pk):
     return redirect("formulaire:candidat_edit", pk=pk)
 
 @require_POST
-def formation_remove(request, pk, index):
-    """Supprime une formation."""
+def formation_remove(request, pk, formation_id):
+    """Supprime une formation par son ID."""
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
-    try:
-        index = int(index)
-        if "formations" in dossier and 0 <= index < len(dossier["formations"]):
-            dossier["formations"].pop(index)
-            candidat.dossier = dossier
-            candidat.save(update_fields=["dossier"])
-            # Return JSON for AJAX requests
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.method == "POST":
-                return JsonResponse({"success": True})
-    except (ValueError, IndexError):
-        pass
+    if "formations" in dossier and isinstance(dossier["formations"], list):
+        # Chercher la formation par son ID
+        dossier["formations"] = [f for f in dossier["formations"] if f.get("id") != formation_id]
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+        # Return JSON for AJAX requests
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.method == "POST":
+            return JsonResponse({"success": True})
 
     return redirect("formulaire:candidat_edit", pk=pk)
 
@@ -1022,37 +1019,35 @@ def formation_remove(request, pk, index):
 
 @require_POST
 def certification_add(request, pk):
-    """Ajoute une certification."""
+    """Ajoute une certification avec UUID et order_index."""
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
-    certification = {
+    certification = normalize_item_with_id_and_order({
         "title": _clean_text(request.POST.get("title", "")),
         "date": _clean_text(request.POST.get("date", "")),
         "description": _clean_text(request.POST.get("description", "")),
-    }
+    }, item_type="certification")
 
     if certification["title"]:
         if "certifications" not in dossier:
             dossier["certifications"] = []
         dossier["certifications"].append(certification)
 
-        # Trier les certifications en anti-chronologique après l'ajout
-        dossier = sort_dossier_items(dossier)
+        # Renormaliser la liste avec order_index recalculés par date
+        dossier["certifications"] = normalize_items_list_with_order(
+            dossier["certifications"], item_type="certification"
+        )
 
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
-        # Trouver le nouvel index après le tri
-        new_index = next(
-            (i for i, c in enumerate(dossier["certifications"])
-             if c.get("title") == certification["title"] and c.get("date") == certification["date"]),
-            len(dossier["certifications"]) - 1
-        )
+        # Trouver la certification ajoutée par son ID
+        cert_id = certification["id"]
 
         # Pour AJAX: retourner juste le snippet HTML du nouvel élément
         desc_html = f'<br><small class="text-muted">{escape(certification["description"])}</small>' if certification.get("description", "").strip() else ''
-        html = f'''<div class="alert alert-info mb-2">
+        html = f'''<div class="alert alert-info mb-2" data-item-id="{cert_id}">
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <strong>{escape(certification["date"])} - {escape(certification["title"])}</strong>
@@ -1060,7 +1055,7 @@ def certification_add(request, pk):
             </div>
             <button type="button" class="btn btn-sm btn-outline-danger btn-certification-remove"
                     data-candidat-pk="{pk}"
-                    data-certification-index="{new_index}">
+                    data-item-id="{cert_id}">
               <i class="bi bi-trash"></i>
             </button>
           </div>
@@ -1070,22 +1065,20 @@ def certification_add(request, pk):
     return redirect("formulaire:candidat_edit", pk=pk)
 
 @require_POST
-def certification_remove(request, pk, index):
-    """Supprime une certification."""
+def certification_remove(request, pk, certification_id):
+    """Supprime une certification par son ID."""
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
-    try:
-        index = int(index)
-        if "certifications" in dossier and 0 <= index < len(dossier["certifications"]):
-            dossier["certifications"].pop(index)
-            candidat.dossier = dossier
-            candidat.save(update_fields=["dossier"])
-            # Return JSON for AJAX requests
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.method == "POST":
-                return JsonResponse({"success": True})
-    except (ValueError, IndexError):
-        pass
+    if "certifications" in dossier and isinstance(dossier["certifications"], list):
+        # Chercher la certification par son ID
+        dossier["certifications"] = [c for c in dossier["certifications"] if c.get("id") != certification_id]
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+        # Return JSON for AJAX requests
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.method == "POST":
+            return JsonResponse({"success": True})
 
     return redirect("formulaire:candidat_edit", pk=pk)
 
@@ -1095,26 +1088,32 @@ def certification_remove(request, pk, index):
 
 @require_POST
 def langue_add(request, pk):
-    """Ajoute une langue."""
+    """Ajoute une langue avec UUID et order_index."""
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
-    langue = {
+    langue = normalize_item_with_id_and_order({
         "title": _clean_text(request.POST.get("title", "")),
         "description": _clean_text(request.POST.get("description", "")),
-    }
+    }, item_type="langue")
 
     if langue["title"]:
         if "langues" not in dossier:
             dossier["langues"] = []
         dossier["langues"].append(langue)
+
+        # Renormaliser la liste avec order_index
+        dossier["langues"] = normalize_items_list_with_order(
+            dossier["langues"], item_type="langue"
+        )
+
         candidat.dossier = dossier
         candidat.save(update_fields=["dossier"])
 
         # Pour AJAX: retourner juste le snippet HTML du nouvel élément
-        index = len(dossier["langues"]) - 1
+        langue_id = langue["id"]
         desc_html = f'<br><small class="text-muted">{escape(langue["description"])}</small>' if langue.get("description", "").strip() else ''
-        html = f'''<div class="alert alert-info mb-2">
+        html = f'''<div class="alert alert-info mb-2" data-item-id="{langue_id}">
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <strong>{escape(langue["title"])}</strong>
@@ -1122,7 +1121,7 @@ def langue_add(request, pk):
             </div>
             <button type="button" class="btn btn-sm btn-outline-danger btn-langue-remove"
                     data-candidat-pk="{pk}"
-                    data-langue-index="{index}">
+                    data-item-id="{langue_id}">
               <i class="bi bi-trash"></i>
             </button>
           </div>
@@ -1132,22 +1131,22 @@ def langue_add(request, pk):
     return redirect("formulaire:candidat_edit", pk=pk)
 
 @require_POST
-def langue_remove(request, pk, index):
-    """Supprime une langue."""
+def langue_remove(request, pk, langue_id):
+    """Supprime une langue par son ID."""
     candidat = get_object_or_404(Candidat, pk=pk)
     dossier = candidat.dossier or _empty_dossier()
 
-    try:
-        index = int(index)
-        if "langues" in dossier and 0 <= index < len(dossier["langues"]):
-            dossier["langues"].pop(index)
-            candidat.dossier = dossier
-            candidat.save(update_fields=["dossier"])
-            # Return JSON for AJAX requests
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.method == "POST":
-                return JsonResponse({"success": True})
-    except (ValueError, IndexError):
-        pass
+    if "langues" in dossier and isinstance(dossier["langues"], list):
+        # Chercher la langue par son ID
+        dossier["langues"] = [lang for lang in dossier["langues"] if lang.get("id") != langue_id]
+        candidat.dossier = dossier
+        candidat.save(update_fields=["dossier"])
+
+        # Return JSON for AJAX requests
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.method == "POST":
+            return JsonResponse({"success": True})
+
+    return redirect("formulaire:candidat_edit", pk=pk)
 
     return redirect("formulaire:candidat_edit", pk=pk)
 
@@ -1162,7 +1161,7 @@ def experience_add(request, pk):
     dossier = candidat.dossier or _empty_dossier()
 
     technologies = request.POST.get("technologies", "").strip()
-    tech_list = [_clean_text(t) for t in technologies.split(",") if t.strip()] if technologies else []
+    tech_list = [_clean_text(tech) for tech in technologies.split(",") if tech.strip()] if technologies else []
 
     # Pré-remplir avec un premier item vide (scaffolding UX)
     description_array = [{

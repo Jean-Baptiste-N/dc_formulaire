@@ -227,7 +227,7 @@
     <div id="formations-list">
       {% if candidat.dossier.formations %}
         {% for formation in candidat.dossier.formations %}
-          <div class="alert alert-info mb-2">
+          <div class="alert alert-info mb-2" data-item-id="{{ formation.id }}">
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <strong>{{ formation.date }} - {{ formation.title }}</strong> <br>
@@ -236,7 +236,7 @@
               </div>
               <button type="button" class="btn btn-sm btn-outline-danger btn-formation-remove"
                       data-candidat-pk="{{ candidat.pk }}"
-                      data-formation-index="{{ forloop.counter0 }}">
+                      data-item-id="{{ formation.id }}">
                 <i class="bi bi-trash"></i>
               </button>
             </div>
@@ -290,7 +290,7 @@
     <div id="certifications-list">
       {% if candidat.dossier.certifications %}
         {% for cert in candidat.dossier.certifications %}
-          <div class="alert alert-info mb-2">
+          <div class="alert alert-info mb-2" data-item-id="{{ cert.id }}">
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <strong>{{ cert.date }} - {{ cert.title }}</strong>
@@ -298,7 +298,7 @@
               </div>
               <button type="button" class="btn btn-sm btn-outline-danger btn-certification-remove"
                       data-candidat-pk="{{ candidat.pk }}"
-                      data-certification-index="{{ forloop.counter0 }}">
+                      data-item-id="{{ cert.id }}">
                 <i class="bi bi-trash"></i>
               </button>
             </div>
@@ -347,7 +347,7 @@
     <div id="langues-list">
       {% if candidat.dossier.langues %}
         {% for langue in candidat.dossier.langues %}
-          <div class="alert alert-info mb-2">
+          <div class="alert alert-info mb-2" data-item-id="{{ langue.id }}">
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <strong>{{ langue.title }}</strong>
@@ -355,7 +355,7 @@
               </div>
               <button type="button" class="btn btn-sm btn-outline-danger btn-langue-remove"
                       data-candidat-pk="{{ candidat.pk }}"
-                      data-langue-index="{{ forloop.counter0 }}">
+                      data-item-id="{{ langue.id }}">
                 <i class="bi bi-trash"></i>
               </button>
             </div>
@@ -1151,13 +1151,13 @@ function removeFormation(e) {
     return;
   }
   const candidatPk = btn.dataset.candidatPk;
-  const formationIndex = btn.dataset.formationIndex;
+  const formationId = btn.dataset.itemId;
   console.log(`[DELETE] Utilisateur supprime la formation: ${title}`);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
-  fetch(`/candidat/${candidatPk}/formation/${formationIndex}/supprimer/`, {
+  fetch(`/candidat/${candidatPk}/formation/${formationId}/supprimer/`, {
     method: 'POST',
     body: formData,
   })
@@ -1183,13 +1183,13 @@ function removeCertification(e) {
     return;
   }
   const candidatPk = btn.dataset.candidatPk;
-  const certificationIndex = btn.dataset.certificationIndex;
+  const certificationId = btn.dataset.itemId;
   console.log(`[DELETE] Utilisateur supprime la certification: ${title}`);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
-  fetch(`/candidat/${candidatPk}/certification/${certificationIndex}/supprimer/`, {
+  fetch(`/candidat/${candidatPk}/certification/${certificationId}/supprimer/`, {
     method: 'POST',
     body: formData,
   })
@@ -1215,13 +1215,13 @@ function removeLangue(e) {
     return;
   }
   const candidatPk = btn.dataset.candidatPk;
-  const langueIndex = btn.dataset.langueIndex;
+  const langueId = btn.dataset.itemId;
   console.log(`[DELETE] Utilisateur supprime la langue: ${title}`);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
-  fetch(`/candidat/${candidatPk}/langue/${langueIndex}/supprimer/`, {
+  fetch(`/candidat/${candidatPk}/langue/${langueId}/supprimer/`, {
     method: 'POST',
     body: formData,
   })
@@ -2217,6 +2217,57 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ========================================================================
+
+// ========================================================================
+// MARK: Normalisation des donnees existantes (UUID + order_index)
+// ========================================================================
+
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0,
+        v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+function normalizeExistingItems() {
+  console.log('[NORMALIZE] Verification des items existants...');
+  var itemsNeedingNormalization = false;
+
+  document.querySelectorAll('#formations-list .alert').forEach(function(div) {
+    if (!div.dataset.itemId) {
+      var id = generateUUID();
+      div.setAttribute('data-item-id', id);
+      var btn = div.querySelector('.btn-formation-remove');
+      if (btn) btn.setAttribute('data-item-id', id);
+      itemsNeedingNormalization = true;
+      console.log('[NORMALIZE] Formation sans UUID - assigne: ' + id);
+    }
+  });
+
+  document.querySelectorAll('#certifications-list .alert').forEach(function(div) {
+    if (!div.dataset.itemId) {
+      var id = generateUUID();
+      div.setAttribute('data-item-id', id);
+      var btn = div.querySelector('.btn-certification-remove');
+      if (btn) btn.setAttribute('data-item-id', id);
+      itemsNeedingNormalization = true;
+      console.log('[NORMALIZE] Certification sans UUID - assigne: ' + id);
+    }
+  });
+
+  document.querySelectorAll('#langues-list .alert').forEach(function(div) {
+    if (!div.dataset.itemId) {
+      var id = generateUUID();
+      div.setAttribute('data-item-id', id);
+      var btn = div.querySelector('.btn-langue-remove');
+      if (btn) btn.setAttribute('data-item-id', id);
+      itemsNeedingNormalization = true;
+      console.log('[NORMALIZE] Langue sans UUID - assigne: ' + id);
+    }
+  });
+}
+
 // MARK: Initialisation générale
 // ========================================================================
 
@@ -2246,6 +2297,7 @@ function initializeAllHandlers(context = 'DOMContentLoaded') {
 // Initialiser au chargement
 document.addEventListener('DOMContentLoaded', () => {
   console.log('[DOMContentLoaded] Initialisation des handlers');
+  normalizeExistingItems();
   initializeAllHandlers('DOMContentLoaded');
 });
 
