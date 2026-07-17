@@ -27,7 +27,11 @@ logger = logging.getLogger(__name__)
 # MARK: 0. HELPERS - Utility functions
 # ============================================================================
 
-def _new_id():
+def _new_id() -> str:
+    """Génère un nouvel UUID unique string pour identifier les items du dossier.
+
+    Utilisé pour créer des IDs pour les postes cibles, compétences, expériences, etc.
+    """
     return str(uuid.uuid4())
 
 def get_candidat_or_redirect(pk_or_slug, index=0) -> Tuple[Literal['success', 'redirect', 'not_found'], Optional[Candidat]]:
@@ -58,8 +62,20 @@ def _clean_text(text):
     """Wrapper pour compatibilité avec le code existant."""
     return clean_text(text)
 
-def _empty_dossier():
-    """Initialise la structure du dossier de competences."""
+def _empty_dossier() -> dict:
+    """Initialise une structure de dossier de compétences vide.
+
+    Contient tous les sections principales:
+    - header: Infos candidat (nom, email, etc.)
+    - poste_cible: Postes visés
+    - skills_cible: Compétences cibles
+    - main_skills: Hiérarchie de domaines/compétences (bullet ou table)
+    - formations, certifications, langues: Données du CV
+    - xp_pro: Expériences professionnelles avec hiérarchie (activités/missions/tâches)
+
+    Returns:
+        dict: Structure vide prête à être remplie
+    """
     return {
         "header": {},
         "poste_cible": [],
@@ -74,12 +90,21 @@ def _empty_dossier():
         "xp_pro": []
     }
 
-def _sync_header_and_defaults(candidat):
-    """
-    Synchro le header du dossier avec les infos du candidat.
-    Initialise aussi poste_cible par défaut s'il n'existe pas.
+def _sync_header_and_defaults(candidat) -> bool:
+    """Synchronise le header du dossier avec les infos du candidat.
 
-    Retourne True si des changements ont été faits (pour décider si sauvegarder).
+    Maintient le header du dossier en sync avec les données du profil candidat:
+    - nom, prenom, email, trigramme, poste, xp_duration
+
+    Initialise aussi les sections par défaut si elles n'existent pas:
+    - poste_cible: Initialise avec le poste du candidat s'il existe
+    - skills_cible: Initialise vide
+
+    Args:
+        candidat: Instance Candidat à synchroniser
+
+    Returns:
+        bool: True si des changements ont été faits (pour décider si sauvegarder)
     """
     dossier = candidat.dossier or _empty_dossier()
     needs_save = False
@@ -346,6 +371,7 @@ def candidat_edit(request, pk=None, slug=None):
         "form": form,
         "placeholders": placeholders,
         "xp_pro_placeholders": placeholders.get("xp_pro", []),
+        "DEBUG": settings.DEBUG,
     }
 
     return render(
