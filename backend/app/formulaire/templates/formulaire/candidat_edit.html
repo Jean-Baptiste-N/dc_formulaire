@@ -178,29 +178,6 @@
     <button type="button" class="btn btn-success btn-sm btn-main-skills-save ms-2" data-section="table" data-candidat-pk="{{ candidat.pk }}">
       <i class="bi bi-save"></i> Enregistrer
     </button>
-
-    <!-- Aperçu tableau -->
-    {% comment %} {% if candidat.dossier.main_skills.table %}
-    <div class="mt-4 pt-3 border-top">
-      <h5 class="mb-3">Aperçu du tableau</h5>
-      <table class="table table-sm table-bordered">
-        <tbody>
-          {% for category in candidat.dossier.main_skills.table %}
-          <tr>
-            <td class="fw-bold" style="width: 20%;">{{ category.title }}</td>
-            <td>
-              {% if category.description %}
-                {% for tool in category.description %}
-                  {{ tool.title }}{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% endif %} {% endcomment %}
   </div>
 </div>
 
@@ -250,7 +227,7 @@
     <div id="formations-list">
       {% if candidat.dossier.formations %}
         {% for formation in candidat.dossier.formations %}
-          <div class="alert alert-info mb-2">
+          <div class="alert alert-info mb-2" data-item-id="{{ formation.id }}">
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <strong>{{ formation.date }} - {{ formation.title }}</strong> <br>
@@ -259,7 +236,7 @@
               </div>
               <button type="button" class="btn btn-sm btn-outline-danger btn-formation-remove"
                       data-candidat-pk="{{ candidat.pk }}"
-                      data-formation-index="{{ forloop.counter0 }}">
+                      data-item-id="{{ formation.id }}">
                 <i class="bi bi-trash"></i>
               </button>
             </div>
@@ -313,7 +290,7 @@
     <div id="certifications-list">
       {% if candidat.dossier.certifications %}
         {% for cert in candidat.dossier.certifications %}
-          <div class="alert alert-info mb-2">
+          <div class="alert alert-info mb-2" data-item-id="{{ cert.id }}">
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <strong>{{ cert.date }} - {{ cert.title }}</strong>
@@ -321,7 +298,7 @@
               </div>
               <button type="button" class="btn btn-sm btn-outline-danger btn-certification-remove"
                       data-candidat-pk="{{ candidat.pk }}"
-                      data-certification-index="{{ forloop.counter0 }}">
+                      data-item-id="{{ cert.id }}">
                 <i class="bi bi-trash"></i>
               </button>
             </div>
@@ -370,7 +347,7 @@
     <div id="langues-list">
       {% if candidat.dossier.langues %}
         {% for langue in candidat.dossier.langues %}
-          <div class="alert alert-info mb-2">
+          <div class="alert alert-info mb-2" data-item-id="{{ langue.id }}">
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <strong>{{ langue.title }}</strong>
@@ -378,7 +355,7 @@
               </div>
               <button type="button" class="btn btn-sm btn-outline-danger btn-langue-remove"
                       data-candidat-pk="{{ candidat.pk }}"
-                      data-langue-index="{{ forloop.counter0 }}">
+                      data-item-id="{{ langue.id }}">
                 <i class="bi bi-trash"></i>
               </button>
             </div>
@@ -440,15 +417,18 @@
               <div style="flex: 1;">
                 <strong>{{ exp.date }} : {{ exp.poste }}</strong> chez <strong>{{ exp.company }}</strong><br>
               </div>
-              <input type="number"
-                     class="form-control form-control-sm xp-pro-order-index"
-                     value="{{ exp.order_index|default:forloop.counter }}"
-                     min="1"
-                     data-exp-id="{{ exp.id }}"
-                     data-exp-index="{{ forloop.counter0 }}"
-                     data-candidat-pk="{{ candidat.pk }}"
-                     data-original-index="{{ exp.order_index|default:forloop.counter }}"
-                     title="Ordre d'affichage">
+              <div class="input-group input-group-sm" style="width: 80px;">
+                <span class="input-group-text">#</span>
+                <input type="number"
+                       class="form-control xp-pro-order-index"
+                       value="{{ exp.order_index|default:forloop.counter }}"
+                       min="1"
+                       data-exp-id="{{ exp.id }}"
+                       data-exp-index="{{ forloop.counter0 }}"
+                       data-candidat-pk="{{ candidat.pk }}"
+                       data-original-index="{{ exp.order_index|default:forloop.counter }}"
+                       title="Ordre d'affichage">
+              </div>
               <button type="button" class="btn btn-sm btn-danger btn-experience-remove"
                       data-candidat-pk="{{ candidat.pk }}"
                       data-exp-index="{{ forloop.counter0 }}">
@@ -749,42 +729,20 @@ function addSkillsCible(e) {
 
 function toggleSkillsCible(e) {
   const checkbox = e.target;
-  const candidatPk = checkbox.dataset.candidatPk;
-  const skillsCibleId = checkbox.dataset.skillsCible;
-
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/skills-cible/${skillsCibleId}/toggle/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .catch(err => console.error('Erreur toggleSkillsCible:', err));
+  triggerAutoSave('skills_cible');
 }
 
 function updateSkillsCible(e) {
   const input = e.target;
-  const candidatPk = input.dataset.candidatPk;
-  const skillsCibleId = input.dataset.skillsCible;
   const title = input.value.trim();
 
-  // Ne faire la requête que si le titre a changé
+  // Ne faire l'auto-save que si le titre a changé
   if (title === input.dataset.originalTitle) {
     return;
   }
 
-  const formData = new FormData();
-  formData.append('title', title);
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/skills-cible/${skillsCibleId}/mettre-a-jour/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(() => {
-    input.dataset.originalTitle = title;
-  })
-  .catch(err => console.error('Erreur updateSkillsCible:', err));
+  input.dataset.originalTitle = title;
+  triggerAutoSave('skills_cible');
 }
 
 function deleteSkillsCible(e) {
@@ -872,8 +830,7 @@ function addMainSkillsHierarchyParentItem(e) {
   const candidatPk = btn.dataset.candidatPk;
   const dirtyKey = `main_skills_${section}`;
 
-  console.log(`[DIRTY] ${dirtyKey} marqué comme modifié (ajout domaine)`);
-  dirtyState[dirtyKey] = true;
+  triggerAutoSave(dirtyKey);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
@@ -895,6 +852,7 @@ function addMainSkillsHierarchyParentItem(e) {
 
     listDiv.insertAdjacentHTML('beforeend', html);
     initMainSkillsHierarchyHandlers();
+    triggerAutoSave(`main_skills_${section}`);
   })
   .catch(err => console.error('Erreur addMainSkillsHierarchyParentItem:', err));
 }
@@ -936,6 +894,7 @@ function addMainSkillsHierarchyChildItem(e) {
   .then(html => {
     document.getElementById(`description-${itemId}`).insertAdjacentHTML('beforeend', html);
     initMainSkillsHierarchyHandlers();
+    startAutosaveTimer(); // Relancer le timer après l'ajout du sous-item
   })
   .catch(err => {
     console.error('Erreur addMainSkillsHierarchyChildItem:', err);
@@ -953,8 +912,7 @@ function updateMainSkillsHierarchyItem(e) {
   const section = endpointBase.replace('main_skills_', '');
   const dirtyKey = `main_skills_${section}`;
 
-  console.log(`[DIRTY] ${dirtyKey} marqué comme modifié (modification titre: ${title})`);
-  dirtyState[dirtyKey] = true;
+  triggerAutoSave(dirtyKey);
 
   const formData = new FormData();
   formData.append('title', title);
@@ -985,7 +943,7 @@ function deleteMainSkillsHierarchyItem(e) {
   if (confirm(message)) {
     console.log(`[DELETE] Utilisateur supprime ${section}: ${title}`);
     const dirtyKey = `main_skills_${section}`;
-    dirtyState[dirtyKey] = true;
+    triggerAutoSave(dirtyKey);
 
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
@@ -1174,13 +1132,13 @@ function removeFormation(e) {
     return;
   }
   const candidatPk = btn.dataset.candidatPk;
-  const formationIndex = btn.dataset.formationIndex;
+  const formationId = btn.dataset.itemId;
   console.log(`[DELETE] Utilisateur supprime la formation: ${title}`);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
-  fetch(`/candidat/${candidatPk}/formation/${formationIndex}/supprimer/`, {
+  fetch(`/candidat/${candidatPk}/formation/${formationId}/supprimer/`, {
     method: 'POST',
     body: formData,
   })
@@ -1206,13 +1164,13 @@ function removeCertification(e) {
     return;
   }
   const candidatPk = btn.dataset.candidatPk;
-  const certificationIndex = btn.dataset.certificationIndex;
+  const certificationId = btn.dataset.itemId;
   console.log(`[DELETE] Utilisateur supprime la certification: ${title}`);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
-  fetch(`/candidat/${candidatPk}/certification/${certificationIndex}/supprimer/`, {
+  fetch(`/candidat/${candidatPk}/certification/${certificationId}/supprimer/`, {
     method: 'POST',
     body: formData,
   })
@@ -1238,13 +1196,13 @@ function removeLangue(e) {
     return;
   }
   const candidatPk = btn.dataset.candidatPk;
-  const langueIndex = btn.dataset.langueIndex;
+  const langueId = btn.dataset.itemId;
   console.log(`[DELETE] Utilisateur supprime la langue: ${title}`);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
-  fetch(`/candidat/${candidatPk}/langue/${langueIndex}/supprimer/`, {
+  fetch(`/candidat/${candidatPk}/langue/${langueId}/supprimer/`, {
     method: 'POST',
     body: formData,
   })
@@ -1319,6 +1277,7 @@ function addXpProHierarchyParentItem(e) {
   .then(html => {
     document.getElementById(`realizations-${expIndex}`).insertAdjacentHTML('beforeend', html);
     initXpProHierarchyHandlers();
+    triggerAutoSave('xp_pro_step2', expIndex);
   })
   .catch(err => console.error('Erreur addXpProHierarchyParentItem:', err));
 }
@@ -1354,6 +1313,7 @@ function addXpProHierarchyChildItem(e) {
   .then(html => {
     document.getElementById(`description-${itemId}`).insertAdjacentHTML('beforeend', html);
     initXpProHierarchyHandlers();
+    triggerAutoSave('xp_pro_step2', expIndex);
   })
   .catch(err => {
     console.error('Erreur addXpProHierarchyChildItem:', err);
@@ -1361,15 +1321,11 @@ function addXpProHierarchyChildItem(e) {
   });
 }
 
-// Mettre à jour une réalisation (marquer dirty, auto-save dans 5s)
+// Mettre à jour une réalisation (marquer dirty, auto-save dans 20s)
 function updateXpProHierarchyItem(e) {
   const input = e.target;
   const expIndex = input.dataset.targetIndex;
-
-  // Marquer comme dirty pour auto-save 5s
-  if (!dirtyState.xp_pro_step2[expIndex]) {
-    dirtyState.xp_pro_step2[expIndex] = true;
-  }
+  triggerAutoSave('xp_pro_step2', expIndex);
 }
 
 // Supprimer une réalisation
@@ -1399,10 +1355,7 @@ function deleteXpProHierarchyItem(e) {
       console.log(`[DELETE SUCCESS] Réalisation ${title} supprimée, xp_pro_step2[${expIndex}] marqué comme modifié`);
       const itemDiv = document.getElementById(`item-${itemId}`);
       if (itemDiv) itemDiv.remove();
-      // Marquer comme modifié
-      if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
-      if (!dirtyState.xp_pro_step2[expIndex]) dirtyState.xp_pro_step2[expIndex] = true;
-      else if (typeof dirtyState.xp_pro_step2[expIndex] === 'object') dirtyState.xp_pro_step2[expIndex].dirty = true;
+      triggerAutoSave('xp_pro_step2', expIndex);
     })
     .catch(err => console.error(`[ERROR] Exception lors de la suppression réalisation:`, err));
   }
@@ -1596,9 +1549,8 @@ function initXpProStep2Handlers() {
       textarea.addEventListener('input', function(e) {
         const container = this.closest('.xp-pro-step2-container');
         const expIndex = container.dataset.expIndex;
-        console.log(`[DIRTY] Utilisateur modifie le contexte pour xp_pro_step2[${expIndex}]`);
-        if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
-        dirtyState.xp_pro_step2[expIndex] = true;
+        console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (contexte)`);
+        triggerAutoSave('xp_pro_step2', expIndex);
       });
       textarea.setAttribute('data-listener-initialized', 'true');
     }
@@ -1611,9 +1563,8 @@ function initXpProStep2Handlers() {
         const container = this.closest('.xp-pro-step2-container');
         const expIndex = container.dataset.expIndex;
         if (this.value.trim()) {
-          console.log(`[DIRTY] Utilisateur ajoute une technologie pour xp_pro_step2[${expIndex}]`);
-          if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
-          dirtyState.xp_pro_step2[expIndex] = true;
+          console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (technos)`);
+          triggerAutoSave('xp_pro_step2', expIndex);
         }
       });
       input.setAttribute('data-listener-initialized', 'true');
@@ -1648,6 +1599,81 @@ function initXpProStep2Handlers() {
 
 // Note: dirty tracking pour xp_pro_step2 est géré dans initAutosaveHandlers()
 
+// ========================================================================
+// MARK: DRAG-AND-DROP SORTABLE HANDLERS (SortableJS) - UI Only
+// ========================================================================
+
+function initDragAndDropHandlers() {
+  // 1. Skills_cible list - auto-save on reorder
+  const skillsCibleList = document.getElementById('skills-cible-list');
+  if (skillsCibleList) {
+    new Sortable(skillsCibleList, {
+      handle: '.bi-grip-vertical',
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
+      onEnd: function(evt) {
+        console.log('[DRAG-DROP] skills_cible réordonnés, marqué dirty pour auto-save');
+        dirtyState.skills_cible = true;
+        startAutosaveTimer();
+      }
+    });
+  }
+
+  // 2. Main_skills bullet list - auto-save on reorder
+  const mainSkillsBulletList = document.getElementById('main_skills_bullet_list');
+  if (mainSkillsBulletList) {
+    new Sortable(mainSkillsBulletList, {
+      handle: '.bi-grip-vertical',
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
+      onEnd: function(evt) {
+        console.log('[DRAG-DROP] main_skills_bullet réordonnés, marqué dirty pour auto-save');
+        dirtyState.main_skills_bullet = true;
+        startAutosaveTimer();
+      }
+    });
+  }
+
+  // 3. Main_skills table list - auto-save on reorder
+  const mainSkillsTableList = document.getElementById('main_skills_table_list');
+  if (mainSkillsTableList) {
+    new Sortable(mainSkillsTableList, {
+      handle: '.bi-grip-vertical',
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
+      onEnd: function(evt) {
+        console.log('[DRAG-DROP] main_skills_table réordonnés, marqué dirty pour auto-save');
+        dirtyState.main_skills_table = true;
+        startAutosaveTimer();
+      }
+    });
+  }
+
+  // 4. XP_PRO realisations (depth=0 only) - keep auto-save for xp_pro_step2
+  // Note: xp_pro_step2 follows auto-save + click-save pattern
+  document.querySelectorAll('.xp-pro-step2-realizations').forEach(realizationsList => {
+    const container = realizationsList.closest('.xp-pro-step2-container');
+    const expIndex = container?.dataset.expIndex;
+
+    new Sortable(realizationsList, {
+      handle: '.bi-grip-vertical',
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
+      onEnd: function(evt) {
+        // Mark as dirty for auto-save (xp_pro_step2 keeps its auto-save behavior)
+        if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
+          console.log(`[DRAG-DROP] xp_pro_step2[${expIndex}] réalisations réordonnées, marqué dirty pour auto-save`);
+          triggerAutoSave('xp_pro_step2', expIndex);
+        }
+      }
+    });
+  });
+}
+
 function addXpProStep2Technology(e) {
   e.preventDefault();
   const btn = e.target.closest('.btn-xp-pro-step2-tech-add');
@@ -1678,8 +1704,7 @@ function addXpProStep2Technology(e) {
   });
 
   input.value = '';
-  if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
-  dirtyState.xp_pro_step2[expIndex] = true;
+  triggerAutoSave('xp_pro_step2', expIndex);
 }
 
 function removeXpProStep2Technology(e) {
@@ -1692,9 +1717,7 @@ function removeXpProStep2Technology(e) {
     console.log(`[DELETE] Utilisateur supprime la technologie: ${tech} (xp_pro_step2[${expIndex}])`);
     badge.remove();
     console.log(`[DELETE SUCCESS] Technologie ${tech} supprimée`);
-    console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié`);
-    if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
-    dirtyState.xp_pro_step2[expIndex] = true;
+    triggerAutoSave('xp_pro_step2', expIndex);
   }
 }
 
@@ -1719,8 +1742,7 @@ function addXpProStep2Realization(e) {
     const realizationsDiv = container.querySelector(`#realizations-${expIndex}`);
     realizationsDiv.insertAdjacentHTML('beforeend', html);
     initXpProHierarchyHandlers();
-    if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
-    dirtyState.xp_pro_step2[expIndex] = true;
+    triggerAutoSave('xp_pro_step2', expIndex);
   })
   .catch(err => console.error('Erreur addXpProStep2Realization:', err));
 }
@@ -1736,6 +1758,16 @@ function buildXpProStep2RealizationTree(container) {
     if (item) items.push(item);
   });
   return items;
+}
+
+// Construire l'arbre des réalisations ET retourner les changements d'ordre (racine seulement)
+function buildXpProStep2RealizationTreeWithOrder(container) {
+  const items = buildXpProStep2RealizationTree(container);
+
+  // Recollecte seulement les changements d'ordre pour les items racine (depth 0)
+  const orderUpdates = getOrderChanges('.xp-pro-step2-realizations > .xp-pro-hierarchy-item');
+
+  return { items, orderUpdates };
 }
 
 function buildXpProStep2SingleItem(itemDiv) {
@@ -1766,8 +1798,59 @@ function buildXpProStep2SingleItem(itemDiv) {
 }
 
 // ========================================================================
-// MARK: AUTO-SAVE & CLICK-SAVE (5s auto-save + button feedback)
+// MARK: AUTO-SAVE & CLICK-SAVE (20s auto-save + button feedback)
 // ========================================================================
+
+// Fonction générique pour déclencher l'auto-save
+// section: nom de la section (poste_cible, skills_cible, main_skills_bullet, etc.)
+// subKey: clé optionnelle pour sections imbriquées (expIndex pour xp_pro_step2)
+function triggerAutoSave(section, subKey = null) {
+  if (subKey !== null) {
+    if (typeof dirtyState[section] !== 'object') dirtyState[section] = {};
+    dirtyState[section][subKey] = true;
+  } else {
+    dirtyState[section] = true;
+  }
+  console.log(`[DIRTY] ${section}${subKey ? `[${subKey}]` : ''} marqué comme modifié`);
+  startAutosaveTimer();
+}
+
+// Fonction helper pour extraire les changements d'ordre réels (filtrer les inchangés)
+function getOrderChanges(selector, originalOrderAttr = 'data-original-order') {
+  const changes = [];
+  document.querySelectorAll(selector).forEach((item, currentIndex) => {
+    const currentOrder = currentIndex + 1;
+    const originalOrder = parseInt(item.getAttribute(originalOrderAttr)) || currentOrder;
+
+    // Ne renvoyer que si l'ordre a changé
+    if (currentOrder !== originalOrder) {
+      const idAttr = item.getAttribute('data-item-id') || item.getAttribute('data-skills-cible-id');
+      if (idAttr) {
+        changes.push({
+          item_id: idAttr,
+          skill_id: idAttr, // Compatibilité avec skills_cible
+          order_index: currentOrder
+        });
+      }
+    }
+  });
+  return changes;
+}
+
+// Fonction générique pour initialiser un bouton click-save
+// getSectionFn: callback optionnel pour déterminer la section dynamiquement
+function initClickSaveButton(selector, staticSection = null, getSectionFn = null) {
+  document.querySelectorAll(selector).forEach(btn => {
+    if (!btn.hasAttribute('data-autosave-initialized')) {
+      btn.addEventListener('click', function() {
+        const section = getSectionFn ? getSectionFn.call(this) : staticSection;
+        console.log(`[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour ${section}`);
+        saveData(section, true);
+      });
+      btn.setAttribute('data-autosave-initialized', 'true');
+    }
+  });
+}
 
 // Configuration centralisée pour l'auto-save
 const autosaveConfig = {
@@ -1782,31 +1865,53 @@ const autosaveConfig = {
   },
   skills_cible: {
     dirtyKey: 'skills_cible',
-    getItems: () => Array.from(document.querySelectorAll('#skills-cible-list input[type="text"]')).map(input => ({
-      id: input.dataset.skillsCible,
-      title: input.value.trim(),
-      active: document.querySelector(`input[data-skills-cible="${input.dataset.skillsCible}"][type="checkbox"]`)?.checked || false,
-    })),
+    getItems: () => {
+      // Recollecte items avec leurs titres et active status depuis le DOM
+      const items = Array.from(document.querySelectorAll('#skills-cible-list input[type="text"]')).map(input => ({
+        id: input.dataset.skillsCible,
+        title: input.value.trim(),
+        active: document.querySelector(`input[data-skills-cible="${input.dataset.skillsCible}"][type="checkbox"]`)?.checked || false,
+      }));
+
+      // Recollecte seulement les changements d'ordre (pas tous les ordre_index)
+      const orderUpdates = getOrderChanges('#skills-cible-list [data-skills-cible-id]');
+
+      return { items, orderUpdates };
+    },
     endpoint: () => `/candidat/${CANDIDAT_PK}/skills-cible/bulk-update/`,
-    type: 'bulk'
+    type: 'bulk_with_reorder'
   },
   main_skills_bullet: {
     dirtyKey: 'main_skills_bullet',
-    getItems: () => Array.from(document.querySelectorAll('#main_skills_bullet_list .main-skills-hierarchy-item')).map(item => ({
-      id: item.dataset.itemId,
-      title: item.querySelector('.main-skills-hierarchy-title').value.trim(),
-    })),
+    getItems: () => {
+      const items = Array.from(document.querySelectorAll('#main_skills_bullet_list .main-skills-hierarchy-item')).map(item => ({
+        id: item.dataset.itemId,
+        title: item.querySelector('.main-skills-hierarchy-title').value.trim(),
+      }));
+
+      // Recollecte seulement les changements d'ordre (pas tous les ordre_index)
+      const orderUpdates = getOrderChanges('#main_skills_bullet_list > .main-skills-hierarchy-item');
+
+      return { items, orderUpdates };
+    },
     endpoint: () => `/candidat/${CANDIDAT_PK}/main_skills/bullet/bulk-update/`,
-    type: 'bulk'
+    type: 'bulk_with_reorder'
   },
   main_skills_table: {
     dirtyKey: 'main_skills_table',
-    getItems: () => Array.from(document.querySelectorAll('#main_skills_table_list .main-skills-hierarchy-item')).map(item => ({
-      id: item.dataset.itemId,
-      title: item.querySelector('.main-skills-hierarchy-title').value.trim(),
-    })),
+    getItems: () => {
+      const items = Array.from(document.querySelectorAll('#main_skills_table_list .main-skills-hierarchy-item')).map(item => ({
+        id: item.dataset.itemId,
+        title: item.querySelector('.main-skills-hierarchy-title').value.trim(),
+      }));
+
+      // Recollecte seulement les changements d'ordre (pas tous les ordre_index)
+      const orderUpdates = getOrderChanges('#main_skills_table_list > .main-skills-hierarchy-item');
+
+      return { items, orderUpdates };
+    },
     endpoint: () => `/candidat/${CANDIDAT_PK}/main_skills/table/bulk-update/`,
-    type: 'bulk'
+    type: 'bulk_with_reorder'
   },
   xp_pro_step2: {
     dirtyKey: 'xp_pro_step2',
@@ -1821,9 +1926,9 @@ const autosaveConfig = {
         .map(tech => tech.replace(/^"|"$/g, '')) // Enlever les guillemets d'échappement
         .filter(t => t);
       const realizationsDiv = container.querySelector('.xp-pro-step2-realizations');
-      const realizations = buildXpProStep2RealizationTree(realizationsDiv);
+      const { items: realizations, orderUpdates } = buildXpProStep2RealizationTreeWithOrder(realizationsDiv);
 
-      return { context, env_tech: envTech, description: realizations };
+      return { context, env_tech: envTech, description: realizations, order_updates: orderUpdates };
     },
     endpoint: (expIndex) => `/candidat/${CANDIDAT_PK}/experience/${expIndex}/step2-update/`,
     type: 'xp_pro_step2'
@@ -1843,30 +1948,36 @@ const dirtyState = {
 let autosaveTimer = null;
 
 function startAutosaveTimer() {
+  // Réinitialiser le timer à chaque fois (debounce pattern)
   if (autosaveTimer) {
-    console.log('[AUTO-SAVE] Timer déjà actif');
-    return; // Timer déjà actif
+    clearTimeout(autosaveTimer);
+    console.log('[AUTO-SAVE] Réinitialisation du timer 20s');
+  } else {
+    console.log('[AUTO-SAVE] Démarrage du timer 20s');
   }
 
-  console.log('[AUTO-SAVE] Démarrage du timer 5s');
-  autosaveTimer = setInterval(() => {
+  autosaveTimer = setTimeout(() => {
+    console.log('[AUTO-SAVE] Début de la sauvegarde après 20s d\'inactivité');
     ['poste_cible', 'skills_cible', 'main_skills_bullet', 'main_skills_table'].forEach(section => {
       if (dirtyState[section]) {
-        console.log(`[AUTO-SAVE] Sauvegarde de ${section} après 5s d'inactivité`);
+        console.log(`[AUTO-SAVE] Sauvegarde de ${section} après 20s d'inactivité`);
         saveData(section, false);
+        dirtyState[section] = false; // Réinitialiser après save
       }
     });
     // Pour xp_pro_step2 (contexte + technos + réalisations, par expérience)
     Object.entries(dirtyState.xp_pro_step2).forEach(([expIndex, isDirty]) => {
       if (isDirty) {
-        console.log(`[AUTO-SAVE] Sauvegarde de xp_pro_step2[${expIndex}] après 5s d'inactivité`);
+        console.log(`[AUTO-SAVE] Sauvegarde de xp_pro_step2[${expIndex}] après 20s d'inactivité`);
         const container = document.querySelector(`.xp-pro-step2-container[data-exp-index="${expIndex}"]`);
         if (container) {
           saveData('xp_pro_step2', false, container);
+          dirtyState.xp_pro_step2[expIndex] = false; // Réinitialiser après save
         }
       }
     });
-  }, 12000); // 12 secondes
+    autosaveTimer = null; // Réinitialiser le timer une fois exécuté
+  }, 20000); // 20 secondes
 }
 
 // Fonction unifiée pour sauvegarder les données
@@ -1887,11 +1998,26 @@ async function saveData(section, showFeedback = false, element = null) {
     formData.append('context', data.context);
     formData.append('env_tech', JSON.stringify(data.env_tech));
     formData.append('realizations', JSON.stringify(data.description));
+    // Envoyer aussi les orderUpdates s'il y en a
+    if (data.order_updates && data.order_updates.length > 0) {
+      formData.append('order_updates', JSON.stringify(data.order_updates));
+      console.log(`[ORDER-UPDATES] Envoi de ${data.order_updates.length} changements d'ordre pour xp_pro_step2[${expIndex}]`, data.order_updates);
+    }
   } else if (config.type === 'bulk') {
     const items = config.getItems();
     endpoint = config.endpoint();
     if (items.length === 0) return;
     formData.append('items', JSON.stringify(items));
+  } else if (config.type === 'bulk_with_reorder') {
+    const result = config.getItems();
+    endpoint = config.endpoint();
+    if (result.items.length === 0) return;
+    formData.append('items', JSON.stringify(result.items));
+    // Envoyer aussi les orderUpdates s'il y en a
+    if (result.orderUpdates && result.orderUpdates.length > 0) {
+      formData.append('order_updates', JSON.stringify(result.orderUpdates));
+      console.log(`[ORDER-UPDATES] Envoi de ${result.orderUpdates.length} changements d'ordre pour ${section}`, result.orderUpdates);
+    }
   } else {
     return;
   }
@@ -1927,6 +2053,13 @@ async function saveData(section, showFeedback = false, element = null) {
     });
 
     if (response.ok) {
+      // Annuler le timer auto-save si un click-save vient de réussir
+      if (showFeedback && autosaveTimer) {
+        clearTimeout(autosaveTimer);
+        autosaveTimer = null;
+        console.log('[CLICK-SAVE] Timer auto-save annulé après succès du click-save');
+      }
+
       if (showFeedback && btn) {
         console.log(`[SUCCESS] ${section} enregistrée avec succès !`);
         const textSpan = btn.querySelector('.btn-save-text') || btn;
@@ -1944,6 +2077,26 @@ async function saveData(section, showFeedback = false, element = null) {
           btn.className = initialClasses; // Restaurer les classes initiales
           btn.disabled = false;
         }, 2000);
+      }
+
+      // Mettre à jour data-original-order après succès
+      if (section === 'skills_cible') {
+        document.querySelectorAll('#skills-cible-list [data-skills-cible-id]').forEach((item, index) => {
+          item.setAttribute('data-original-order', index + 1);
+        });
+      } else if (section === 'main_skills_bullet') {
+        document.querySelectorAll('#main_skills_bullet_list > .main-skills-hierarchy-item').forEach((item, index) => {
+          item.setAttribute('data-original-order', index + 1);
+        });
+      } else if (section === 'main_skills_table') {
+        document.querySelectorAll('#main_skills_table_list > .main-skills-hierarchy-item').forEach((item, index) => {
+          item.setAttribute('data-original-order', index + 1);
+        });
+      } else if (section === 'xp_pro_step2' && element) {
+        // Réinitialiser les data-original-order pour réalisations
+        element.querySelectorAll('.xp-pro-step2-realizations > .xp-pro-hierarchy-item').forEach((item, index) => {
+          item.setAttribute('data-original-order', index + 1);
+        });
       }
 
       // Marquer comme clean
@@ -1987,114 +2140,16 @@ async function saveData(section, showFeedback = false, element = null) {
 
 // Fonction unifiée d'initialisation des handlers
 function initAutosaveHandlers() {
-  // Boutons pour bulk sections (poste_cible, skills_cible, main_skills)
-
-  // Bouton poste_cible
-  document.querySelectorAll('.btn-poste-cible-save').forEach(btn => {
-    if (!btn.hasAttribute('data-autosave-initialized')) {
-      btn.addEventListener('click', () => {
-        console.log('[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour poste_cible');
-        saveData('poste_cible', true);
-      });
-      btn.setAttribute('data-autosave-initialized', 'true');
-    }
+  // Initialiser les boutons click-save pour les sections bulk
+  initClickSaveButton('.btn-poste-cible-save', 'poste_cible');
+  initClickSaveButton('.btn-skills-cible-save', 'skills_cible');
+  initClickSaveButton('.btn-main-skills-save', null, function() {
+    return `main_skills_${this.dataset.section}`;
   });
 
-  // Bouton skills_cible
-  document.querySelectorAll('.btn-skills-cible-save').forEach(btn => {
-    if (!btn.hasAttribute('data-autosave-initialized')) {
-      btn.addEventListener('click', () => {
-        console.log('[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour skills_cible');
-        saveData('skills_cible', true);
-      });
-      btn.setAttribute('data-autosave-initialized', 'true');
-    }
-  });
-
-  // Boutons main_skills
-  document.querySelectorAll('.btn-main-skills-save').forEach(btn => {
-    if (!btn.hasAttribute('data-autosave-initialized')) {
-      btn.addEventListener('click', function() {
-        const section = `main_skills_${this.dataset.section}`;
-        console.log(`[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour ${section}`);
-        saveData(section, true);
-      });
-      btn.setAttribute('data-autosave-initialized', 'true');
-    }
-  });
-
-  // Dirty tracking pour poste_cible et skills_cible
-  document.querySelectorAll('#poste-cible-list input[type="text"], #skills-cible-list input[type="text"], #skills-cible-list input[type="checkbox"]').forEach(input => {
-    if (!input.hasAttribute('data-autosave-initialized')) {
-      input.addEventListener('change', function() {
-        if (this.classList.contains('skills-cible-checkbox') || this.dataset.skillsCible) {
-          console.log('[DIRTY] skills_cible marqué comme modifié');
-          dirtyState.skills_cible = true;
-        } else {
-          console.log('[DIRTY] poste_cible marqué comme modifié');
-          dirtyState.poste_cible = true;
-        }
-      });
-      input.addEventListener('blur', function() {
-        if (this.type === 'text' && this.dataset.skillsCible) {
-          console.log('[DIRTY] skills_cible marqué comme modifié (blur)');
-          dirtyState.skills_cible = true;
-        }
-      });
-      input.setAttribute('data-autosave-initialized', 'true');
-    }
-  });
-
-  // Dirty tracking pour main_skills et xp_pro_step2 (réalisations)
-  document.querySelectorAll('.main-skills-hierarchy-title, .xp-pro-hierarchy-title').forEach(input => {
-    if (!input.hasAttribute('data-autosave-initialized')) {
-      input.addEventListener('change', function() {
-        if (this.classList.contains('xp-pro-hierarchy-title')) {
-          const container = this.closest('.xp-pro-step2-container');
-          const expIndex = container?.dataset.expIndex || this.dataset.targetIndex;
-          if (container && !dirtyState.xp_pro_step2[expIndex]) {
-            console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (réalisation)`);
-            dirtyState.xp_pro_step2[expIndex] = true;
-          }
-        } else {
-          const section = this.dataset.endpointBase === 'bullet' ? 'main_skills_bullet' : 'main_skills_table';
-          console.log(`[DIRTY] ${section} marqué comme modifié`);
-          dirtyState[section] = true;
-        }
-      });
-      input.setAttribute('data-autosave-initialized', 'true');
-    }
-  });
-
-  // Auto-save 5s timer pour xp_pro_step2 (contexte, technologies, réalisations)
-  document.querySelectorAll('.xp-pro-step2-context').forEach(textarea => {
-    if (!textarea.hasAttribute('data-autosave-initialized')) {
-      textarea.addEventListener('input', function() {
-        const container = this.closest('.xp-pro-step2-container');
-        const expIndex = container?.dataset.expIndex;
-        if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
-          console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (contexte)`);
-          dirtyState.xp_pro_step2[expIndex] = true;
-        }
-      });
-      textarea.setAttribute('data-autosave-initialized', 'true');
-    }
-  });
-
-  // Dirty tracking pour technologies (badges)
-  document.querySelectorAll('.xp-pro-step2-tech-input').forEach(input => {
-    if (!input.hasAttribute('data-autosave-initialized')) {
-      input.addEventListener('input', function() {
-        const container = this.closest('.xp-pro-step2-container');
-        const expIndex = container?.dataset.expIndex;
-        if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
-          console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (technos)`);
-          dirtyState.xp_pro_step2[expIndex] = true;
-        }
-      });
-      input.setAttribute('data-autosave-initialized', 'true');
-    }
-  });
+  // NOTE: Les handlers personnalisés (updateMainSkillsHierarchyItem, updateXpProHierarchyItem,
+  // updateSkillsCible, updatePostesCible, etc.) marquent déjà dirtyState et appellent
+  // startAutosaveTimer(). Pas besoin de listeners supplémentaires pour éviter les doublons.
 }
 
 // Initialiser le timer au chargement (une seule fois)
@@ -2103,6 +2158,85 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ========================================================================
+
+// ========================================================================
+// MARK: Normalisation des donnees existantes (UUID + order_index)
+// ========================================================================
+
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0,
+        v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+function normalizeExistingItems() {
+  console.log('[NORMALIZE] Verification des items existants...');
+  var itemsNeedingNormalization = false;
+
+  document.querySelectorAll('#formations-list .alert').forEach(function(div) {
+    if (!div.dataset.itemId) {
+      var id = generateUUID();
+      div.setAttribute('data-item-id', id);
+      var btn = div.querySelector('.btn-formation-remove');
+      if (btn) btn.setAttribute('data-item-id', id);
+      itemsNeedingNormalization = true;
+      console.log('[NORMALIZE] Formation sans UUID - assigne: ' + id);
+    }
+  });
+
+  document.querySelectorAll('#certifications-list .alert').forEach(function(div) {
+    if (!div.dataset.itemId) {
+      var id = generateUUID();
+      div.setAttribute('data-item-id', id);
+      var btn = div.querySelector('.btn-certification-remove');
+      if (btn) btn.setAttribute('data-item-id', id);
+      itemsNeedingNormalization = true;
+      console.log('[NORMALIZE] Certification sans UUID - assigne: ' + id);
+    }
+  });
+
+  document.querySelectorAll('#langues-list .alert').forEach(function(div) {
+    if (!div.dataset.itemId) {
+      var id = generateUUID();
+      div.setAttribute('data-item-id', id);
+      var btn = div.querySelector('.btn-langue-remove');
+      if (btn) btn.setAttribute('data-item-id', id);
+      itemsNeedingNormalization = true;
+      console.log('[NORMALIZE] Langue sans UUID - assigne: ' + id);
+    }
+  });
+
+  // Initialiser data-original-order pour tracker les changements d'ordre
+  initializeOriginalOrderTracking();
+}
+
+// Initialiser les data-original-order pour tracker l'ordre initial
+function initializeOriginalOrderTracking() {
+  console.log('[INIT-ORDER-TRACKING] Initialisation du suivi des ordres initiaux');
+
+  // Skills cible
+  document.querySelectorAll('#skills-cible-list [data-skills-cible-id]').forEach((item, index) => {
+    item.setAttribute('data-original-order', index + 1);
+  });
+
+  // Main skills bullet (root items only)
+  document.querySelectorAll('#main_skills_bullet_list > .main-skills-hierarchy-item').forEach((item, index) => {
+    item.setAttribute('data-original-order', index + 1);
+  });
+
+  // Main skills table (root items only)
+  document.querySelectorAll('#main_skills_table_list > .main-skills-hierarchy-item').forEach((item, index) => {
+    item.setAttribute('data-original-order', index + 1);
+  });
+
+  // XP Pro realizations (root items only) pour chaque expérience
+  document.querySelectorAll('.xp-pro-step2-realizations > .xp-pro-hierarchy-item').forEach((item, index) => {
+    item.setAttribute('data-original-order', index + 1);
+  });
+}
+
 // MARK: Initialisation générale
 // ========================================================================
 
@@ -2116,6 +2250,7 @@ function initializeAllHandlers(context = 'DOMContentLoaded') {
     { name: 'initExperienceHandlers', fn: initExperienceHandlers },
     { name: 'initXpProHierarchyHandlers', fn: initXpProHierarchyHandlers },
     { name: 'initXpProStep2Handlers', fn: initXpProStep2Handlers },
+    { name: 'initDragAndDropHandlers', fn: initDragAndDropHandlers },
     { name: 'initAutosaveHandlers', fn: initAutosaveHandlers }
   ];
 
@@ -2131,6 +2266,7 @@ function initializeAllHandlers(context = 'DOMContentLoaded') {
 // Initialiser au chargement
 document.addEventListener('DOMContentLoaded', () => {
   console.log('[DOMContentLoaded] Initialisation des handlers');
+  normalizeExistingItems();
   initializeAllHandlers('DOMContentLoaded');
 });
 

@@ -1,23 +1,29 @@
 {# Template pour afficher les items hiérarchiques main_skills (bullets et table) #}
 {% load custom_filters %}
 <div id="item-{{ item.id }}"
-     class="main-skills-hierarchy-item mb-2 {% if depth > 0 %}ms-4{% endif %}"
+     class="main-skills-hierarchy-item mb-2 {% if depth > 0 %}ms-4 hierarchy-item-nested{% else %}hierarchy-item-root{% endif %}"
      data-item-id="{{ item.id }}"
-     data-max-depth="{{ max_depth|default:3 }}">
+     data-max-depth="{{ max_depth|default:3 }}"
+     data-depth="{{ depth }}"
+     {% if depth == 0 %}data-order-index="{{ item.order_index|default:1 }}" data-original-order="{{ item.order_index|default:1 }}"{% endif %}>
 
   <div class="main-skills-hierarchy-row d-flex gap-2 align-items-start">
 
+    {# Grip handle for depth=0 only #}
+    {% if depth == 0 %}
+    <i class="bi bi-grip-vertical hierarchy-grip"></i>
+    {% endif %}
+
     {# Champ de texte pour le titre #}
     <input type="text"
-           class="form-control form-control-sm main-skills-hierarchy-title"
+           class="form-control form-control-sm main-skills-hierarchy-title hierarchy-input-title"
            value="{{ item.title }}"
            placeholder="{{ main_skills_placeholders|get_placeholder:depth }}"
            data-item-id="{{ item.id }}"
            data-target-index="{{ target_index }}"
            data-endpoint-base="{{ endpoint_base }}"
            data-depth="{{ depth }}"
-           name="title"
-           style="flex: 1;">
+           name="title">
 
     {# Bouton ajouter sous-item (seulement si depth < max_depth) #}
     {% if depth < max_depth|default:3 %}

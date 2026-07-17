@@ -18,9 +18,9 @@ def clean_text(text):
     # Enlever les guillemets littéraux au début et fin (notamment du JSON avec double-encoding)
     text = re.sub(r'^["\']|["\']$', '', text)
 
-    # Supprimer caractères non-alphanumériques au début et fin
-    text = re.sub(r'^\W+', '', text)
-    text = re.sub(r'\W+$', '', text)
+    # Supprimer caractères non-alphanumériques au début et fin (sauf les parenthèses)
+    text = re.sub(r'^[^\w()+#]+', '', text)
+    text = re.sub(r'[^\w()+#]+$', '', text)
 
     return text.strip()
 
@@ -323,3 +323,82 @@ def sort_xp_pro_by_order_index(xp_pro_list):
 
     sorted_list.sort(key=get_order_index)
     return sorted_list
+
+
+# ============================================================================
+# MARK: NORMALIZATION FUNCTIONS - Add UUID and order_index
+# ============================================================================
+
+def normalize_item_with_id_and_order(item, item_type="formation"):
+    """
+    Normalise un item en ajoutant un UUID et order_index s'ils manquent.
+
+    Args:
+        item: L'item à normaliser (formation, certification, ou langue)
+        item_type: Type d'item ('formation', 'certification', 'langue')
+
+    Returns:
+        L'item normalisé avec UUID et order_index
+    """
+    import uuid as uuid_module
+
+    if not isinstance(item, dict):
+        return item
+
+    # Ajouter UUID si absent
+    if "id" not in item or not item["id"]:
+        item["id"] = str(uuid_module.uuid4())
+
+    # Ajouter order_index si absent (sera recalculé après)
+    if "order_index" not in item:
+        item["order_index"] = 1
+
+    return item
+
+
+def normalize_items_list_with_order(items, item_type="formation"):
+    """
+    Normalise une liste d'items en ajoutant UUID et recalculant order_index par date.
+
+    Args:
+        items: Liste des items à normaliser
+        item_type: Type d'item ('formation', 'certification', 'langue')
+
+    Returns:
+        Liste normalisée avec UUID et order_index recalculés
+    """
+    import uuid as uuid_module
+
+    if not isinstance(items, list):
+        return items
+
+    # D'abord, ajouter les UUIDs manquants
+    for item in items:
+        if "id" not in item or not item.get("id"):
+            item["id"] = str(uuid_module.uuid4())
+
+    # Ensuite, trier par date (anti-chronologique) et assigner order_index
+    if item_type in ["formation", "certification"]:
+        # Trier par date décroissante (dates récentes en premier)
+        items_with_dates = []
+        for i, item in enumerate(items):
+            date_obj, _ = parse_date_to_end_date(item.get("date", ""))
+            items_with_dates.append((date_obj, i, item))
+
+        # Trier par date décroissante
+        items_with_dates.sort(key=lambda x: x[0], reverse=True)
+
+        # Réassigner order_index et réordonner la liste
+        normalized_items = []
+        for order_idx, (_, _, item) in enumerate(items_with_dates, start=1):
+            item["order_index"] = order_idx
+            normalized_items.append(item)
+
+        return normalized_items
+    elif item_type == "langue":
+        # Pour les langues, garder l'ordre et assigner order_index séquentiellement
+        for order_idx, item in enumerate(items, start=1):
+            item["order_index"] = order_idx
+        return items
+
+    return items
