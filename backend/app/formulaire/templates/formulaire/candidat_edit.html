@@ -534,32 +534,32 @@ const AppLogger = {
   // Configuration générale
   ENABLED: IS_DEBUG,
   MIN_LEVEL: IS_DEBUG ? 0 : 3,  // Dev: DEBUG (0), Prod: ERROR (3) seulement
-  
+
   // Niveaux de sévérité
   DEBUG: 0,
   INFO: 1,
   WARN: 2,
   ERROR: 3,
-  
+
   // Méthodes de logging
   debug: function(message, data = null) {
     if (this.ENABLED && this.DEBUG >= this.MIN_LEVEL) {
       AppLogger.info(`[DEBUG] ${message}`, data || '');
     }
   },
-  
+
   info: function(message, data = null) {
     if (this.ENABLED && this.INFO >= this.MIN_LEVEL) {
       AppLogger.info(`[INFO] ${message}`, data || '');
     }
   },
-  
+
   warn: function(message, data = null) {
     if (this.ENABLED && this.WARN >= this.MIN_LEVEL) {
       AppLogger.warn(`[WARN] ${message}`, data || '');
     }
   },
-  
+
   error: function(message, data = null) {
     if (this.ENABLED && this.ERROR >= this.MIN_LEVEL) {
       AppLogger.error(`[ERROR] ${message}`, data || '');
@@ -568,65 +568,134 @@ const AppLogger = {
 };
 
 // ========================================================================
+// MARK: GENERIC UTILITIES - Consolidation patterns
+// ========================================================================
+
+/**
+ * Crée un initialiser de handlers réutilisable
+ * Réduit la duplication entre init*Handlers()
+ *
+ * Exemple:
+ *   const initSkillsHandlers = createHandlerInitializer([
+ *     { selector: '.btn-skills-add', event: 'click', handler: addSkills },
+ *     { selector: '.skills-input', event: 'blur', handler: updateSkills },
+ *     { selector: '.btn-skills-delete', event: 'click', handler: deleteSkills }
+ *   ]);
+ */
+function createHandlerInitializer(bindings) {
+  return function init() {
+    bindings.forEach(({ selector, event, handler }) => {
+      document.querySelectorAll(selector).forEach(el => {
+        if (!el.hasAttribute('data-listener-initialized')) {
+          el.addEventListener(event, handler);
+          el.setAttribute('data-listener-initialized', 'true');
+        }
+      });
+    });
+  };
+}
+
+/**
+ * Fonction générique pour POST + insertHTML + réinit handlers
+ * Consolide 11+ fetch patterns identiques
+ *
+ * Exemple:
+ *   fetch(`/candidat/${pk}/skills-add/`)
+ *     → .then(r => r.text())
+ *     → insertAdjacentHTML('beforeend', html)
+ *     → initSkillsHandlers()
+ *
+ * Devient:
+ *   postAndInsertHTML(
+ *     `/candidat/${pk}/skills-add/`,
+ *     '#skills-list',
+ *     () => new FormData(),
+ *     'beforeend',
+ *     '.text-muted.fst-italic',
+ *     initSkillsHandlers
+ *   )
+ */
+async function postAndInsertHTML(config) {
+  const {
+    endpoint,
+    formData,
+    targetSelector,
+    placement = 'beforeend',
+    emptyMsgSelector = '.text-muted.fst-italic',
+    context = 'Élément',
+    onSuccess = null
+  } = config;
+
+  try {
+    // Ajouter le token CSRF si formData fourni
+    if (formData) {
+      formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    }
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const html = await response.text();
+    const target = document.querySelector(targetSelector);
+
+    if (!target) {
+      throw new Error(`Element not found: ${targetSelector}`);
+    }
+
+    // Supprimer le message "vide" s'il existe
+    if (emptyMsgSelector) {
+      const emptyMsg = target.querySelector(emptyMsgSelector);
+      if (emptyMsg) emptyMsg.remove();
+    }
+
+    // Insérer le HTML
+    target.insertAdjacentHTML(placement, html);
+
+    AppLogger.info(`${context} ajouté avec succès`);
+
+    // Callback optionnel (ex: réinitialiser les handlers)
+    if (onSuccess) onSuccess();
+
+    return true;
+  } catch (error) {
+    AppLogger.error(`Erreur ${context}`, error.message);
+    alert(`❌ Erreur: ${error.message}`);
+    return false;
+  }
+}
+
+// ========================================================================
 // MARK: POSTE_CIBLE HANDLERS (poste_cible_item.html)
 // ========================================================================
 
 function initPostesCibleHandlers() {
-  // Bouton pour ajouter une variante
-  document.querySelectorAll('.btn-poste-cible-add').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', addPostesCible);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Radio pour activer une variante
-  document.querySelectorAll('.poste-cible-radio').forEach(input => {
-    if (!input.hasAttribute('data-listener-initialized')) {
-      input.addEventListener('change', activatePostesCible);
-      input.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Input pour modifier le titre
-  document.querySelectorAll('#poste-cible-list input[type="text"]').forEach(input => {
-    if (!input.hasAttribute('data-listener-initialized')) {
-      input.addEventListener('blur', updatePostesCible);
-      input.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Bouton pour supprimer une variante
-  document.querySelectorAll('.poste-cible-delete').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', deletePostesCible);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
+  createHandlerInitializer([
+    { selector: '.btn-poste-cible-add', event: 'click', handler: addPostesCible },
+    { selector: '.poste-cible-radio', event: 'change', handler: activatePostesCible },
+    { selector: '#poste-cible-list input[type="text"]', event: 'blur', handler: updatePostesCible },
+    { selector: '.poste-cible-delete', event: 'click', handler: deletePostesCible }
+  ])();
 }
 
-function addPostesCible(e) {
+async function addPostesCible(e) {
   e.preventDefault();
   const candidatPk = e.target.closest('.btn-poste-cible-add').dataset.candidatPk;
 
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/poste-cible/ajouter/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(r => r.text())
-  .then(html => {
-    const listDiv = document.getElementById('poste-cible-list');
-    const emptyMsg = listDiv.querySelector('.text-muted.fst-italic');
-    if (emptyMsg) {
-      emptyMsg.remove();
-    }
-    listDiv.insertAdjacentHTML('beforeend', html);
-    initPostesCibleHandlers();
-  })
-  .catch(err => AppLogger.error('addPostesCible failed', err));
+  await postAndInsertHTML({
+    endpoint: `/candidat/${candidatPk}/poste-cible/ajouter/`,
+    formData: new FormData(),
+    targetSelector: '#poste-cible-list',
+    placement: 'beforeend',
+    emptyMsgSelector: '.text-muted.fst-italic',
+    context: 'Poste cible',
+    onSuccess: initPostesCibleHandlers
+  });
 }
 
 function activatePostesCible(e) {
@@ -713,61 +782,27 @@ function deletePostesCible(e) {
 // ========================================================================
 
 function initSkillsCibleHandlers() {
-  // Bouton pour ajouter une compétence cible
-  document.querySelectorAll('.btn-skills-cible-add').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', addSkillsCible);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Checkbox pour activer/désactiver une compétence cible
-  document.querySelectorAll('.skills-cible-checkbox').forEach(input => {
-    if (!input.hasAttribute('data-listener-initialized')) {
-      input.addEventListener('change', toggleSkillsCible);
-      input.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Input pour modifier le titre
-  document.querySelectorAll('#skills-cible-list input[type="text"]').forEach(input => {
-    if (!input.hasAttribute('data-listener-initialized')) {
-      input.addEventListener('blur', updateSkillsCible);
-      input.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Bouton pour supprimer une compétence cible
-  document.querySelectorAll('.skills-cible-delete').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', deleteSkillsCible);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
+  createHandlerInitializer([
+    { selector: '.btn-skills-cible-add', event: 'click', handler: addSkillsCible },
+    { selector: '.skills-cible-checkbox', event: 'change', handler: toggleSkillsCible },
+    { selector: '#skills-cible-list input[type="text"]', event: 'blur', handler: updateSkillsCible },
+    { selector: '.skills-cible-delete', event: 'click', handler: deleteSkillsCible }
+  ])();
 }
 
-function addSkillsCible(e) {
+async function addSkillsCible(e) {
   e.preventDefault();
   const candidatPk = e.target.closest('.btn-skills-cible-add').dataset.candidatPk;
 
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/skills-cible/ajouter/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(r => r.text())
-  .then(html => {
-    const listDiv = document.getElementById('skills-cible-list');
-    const emptyMsg = listDiv.querySelector('.text-muted.fst-italic');
-    if (emptyMsg) {
-      emptyMsg.remove();
-    }
-    listDiv.insertAdjacentHTML('beforeend', html);
-    initSkillsCibleHandlers();
-  })
-  .catch(err => AppLogger.error('Erreur addSkillsCible:', err));
+  await postAndInsertHTML({
+    endpoint: `/candidat/${candidatPk}/skills-cible/ajouter/`,
+    formData: new FormData(),
+    targetSelector: '#skills-cible-list',
+    placement: 'beforeend',
+    emptyMsgSelector: '.text-muted.fst-italic',
+    context: 'Compétence cible',
+    onSuccess: initSkillsCibleHandlers
+  });
 }
 
 function toggleSkillsCible(e) {
@@ -831,38 +866,13 @@ function deleteSkillsCible(e) {
 // ========================================================================
 
 function initMainSkillsHierarchyHandlers() {
-  // Ajouter root item pour main_skills
-  document.querySelectorAll('.btn-main-skills-hierarchy-add-root').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', addMainSkillsHierarchyParentItem);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Ajouter sous-item pour main_skills
-  document.querySelectorAll('.btn-main-skills-hierarchy-add-child').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', addMainSkillsHierarchyChildItem);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Mettre à jour item main_skills
-  document.querySelectorAll('.main-skills-hierarchy-title').forEach(input => {
-    if (!input.hasAttribute('data-listener-initialized')) {
-      input.addEventListener('change', updateMainSkillsHierarchyItem);
-      input.addEventListener('blur', updateMainSkillsHierarchyItem);
-      input.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Supprimer item main_skills
-  document.querySelectorAll('.btn-main-skills-hierarchy-delete').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', deleteMainSkillsHierarchyItem);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
+  createHandlerInitializer([
+    { selector: '.btn-main-skills-hierarchy-add-root', event: 'click', handler: addMainSkillsHierarchyParentItem },
+    { selector: '.btn-main-skills-hierarchy-add-child', event: 'click', handler: addMainSkillsHierarchyChildItem },
+    { selector: '.main-skills-hierarchy-title', event: 'change', handler: updateMainSkillsHierarchyItem },
+    { selector: '.main-skills-hierarchy-title', event: 'blur', handler: updateMainSkillsHierarchyItem },
+    { selector: '.btn-main-skills-hierarchy-delete', event: 'click', handler: deleteMainSkillsHierarchyItem }
+  ])();
 }
 
 // Ajouter un root item pour main_skills (bullet ou table)
@@ -1030,29 +1040,12 @@ function initFormationCertificationLangueHandlers() {
     langueForm.setAttribute('data-listener-initialized', 'true');
   }
 
-  // Formation delete
-  document.querySelectorAll('.btn-formation-remove').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', removeFormation);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Certification delete
-  document.querySelectorAll('.btn-certification-remove').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', removeCertification);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Langue delete
-  document.querySelectorAll('.btn-langue-remove').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', removeLangue);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
+  // Delete buttons consolidation
+  createHandlerInitializer([
+    { selector: '.btn-formation-remove', event: 'click', handler: removeFormation },
+    { selector: '.btn-certification-remove', event: 'click', handler: removeCertification },
+    { selector: '.btn-langue-remove', event: 'click', handler: removeLangue }
+  ])();
 }
 
 // ========================================================================
@@ -1268,38 +1261,13 @@ function removeLangue(e) {
 // ========================================================================
 
 function initXpProHierarchyHandlers() {
-  // Ajouter sous-item réalisation
-  document.querySelectorAll('.btn-xp-pro-hierarchy-add-child').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', addXpProHierarchyChildItem);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Mettre à jour réalisation
-  document.querySelectorAll('.xp-pro-hierarchy-title').forEach(input => {
-    if (!input.hasAttribute('data-listener-initialized')) {
-      input.addEventListener('change', updateXpProHierarchyItem);
-      input.addEventListener('blur', updateXpProHierarchyItem);
-      input.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Supprimer réalisation
-  document.querySelectorAll('.btn-xp-pro-hierarchy-delete').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', deleteXpProHierarchyItem);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
-
-  // Ajouter une réalisation racine
-  document.querySelectorAll('.btn-xp-pro-hierarchy-add-root').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', addXpProHierarchyParentItem);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
+  createHandlerInitializer([
+    { selector: '.btn-xp-pro-hierarchy-add-child', event: 'click', handler: addXpProHierarchyChildItem },
+    { selector: '.xp-pro-hierarchy-title', event: 'change', handler: updateXpProHierarchyItem },
+    { selector: '.xp-pro-hierarchy-title', event: 'blur', handler: updateXpProHierarchyItem },
+    { selector: '.btn-xp-pro-hierarchy-delete', event: 'click', handler: deleteXpProHierarchyItem },
+    { selector: '.btn-xp-pro-hierarchy-add-root', event: 'click', handler: addXpProHierarchyParentItem }
+  ])();
 }
 
 // Ajouter une réalisation racine (xp_pro)
@@ -1416,12 +1384,9 @@ function initExperienceHandlers() {
     experienceForm.setAttribute('data-listener-initialized', 'true');
   }
 
-  document.querySelectorAll('.btn-experience-remove').forEach(btn => {
-    if (!btn.hasAttribute('data-listener-initialized')) {
-      btn.addEventListener('click', removeExperience);
-      btn.setAttribute('data-listener-initialized', 'true');
-    }
-  });
+  createHandlerInitializer([
+    { selector: '.btn-experience-remove', event: 'click', handler: removeExperience }
+  ])();
 }
 
 function addExperience(e) {
