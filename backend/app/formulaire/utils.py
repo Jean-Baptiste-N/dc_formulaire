@@ -18,9 +18,9 @@ def clean_text(text):
     # Enlever les guillemets littéraux au début et fin (notamment du JSON avec double-encoding)
     text = re.sub(r'^["\']|["\']$', '', text)
 
-    # Supprimer caractères non-alphanumériques au début et fin
-    text = re.sub(r'^\W+', '', text)
-    text = re.sub(r'\W+$', '', text)
+    # Supprimer caractères non-alphanumériques au début et fin (sauf les parenthèses)
+    text = re.sub(r'^[^\w()+#]+', '', text)
+    text = re.sub(r'[^\w()+#]+$', '', text)
 
     return text.strip()
 

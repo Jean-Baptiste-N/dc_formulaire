@@ -726,42 +726,24 @@ function addSkillsCible(e) {
 
 function toggleSkillsCible(e) {
   const checkbox = e.target;
-  const candidatPk = checkbox.dataset.candidatPk;
-  const skillsCibleId = checkbox.dataset.skillsCible;
-
-  const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/skills-cible/${skillsCibleId}/toggle/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .catch(err => console.error('Erreur toggleSkillsCible:', err));
+  console.log(`[DIRTY] skills_cible marqué comme modifié (toggle checkbox)`);
+  dirtyState.skills_cible = true;
+  startAutosaveTimer(); // Relancer le timer pour auto-save
 }
 
 function updateSkillsCible(e) {
   const input = e.target;
-  const candidatPk = input.dataset.candidatPk;
-  const skillsCibleId = input.dataset.skillsCible;
   const title = input.value.trim();
 
-  // Ne faire la requête que si le titre a changé
+  // Ne faire l'auto-save que si le titre a changé
   if (title === input.dataset.originalTitle) {
     return;
   }
 
-  const formData = new FormData();
-  formData.append('title', title);
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-  fetch(`/candidat/${candidatPk}/skills-cible/${skillsCibleId}/mettre-a-jour/`, {
-    method: 'POST',
-    body: formData,
-  })
-  .then(() => {
-    input.dataset.originalTitle = title;
-  })
-  .catch(err => console.error('Erreur updateSkillsCible:', err));
+  input.dataset.originalTitle = title;
+  console.log(`[DIRTY] skills_cible marqué comme modifié (mise à jour titre: ${title})`);
+  dirtyState.skills_cible = true;
+  startAutosaveTimer(); // Relancer le timer pour auto-save
 }
 
 function deleteSkillsCible(e) {
@@ -872,6 +854,7 @@ function addMainSkillsHierarchyParentItem(e) {
 
     listDiv.insertAdjacentHTML('beforeend', html);
     initMainSkillsHierarchyHandlers();
+    startAutosaveTimer(); // Relancer le timer après l'ajout
   })
   .catch(err => console.error('Erreur addMainSkillsHierarchyParentItem:', err));
 }
@@ -913,6 +896,7 @@ function addMainSkillsHierarchyChildItem(e) {
   .then(html => {
     document.getElementById(`description-${itemId}`).insertAdjacentHTML('beforeend', html);
     initMainSkillsHierarchyHandlers();
+    startAutosaveTimer(); // Relancer le timer après l'ajout du sous-item
   })
   .catch(err => {
     console.error('Erreur addMainSkillsHierarchyChildItem:', err);
@@ -940,6 +924,9 @@ function updateMainSkillsHierarchyItem(e) {
   fetch(`/candidat/${CANDIDAT_PK}/main_skills/${section}/item/${itemId}/mettre-a-jour/`, {
     method: 'POST',
     body: formData,
+  })
+  .then(() => {
+    startAutosaveTimer(); // Relancer le timer après la mise à jour
   })
   .catch(err => console.error('Erreur updateMainSkillsHierarchyItem:', err));
 }
@@ -975,6 +962,7 @@ function deleteMainSkillsHierarchyItem(e) {
       console.log(`[DELETE SUCCESS] ${section} ${title} supprimé avec succès, section marqué comme modifié`);
       const itemDiv = document.getElementById(`item-${itemId}`);
       if (itemDiv) itemDiv.remove();
+      startAutosaveTimer(); // Relancer le timer après la suppression
     })
     .catch(err => console.error(`[ERROR] Exception lors de la suppression ${section}:`, err));
   }
@@ -1296,6 +1284,7 @@ function addXpProHierarchyParentItem(e) {
   .then(html => {
     document.getElementById(`realizations-${expIndex}`).insertAdjacentHTML('beforeend', html);
     initXpProHierarchyHandlers();
+    startAutosaveTimer(); // Relancer le timer après l'ajout de réalisation
   })
   .catch(err => console.error('Erreur addXpProHierarchyParentItem:', err));
 }
@@ -1331,6 +1320,7 @@ function addXpProHierarchyChildItem(e) {
   .then(html => {
     document.getElementById(`description-${itemId}`).insertAdjacentHTML('beforeend', html);
     initXpProHierarchyHandlers();
+    startAutosaveTimer(); // Relancer le timer après l'ajout de sous-item
   })
   .catch(err => {
     console.error('Erreur addXpProHierarchyChildItem:', err);
@@ -1346,6 +1336,7 @@ function updateXpProHierarchyItem(e) {
   // Marquer comme dirty pour auto-save 20s
   if (!dirtyState.xp_pro_step2[expIndex]) {
     dirtyState.xp_pro_step2[expIndex] = true;
+    startAutosaveTimer(); // Relancer le timer après la modification
   }
 }
 
@@ -1380,6 +1371,7 @@ function deleteXpProHierarchyItem(e) {
       if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
       if (!dirtyState.xp_pro_step2[expIndex]) dirtyState.xp_pro_step2[expIndex] = true;
       else if (typeof dirtyState.xp_pro_step2[expIndex] === 'object') dirtyState.xp_pro_step2[expIndex].dirty = true;
+      startAutosaveTimer(); // Relancer le timer après la suppression
     })
     .catch(err => console.error(`[ERROR] Exception lors de la suppression réalisation:`, err));
   }
@@ -1440,6 +1432,7 @@ function addExperience(e) {
     // Réinitialiser aussi les handlers xp_pro
     initXpProHierarchyHandlers();
     initXpProStep2Handlers();
+    startAutosaveTimer(); // Relancer le timer après l'ajout d'expérience
   })
   .catch(err => console.error(`[ERROR] Exception lors de l'ajout expérience:`, err));
 }
@@ -1474,6 +1467,7 @@ function removeExperience(e) {
       if (expDiv) {
         expDiv.remove();
       }
+      startAutosaveTimer(); // Relancer le timer après la suppression d'expérience
     } else {
       console.error(`[ERROR] Erreur suppression expérience: réponse HTTP ${r.status}`);
     }
@@ -1732,6 +1726,7 @@ function addXpProStep2Technology(e) {
   input.value = '';
   if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
   dirtyState.xp_pro_step2[expIndex] = true;
+  startAutosaveTimer(); // Relancer le timer après l'ajout de technologie
 }
 
 function removeXpProStep2Technology(e) {
@@ -1747,6 +1742,7 @@ function removeXpProStep2Technology(e) {
     console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié`);
     if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
     dirtyState.xp_pro_step2[expIndex] = true;
+    startAutosaveTimer(); // Relancer le timer après la suppression de technologie
   }
 }
 
@@ -1773,6 +1769,7 @@ function addXpProStep2Realization(e) {
     initXpProHierarchyHandlers();
     if (!dirtyState.xp_pro_step2) dirtyState.xp_pro_step2 = {};
     dirtyState.xp_pro_step2[expIndex] = true;
+    startAutosaveTimer(); // Relancer le timer après l'ajout de réalisation
   })
   .catch(err => console.error('Erreur addXpProStep2Realization:', err));
 }
@@ -2148,11 +2145,13 @@ function initAutosaveHandlers() {
           console.log('[DIRTY] poste_cible marqué comme modifié');
           dirtyState.poste_cible = true;
         }
+        startAutosaveTimer(); // Réinitialiser le timer
       });
       input.addEventListener('blur', function() {
         if (this.type === 'text' && this.dataset.skillsCible) {
           console.log('[DIRTY] skills_cible marqué comme modifié (blur)');
           dirtyState.skills_cible = true;
+          startAutosaveTimer(); // Réinitialiser le timer
         }
       });
       input.setAttribute('data-autosave-initialized', 'true');
@@ -2169,11 +2168,13 @@ function initAutosaveHandlers() {
           if (container && !dirtyState.xp_pro_step2[expIndex]) {
             console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (réalisation)`);
             dirtyState.xp_pro_step2[expIndex] = true;
+            startAutosaveTimer(); // Réinitialiser le timer
           }
         } else {
           const section = this.dataset.endpointBase === 'bullet' ? 'main_skills_bullet' : 'main_skills_table';
           console.log(`[DIRTY] ${section} marqué comme modifié`);
           dirtyState[section] = true;
+          startAutosaveTimer(); // Réinitialiser le timer
         }
       });
       input.setAttribute('data-autosave-initialized', 'true');
@@ -2189,6 +2190,7 @@ function initAutosaveHandlers() {
         if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
           console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (contexte)`);
           dirtyState.xp_pro_step2[expIndex] = true;
+          startAutosaveTimer(); // Réinitialiser le timer
         }
       });
       textarea.setAttribute('data-autosave-initialized', 'true');
@@ -2204,6 +2206,7 @@ function initAutosaveHandlers() {
         if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
           console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (technos)`);
           dirtyState.xp_pro_step2[expIndex] = true;
+          startAutosaveTimer(); // Réinitialiser le timer
         }
       });
       input.setAttribute('data-autosave-initialized', 'true');
