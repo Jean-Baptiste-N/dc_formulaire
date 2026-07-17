@@ -346,6 +346,7 @@ def candidat_edit(request, pk=None, slug=None):
         "form": form,
         "placeholders": placeholders,
         "xp_pro_placeholders": placeholders.get("xp_pro", []),
+        "DEBUG": settings.DEBUG,
     }
 
     return render(

@@ -525,6 +525,49 @@ const CANDIDAT_SLUG = '{{ candidat.slug }}';
 const CANDIDAT_DISPLAY_URL = '/candidat/{{ candidat.slug }}/modifier/';
 
 // ========================================================================
+// MARK: APP LOGGER - Logs configurables par environnement (Dev/Prod)
+// ========================================================================
+
+const IS_DEBUG = {{ DEBUG|lower }};  // true en dev, false en prod
+
+const AppLogger = {
+  // Configuration générale
+  ENABLED: IS_DEBUG,
+  MIN_LEVEL: IS_DEBUG ? 0 : 3,  // Dev: DEBUG (0), Prod: ERROR (3) seulement
+  
+  // Niveaux de sévérité
+  DEBUG: 0,
+  INFO: 1,
+  WARN: 2,
+  ERROR: 3,
+  
+  // Méthodes de logging
+  debug: function(message, data = null) {
+    if (this.ENABLED && this.DEBUG >= this.MIN_LEVEL) {
+      AppLogger.info(`[DEBUG] ${message}`, data || '');
+    }
+  },
+  
+  info: function(message, data = null) {
+    if (this.ENABLED && this.INFO >= this.MIN_LEVEL) {
+      AppLogger.info(`[INFO] ${message}`, data || '');
+    }
+  },
+  
+  warn: function(message, data = null) {
+    if (this.ENABLED && this.WARN >= this.MIN_LEVEL) {
+      AppLogger.warn(`[WARN] ${message}`, data || '');
+    }
+  },
+  
+  error: function(message, data = null) {
+    if (this.ENABLED && this.ERROR >= this.MIN_LEVEL) {
+      AppLogger.error(`[ERROR] ${message}`, data || '');
+    }
+  }
+};
+
+// ========================================================================
 // MARK: POSTE_CIBLE HANDLERS (poste_cible_item.html)
 // ========================================================================
 
@@ -583,7 +626,7 @@ function addPostesCible(e) {
     listDiv.insertAdjacentHTML('beforeend', html);
     initPostesCibleHandlers();
   })
-  .catch(err => console.error('Erreur addPostesCible:', err));
+  .catch(err => AppLogger.error('addPostesCible failed', err));
 }
 
 function activatePostesCible(e) {
@@ -604,11 +647,11 @@ function activatePostesCible(e) {
     if (!r.ok) {
       throw new Error(`HTTP ${r.status}`);
     }
-    console.log(`[SUCCESS] Poste cible ${posteCibleTitle} activé avec succès`);
+    AppLogger.info(`[SUCCESS] Poste cible ${posteCibleTitle} activé avec succès`);
     dirtyState.poste_cible = true;
   })
   .catch(err => {
-    console.error(`[ERROR] Erreur lors de l'activation du poste cible:`, err);
+    AppLogger.error(`Erreur activation poste cible`, err);
     // Revert the radio on error
     radio.checked = false;
   });
@@ -623,7 +666,7 @@ function updatePostesCible(e) {
     return;
   }
 
-  console.log(`[DIRTY] poste_cible marqué comme modifié (mise à jour titre: ${title})`);
+  AppLogger.info(`[DIRTY] poste_cible marqué comme modifié (mise à jour titre: ${title})`);
   dirtyState.poste_cible = true;
 }
 
@@ -634,7 +677,7 @@ function deletePostesCible(e) {
   if (!confirm('Supprimer cette variante de poste ?')) {
     return;
   }
-  console.log(`[DELETE] Utilisateur supprime le poste cible: ${posteCibleTitle}`);
+  AppLogger.info(`[DELETE] Utilisateur supprime le poste cible: ${posteCibleTitle}`);
 
   const candidatPk = btn.dataset.candidatPk;
   const posteCibleId = btn.dataset.posteCible;
@@ -647,7 +690,7 @@ function deletePostesCible(e) {
     body: formData,
   })
   .then(() => {
-    console.log(`[DELETE SUCCESS] Poste cible ${posteCibleTitle} supprimé avec succès, section marqué comme modifié`);
+    AppLogger.info(`Poste cible supprimé: ${posteCibleTitle}`);
     const itemDiv = document.getElementById(`poste-cible-${posteCibleId}`);
     if (itemDiv) {
       itemDiv.remove();
@@ -662,7 +705,7 @@ function deletePostesCible(e) {
       dirtyState['poste_cible'] = true;
     }
   })
-  .catch(err => console.error(`[ERROR] Exception lors de la suppression poste cible:`, err));
+  .catch(err => AppLogger.error(`Erreur suppression poste cible`, err));
 }
 
 // ========================================================================
@@ -724,7 +767,7 @@ function addSkillsCible(e) {
     listDiv.insertAdjacentHTML('beforeend', html);
     initSkillsCibleHandlers();
   })
-  .catch(err => console.error('Erreur addSkillsCible:', err));
+  .catch(err => AppLogger.error('Erreur addSkillsCible:', err));
 }
 
 function toggleSkillsCible(e) {
@@ -752,7 +795,7 @@ function deleteSkillsCible(e) {
   if (!confirm('Supprimer cette compétence cible ?')) {
     return;
   }
-  console.log(`[DELETE] Utilisateur supprime la compétence cible: ${skillsCibleTitle}`);
+  AppLogger.info(`[DELETE] Utilisateur supprime la compétence cible: ${skillsCibleTitle}`);
 
   const candidatPk = btn.dataset.candidatPk;
   const skillsCibleId = btn.dataset.skillsCible;
@@ -765,7 +808,7 @@ function deleteSkillsCible(e) {
     body: formData,
   })
   .then(() => {
-    console.log(`[DELETE SUCCESS] Compétence cible ${skillsCibleTitle} supprimée avec succès, section marqué comme modifié`);
+    AppLogger.info(`[DELETE SUCCESS] Compétence cible ${skillsCibleTitle} supprimée avec succès, section marqué comme modifié`);
     const itemDiv = document.getElementById(`skills-cible-${skillsCibleId}`);
     if (itemDiv) {
       itemDiv.remove();
@@ -780,7 +823,7 @@ function deleteSkillsCible(e) {
       dirtyState['skills_cible'] = true;
     }
   })
-  .catch(err => console.error(`[ERROR] Exception lors de la suppression compétence cible:`, err));
+  .catch(err => AppLogger.error(`[ERROR] Exception lors de la suppression compétence cible:`, err));
 }
 
 // ========================================================================
@@ -854,7 +897,7 @@ function addMainSkillsHierarchyParentItem(e) {
     initMainSkillsHierarchyHandlers();
     triggerAutoSave(`main_skills_${section}`);
   })
-  .catch(err => console.error('Erreur addMainSkillsHierarchyParentItem:', err));
+  .catch(err => AppLogger.error('Erreur addMainSkillsHierarchyParentItem:', err));
 }
 
 // Ajouter un sous-item pour main_skills
@@ -875,7 +918,7 @@ function addMainSkillsHierarchyChildItem(e) {
     return;
   }
 
-  console.log(`[DIRTY] ${dirtyKey} marqué comme modifié (ajout sous-domaine)`);
+  AppLogger.info(`[DIRTY] ${dirtyKey} marqué comme modifié (ajout sous-domaine)`);
   dirtyState[dirtyKey] = true;
 
   const formData = new FormData();
@@ -897,7 +940,7 @@ function addMainSkillsHierarchyChildItem(e) {
     startAutosaveTimer(); // Relancer le timer après l'ajout du sous-item
   })
   .catch(err => {
-    console.error('Erreur addMainSkillsHierarchyChildItem:', err);
+    AppLogger.error('Erreur addMainSkillsHierarchyChildItem:', err);
     alert(`❌ Erreur: ${err}`);
   });
 }
@@ -922,7 +965,7 @@ function updateMainSkillsHierarchyItem(e) {
     method: 'POST',
     body: formData,
   })
-  .catch(err => console.error('Erreur updateMainSkillsHierarchyItem:', err));
+  .catch(err => AppLogger.error('Erreur updateMainSkillsHierarchyItem:', err));
 }
 
 // Supprimer un item main_skills
@@ -941,7 +984,7 @@ function deleteMainSkillsHierarchyItem(e) {
     : `Supprimer: ${title} et ses enfants ?\n\nCette action est irréversible.`;
 
   if (confirm(message)) {
-    console.log(`[DELETE] Utilisateur supprime ${section}: ${title}`);
+    AppLogger.info(`[DELETE] Utilisateur supprime ${section}: ${title}`);
     const dirtyKey = `main_skills_${section}`;
     triggerAutoSave(dirtyKey);
 
@@ -953,11 +996,11 @@ function deleteMainSkillsHierarchyItem(e) {
       body: formData,
     })
     .then(() => {
-      console.log(`[DELETE SUCCESS] ${section} ${title} supprimé avec succès, section marqué comme modifié`);
+      AppLogger.info(`[DELETE SUCCESS] ${section} ${title} supprimé avec succès, section marqué comme modifié`);
       const itemDiv = document.getElementById(`item-${itemId}`);
       if (itemDiv) itemDiv.remove();
     })
-    .catch(err => console.error(`[ERROR] Exception lors de la suppression ${section}:`, err));
+    .catch(err => AppLogger.error(`[ERROR] Exception lors de la suppression ${section}:`, err));
   }
 }
 
@@ -1022,7 +1065,7 @@ function addFormation(e) {
   const candidatPk = form.action.split('/')[3]; // Extraire PK de l'URL
   const title = form.querySelector('input[name="title"]').value.trim();
 
-  console.log(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour formation: ${title}`);
+  AppLogger.info(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour formation: ${title}`);
 
   const formData = new FormData(form);
 
@@ -1034,12 +1077,12 @@ function addFormation(e) {
     if (r.ok) {
       return r.text();
     } else {
-      console.error(`[ERROR] Erreur ajout formation: réponse HTTP ${r.status}`);
+      AppLogger.error(`[ERROR] Erreur ajout formation: réponse HTTP ${r.status}`);
       throw new Error(`HTTP ${r.status}`);
     }
   })
   .then(html => {
-    console.log(`[SUCCESS] Formation ${title} ajoutée avec succès`);
+    AppLogger.info(`[SUCCESS] Formation ${title} ajoutée avec succès`);
     const listDiv = document.getElementById('formations-list');
     const emptyMsg = listDiv.querySelector('p.text-muted');
     if (emptyMsg) {
@@ -1049,7 +1092,7 @@ function addFormation(e) {
     form.reset();
     initFormationCertificationLangueHandlers();
   })
-  .catch(err => console.error(`[ERROR] Exception lors de l'ajout formation:`, err));
+  .catch(err => AppLogger.error(`[ERROR] Exception lors de l'ajout formation:`, err));
 }
 
 function addCertification(e) {
@@ -1058,7 +1101,7 @@ function addCertification(e) {
   const candidatPk = form.action.split('/')[3]; // Extraire PK de l'URL
   const title = form.querySelector('input[name="title"]').value.trim();
 
-  console.log(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour certification: ${title}`);
+  AppLogger.info(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour certification: ${title}`);
 
   const formData = new FormData(form);
 
@@ -1070,12 +1113,12 @@ function addCertification(e) {
     if (r.ok) {
       return r.text();
     } else {
-      console.error(`[ERROR] Erreur ajout certification: réponse HTTP ${r.status}`);
+      AppLogger.error(`[ERROR] Erreur ajout certification: réponse HTTP ${r.status}`);
       throw new Error(`HTTP ${r.status}`);
     }
   })
   .then(html => {
-    console.log(`[SUCCESS] Certification ${title} ajoutée avec succès`);
+    AppLogger.info(`[SUCCESS] Certification ${title} ajoutée avec succès`);
     const listDiv = document.getElementById('certifications-list');
     const emptyMsg = listDiv.querySelector('p.text-muted');
     if (emptyMsg) {
@@ -1085,7 +1128,7 @@ function addCertification(e) {
     form.reset();
     initFormationCertificationLangueHandlers();
   })
-  .catch(err => console.error(`[ERROR] Exception lors de l'ajout certification:`, err));
+  .catch(err => AppLogger.error(`[ERROR] Exception lors de l'ajout certification:`, err));
 }
 
 function addLangue(e) {
@@ -1094,7 +1137,7 @@ function addLangue(e) {
   const candidatPk = form.action.split('/')[3]; // Extraire PK de l'URL
   const title = form.querySelector('input[name="title"]').value.trim();
 
-  console.log(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour langue: ${title}`);
+  AppLogger.info(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour langue: ${title}`);
 
   const formData = new FormData(form);
 
@@ -1106,12 +1149,12 @@ function addLangue(e) {
     if (r.ok) {
       return r.text();
     } else {
-      console.error(`[ERROR] Erreur ajout langue: réponse HTTP ${r.status}`);
+      AppLogger.error(`[ERROR] Erreur ajout langue: réponse HTTP ${r.status}`);
       throw new Error(`HTTP ${r.status}`);
     }
   })
   .then(html => {
-    console.log(`[SUCCESS] Langue ${title} ajoutée avec succès`);
+    AppLogger.info(`[SUCCESS] Langue ${title} ajoutée avec succès`);
     const listDiv = document.getElementById('langues-list');
     const emptyMsg = listDiv.querySelector('p.text-muted');
     if (emptyMsg) {
@@ -1121,7 +1164,7 @@ function addLangue(e) {
     form.reset();
     initFormationCertificationLangueHandlers();
   })
-  .catch(err => console.error(`[ERROR] Exception lors de l'ajout langue:`, err));
+  .catch(err => AppLogger.error(`[ERROR] Exception lors de l'ajout langue:`, err));
 }
 
 function removeFormation(e) {
@@ -1133,7 +1176,7 @@ function removeFormation(e) {
   }
   const candidatPk = btn.dataset.candidatPk;
   const formationId = btn.dataset.itemId;
-  console.log(`[DELETE] Utilisateur supprime la formation: ${title}`);
+  AppLogger.info(`[DELETE] Utilisateur supprime la formation: ${title}`);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
@@ -1144,16 +1187,16 @@ function removeFormation(e) {
   })
   .then(r => {
     if (r.ok) {
-      console.log(`[DELETE SUCCESS] Formation ${title} supprimée avec succès`);
+      AppLogger.info(`[DELETE SUCCESS] Formation ${title} supprimée avec succès`);
       const formationDiv = btn.closest('.alert.alert-info');
       if (formationDiv) {
         formationDiv.remove();
       }
     } else {
-      console.error(`[ERROR] Erreur suppression formation: réponse HTTP ${r.status}`);
+      AppLogger.error(`[ERROR] Erreur suppression formation: réponse HTTP ${r.status}`);
     }
   })
-  .catch(err => console.error(`[ERROR] Exception lors de la suppression formation:`, err));
+  .catch(err => AppLogger.error(`[ERROR] Exception lors de la suppression formation:`, err));
 }
 
 function removeCertification(e) {
@@ -1165,7 +1208,7 @@ function removeCertification(e) {
   }
   const candidatPk = btn.dataset.candidatPk;
   const certificationId = btn.dataset.itemId;
-  console.log(`[DELETE] Utilisateur supprime la certification: ${title}`);
+  AppLogger.info(`[DELETE] Utilisateur supprime la certification: ${title}`);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
@@ -1176,16 +1219,16 @@ function removeCertification(e) {
   })
   .then(r => {
     if (r.ok) {
-      console.log(`[DELETE SUCCESS] Certification ${title} supprimée avec succès`);
+      AppLogger.info(`[DELETE SUCCESS] Certification ${title} supprimée avec succès`);
       const certDiv = btn.closest('.alert.alert-info');
       if (certDiv) {
         certDiv.remove();
       }
     } else {
-      console.error(`[ERROR] Erreur suppression certification: réponse HTTP ${r.status}`);
+      AppLogger.error(`[ERROR] Erreur suppression certification: réponse HTTP ${r.status}`);
     }
   })
-  .catch(err => console.error(`[ERROR] Exception lors de la suppression certification:`, err));
+  .catch(err => AppLogger.error(`[ERROR] Exception lors de la suppression certification:`, err));
 }
 
 function removeLangue(e) {
@@ -1197,7 +1240,7 @@ function removeLangue(e) {
   }
   const candidatPk = btn.dataset.candidatPk;
   const langueId = btn.dataset.itemId;
-  console.log(`[DELETE] Utilisateur supprime la langue: ${title}`);
+  AppLogger.info(`[DELETE] Utilisateur supprime la langue: ${title}`);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
@@ -1208,16 +1251,16 @@ function removeLangue(e) {
   })
   .then(r => {
     if (r.ok) {
-      console.log(`[DELETE SUCCESS] Langue ${title} supprimée avec succès`);
+      AppLogger.info(`[DELETE SUCCESS] Langue ${title} supprimée avec succès`);
       const langueDiv = btn.closest('.alert.alert-info');
       if (langueDiv) {
         langueDiv.remove();
       }
     } else {
-      console.error(`[ERROR] Erreur suppression langue: réponse HTTP ${r.status}`);
+      AppLogger.error(`[ERROR] Erreur suppression langue: réponse HTTP ${r.status}`);
     }
   })
-  .catch(err => console.error('Erreur removeLangue:', err));
+  .catch(err => AppLogger.error('Erreur removeLangue:', err));
 }
 
 // ========================================================================
@@ -1279,7 +1322,7 @@ function addXpProHierarchyParentItem(e) {
     initXpProHierarchyHandlers();
     triggerAutoSave('xp_pro_step2', expIndex);
   })
-  .catch(err => console.error('Erreur addXpProHierarchyParentItem:', err));
+  .catch(err => AppLogger.error('Erreur addXpProHierarchyParentItem:', err));
 }
 
 // Ajouter un sous-item réalisation
@@ -1316,7 +1359,7 @@ function addXpProHierarchyChildItem(e) {
     triggerAutoSave('xp_pro_step2', expIndex);
   })
   .catch(err => {
-    console.error('Erreur addXpProHierarchyChildItem:', err);
+    AppLogger.error('Erreur addXpProHierarchyChildItem:', err);
     alert(`❌ Erreur: ${err}`);
   });
 }
@@ -1343,7 +1386,7 @@ function deleteXpProHierarchyItem(e) {
     : `Supprimer: ${title} et ses enfants ?\n\nCette action est irréversible.`;
 
   if (confirm(message)) {
-    console.log(`[DELETE] Utilisateur supprime réalisation: ${title} (xp_pro_step2[${expIndex}])`);
+    AppLogger.info(`[DELETE] Utilisateur supprime réalisation: ${title} (xp_pro_step2[${expIndex}])`);
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
@@ -1352,12 +1395,12 @@ function deleteXpProHierarchyItem(e) {
       body: formData,
     })
     .then(() => {
-      console.log(`[DELETE SUCCESS] Réalisation ${title} supprimée, xp_pro_step2[${expIndex}] marqué comme modifié`);
+      AppLogger.info(`[DELETE SUCCESS] Réalisation ${title} supprimée, xp_pro_step2[${expIndex}] marqué comme modifié`);
       const itemDiv = document.getElementById(`item-${itemId}`);
       if (itemDiv) itemDiv.remove();
       triggerAutoSave('xp_pro_step2', expIndex);
     })
-    .catch(err => console.error(`[ERROR] Exception lors de la suppression réalisation:`, err));
+    .catch(err => AppLogger.error(`[ERROR] Exception lors de la suppression réalisation:`, err));
   }
 }
 
@@ -1387,7 +1430,7 @@ function addExperience(e) {
   const poste = form.querySelector('input[name="poste"]').value.trim();
   const company = form.querySelector('input[name="company"]').value.trim();
 
-  console.log(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour expérience: ${poste} chez ${company}`);
+  AppLogger.info(`[CLICK-SAVE] Utilisateur clique sur "Ajouter" pour expérience: ${poste} chez ${company}`);
 
   const formData = new FormData(form);
 
@@ -1399,12 +1442,12 @@ function addExperience(e) {
     if (r.ok) {
       return r.text();
     } else {
-      console.error(`[ERROR] Erreur ajout expérience: réponse HTTP ${r.status}`);
+      AppLogger.error(`[ERROR] Erreur ajout expérience: réponse HTTP ${r.status}`);
       throw new Error(`HTTP ${r.status}`);
     }
   })
   .then(html => {
-    console.log(`[SUCCESS] Expérience ${poste} chez ${company} ajoutée avec succès`);
+    AppLogger.info(`[SUCCESS] Expérience ${poste} chez ${company} ajoutée avec succès`);
     const listDiv = document.getElementById('experiences-list');
     const emptyMsg = listDiv.querySelector('.text-muted');
     if (emptyMsg) {
@@ -1417,7 +1460,7 @@ function addExperience(e) {
     initXpProHierarchyHandlers();
     initXpProStep2Handlers();
   })
-  .catch(err => console.error(`[ERROR] Exception lors de l'ajout expérience:`, err));
+  .catch(err => AppLogger.error(`[ERROR] Exception lors de l'ajout expérience:`, err));
 }
 
 function removeExperience(e) {
@@ -1430,7 +1473,7 @@ function removeExperience(e) {
   if (!confirm(`Supprimer l'expérience: ${poste}${subtitle} ?\n\nCette action supprimera aussi toutes les réalisations associées et est irréversible.`)) {
     return;
   }
-  console.log(`[DELETE] Utilisateur supprime l'expérience: ${poste}${subtitle}`);
+  AppLogger.info(`[DELETE] Utilisateur supprime l'expérience: ${poste}${subtitle}`);
 
   const candidatPk = btn.dataset.candidatPk;
   const expIndex = btn.dataset.expIndex;
@@ -1444,17 +1487,17 @@ function removeExperience(e) {
   })
   .then(r => {
     if (r.ok) {
-      console.log(`[DELETE SUCCESS] Expérience ${poste}${subtitle} supprimée avec succès`);
+      AppLogger.info(`[DELETE SUCCESS] Expérience ${poste}${subtitle} supprimée avec succès`);
       // Remove the experience card from the DOM
       const expDiv = btn.closest('.alert.alert-xp-pro');
       if (expDiv) {
         expDiv.remove();
       }
     } else {
-      console.error(`[ERROR] Erreur suppression expérience: réponse HTTP ${r.status}`);
+      AppLogger.error(`[ERROR] Erreur suppression expérience: réponse HTTP ${r.status}`);
     }
   })
-  .catch(err => console.error(`[ERROR] Exception lors de la suppression expérience:`, err));
+  .catch(err => AppLogger.error(`[ERROR] Exception lors de la suppression expérience:`, err));
 }
 
 
@@ -1470,7 +1513,7 @@ function initXpProStep2Handlers() {
         e.preventDefault();
         const container = this.closest('.xp-pro-step2-container');
         const candidatPk = container.dataset.candidatPk;
-        console.log(`[CLICK-SAVE] Utilisateur clique sur "Enregistrer"`);
+        AppLogger.info(`[CLICK-SAVE] Utilisateur clique sur "Enregistrer"`);
 
         // 1. SCANNER TOUS les order_index modifiés sur la page entière
         const orderInputsModifiés = [];
@@ -1485,13 +1528,13 @@ function initXpProStep2Handlers() {
               order_index: newOrderIndex,
               input: input
             });
-            console.log(`[CLICK-SAVE] Order modifié détecté: expId=${expId}: ${originalIndex} → ${newOrderIndex}`);
+            AppLogger.info(`[CLICK-SAVE] Order modifié détecté: expId=${expId}: ${originalIndex} → ${newOrderIndex}`);
           }
         });
 
         // 2. Sauvegarder TOUS les order_index modifiés EN UNE SEULE REQUÊTE ATOMIQUE
         if (orderInputsModifiés.length > 0) {
-          console.log(`[CLICK-SAVE] ${orderInputsModifiés.length} order_index(es) à sauvegarder (requête atomique)`);
+          AppLogger.info(`[CLICK-SAVE] ${orderInputsModifiés.length} order_index(es) à sauvegarder (requête atomique)`);
 
           // Préparer le payload sans l'objet input
           const payload = {
@@ -1512,30 +1555,30 @@ function initXpProStep2Handlers() {
           .then(r => r.json())
           .then(data => {
             if (data.success) {
-              console.log(`[CLICK-SAVE] ✓ TOUS les order_index ont été sauvegardés atomiquement:`, data.results);
+              AppLogger.info(`[CLICK-SAVE] ✓ TOUS les order_index ont été sauvegardés atomiquement:`, data.results);
               // Mettre à jour les data-original-index avec les nouveaux indices
               orderInputsModifiés.forEach(item => {
                 const newPos = data.results[item.exp_id];
                 if (newPos) {
                   item.input.dataset.originalIndex = newPos;
                   item.input.value = newPos;
-                  console.log(`[CLICK-SAVE] ✓ Mis à jour input pour expId=${item.exp_id}: ${newPos}`);
+                  AppLogger.info(`[CLICK-SAVE] ✓ Mis à jour input pour expId=${item.exp_id}: ${newPos}`);
                 }
               });
             } else {
-              console.error(`[ERROR] Erreur sauvegarde batch order_index:`, data.error);
+              AppLogger.error(`[ERROR] Erreur sauvegarde batch order_index:`, data.error);
             }
           })
-          .catch(err => console.error(`[ERROR] Exception lors du save batch order_index:`, err));
+          .catch(err => AppLogger.error(`[ERROR] Exception lors du save batch order_index:`, err));
 
           // Après que les order_index sont sauvés, sauvegarder les données xp_pro_step2
           setTimeout(() => {
-            console.log(`[CLICK-SAVE] Sauvegarde xp_pro_step2 après batch order_index`);
+            AppLogger.info(`[CLICK-SAVE] Sauvegarde xp_pro_step2 après batch order_index`);
             saveData('xp_pro_step2', true, container);
           }, 200);
         } else {
           // Pas de changement d'order_index, sauvegarder juste xp_pro_step2
-          console.log(`[CLICK-SAVE] Pas de changement d'order_index, sauvegarde xp_pro_step2 uniquement`);
+          AppLogger.info(`[CLICK-SAVE] Pas de changement d'order_index, sauvegarde xp_pro_step2 uniquement`);
           saveData('xp_pro_step2', true, container);
         }
       });
@@ -1549,7 +1592,7 @@ function initXpProStep2Handlers() {
       textarea.addEventListener('input', function(e) {
         const container = this.closest('.xp-pro-step2-container');
         const expIndex = container.dataset.expIndex;
-        console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (contexte)`);
+        AppLogger.info(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (contexte)`);
         triggerAutoSave('xp_pro_step2', expIndex);
       });
       textarea.setAttribute('data-listener-initialized', 'true');
@@ -1563,7 +1606,7 @@ function initXpProStep2Handlers() {
         const container = this.closest('.xp-pro-step2-container');
         const expIndex = container.dataset.expIndex;
         if (this.value.trim()) {
-          console.log(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (technos)`);
+          AppLogger.info(`[DIRTY] xp_pro_step2[${expIndex}] marqué comme modifié (technos)`);
           triggerAutoSave('xp_pro_step2', expIndex);
         }
       });
@@ -1613,7 +1656,7 @@ function initDragAndDropHandlers() {
       ghostClass: 'sortable-ghost',
       dragClass: 'sortable-drag',
       onEnd: function(evt) {
-        console.log('[DRAG-DROP] skills_cible réordonnés, marqué dirty pour auto-save');
+        AppLogger.info('[DRAG-DROP] skills_cible réordonnés, marqué dirty pour auto-save');
         dirtyState.skills_cible = true;
         startAutosaveTimer();
       }
@@ -1629,7 +1672,7 @@ function initDragAndDropHandlers() {
       ghostClass: 'sortable-ghost',
       dragClass: 'sortable-drag',
       onEnd: function(evt) {
-        console.log('[DRAG-DROP] main_skills_bullet réordonnés, marqué dirty pour auto-save');
+        AppLogger.info('[DRAG-DROP] main_skills_bullet réordonnés, marqué dirty pour auto-save');
         dirtyState.main_skills_bullet = true;
         startAutosaveTimer();
       }
@@ -1645,7 +1688,7 @@ function initDragAndDropHandlers() {
       ghostClass: 'sortable-ghost',
       dragClass: 'sortable-drag',
       onEnd: function(evt) {
-        console.log('[DRAG-DROP] main_skills_table réordonnés, marqué dirty pour auto-save');
+        AppLogger.info('[DRAG-DROP] main_skills_table réordonnés, marqué dirty pour auto-save');
         dirtyState.main_skills_table = true;
         startAutosaveTimer();
       }
@@ -1666,7 +1709,7 @@ function initDragAndDropHandlers() {
       onEnd: function(evt) {
         // Mark as dirty for auto-save (xp_pro_step2 keeps its auto-save behavior)
         if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
-          console.log(`[DRAG-DROP] xp_pro_step2[${expIndex}] réalisations réordonnées, marqué dirty pour auto-save`);
+          AppLogger.info(`[DRAG-DROP] xp_pro_step2[${expIndex}] réalisations réordonnées, marqué dirty pour auto-save`);
           triggerAutoSave('xp_pro_step2', expIndex);
         }
       }
@@ -1692,7 +1735,7 @@ function addXpProStep2Technology(e) {
   techs.forEach(tech => {
     // Nettoyer les guillemets d'échappement si présents
     const cleanedTech = tech.replace(/^\"|\"$/g, '');
-    console.log(`[DIRTY] Utilisateur ajoute la technologie: ${cleanedTech} (xp_pro_step2[${expIndex}])`);
+    AppLogger.info(`[DIRTY] Utilisateur ajoute la technologie: ${cleanedTech} (xp_pro_step2[${expIndex}])`);
     const badge = document.createElement('span');
     badge.className = 'badge bg-info text-dark me-2 mb-2';
     badge.innerHTML = `${cleanedTech} <button type="button" class="btn-xp-pro-step2-tech-remove" data-tech="${cleanedTech}" style="border: none; background: none; color: inherit; cursor: pointer; margin-left: 5px;">×</button>`;
@@ -1714,9 +1757,9 @@ function removeXpProStep2Technology(e) {
     const tech = badge.textContent.replace('×', '').trim();
     const container = e.target.closest('.xp-pro-step2-container');
     const expIndex = container?.dataset.expIndex;
-    console.log(`[DELETE] Utilisateur supprime la technologie: ${tech} (xp_pro_step2[${expIndex}])`);
+    AppLogger.info(`[DELETE] Utilisateur supprime la technologie: ${tech} (xp_pro_step2[${expIndex}])`);
     badge.remove();
-    console.log(`[DELETE SUCCESS] Technologie ${tech} supprimée`);
+    AppLogger.info(`[DELETE SUCCESS] Technologie ${tech} supprimée`);
     triggerAutoSave('xp_pro_step2', expIndex);
   }
 }
@@ -1728,7 +1771,7 @@ function addXpProStep2Realization(e) {
   const expIndex = container.dataset.expIndex;
   const candidatPk = container.dataset.candidatPk;
 
-  console.log(`[DIRTY] Utilisateur ajoute une réalisation pour xp_pro_step2[${expIndex}]`);
+  AppLogger.info(`[DIRTY] Utilisateur ajoute une réalisation pour xp_pro_step2[${expIndex}]`);
 
   const formData = new FormData();
   formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
@@ -1744,7 +1787,7 @@ function addXpProStep2Realization(e) {
     initXpProHierarchyHandlers();
     triggerAutoSave('xp_pro_step2', expIndex);
   })
-  .catch(err => console.error('Erreur addXpProStep2Realization:', err));
+  .catch(err => AppLogger.error('Erreur addXpProStep2Realization:', err));
 }
 
 // saveXpProStep2() a été supprimée et consolidée dans saveData() avec autosaveConfig.xp_pro_step2
@@ -1811,7 +1854,7 @@ function triggerAutoSave(section, subKey = null) {
   } else {
     dirtyState[section] = true;
   }
-  console.log(`[DIRTY] ${section}${subKey ? `[${subKey}]` : ''} marqué comme modifié`);
+  AppLogger.info(`[DIRTY] ${section}${subKey ? `[${subKey}]` : ''} marqué comme modifié`);
   startAutosaveTimer();
 }
 
@@ -1844,7 +1887,7 @@ function initClickSaveButton(selector, staticSection = null, getSectionFn = null
     if (!btn.hasAttribute('data-autosave-initialized')) {
       btn.addEventListener('click', function() {
         const section = getSectionFn ? getSectionFn.call(this) : staticSection;
-        console.log(`[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour ${section}`);
+        AppLogger.info(`[CLICK-SAVE] Utilisateur clique sur "Enregistrer" pour ${section}`);
         saveData(section, true);
       });
       btn.setAttribute('data-autosave-initialized', 'true');
@@ -1951,16 +1994,16 @@ function startAutosaveTimer() {
   // Réinitialiser le timer à chaque fois (debounce pattern)
   if (autosaveTimer) {
     clearTimeout(autosaveTimer);
-    console.log('[AUTO-SAVE] Réinitialisation du timer 20s');
+    AppLogger.info('[AUTO-SAVE] Réinitialisation du timer 20s');
   } else {
-    console.log('[AUTO-SAVE] Démarrage du timer 20s');
+    AppLogger.info('[AUTO-SAVE] Démarrage du timer 20s');
   }
 
   autosaveTimer = setTimeout(() => {
-    console.log('[AUTO-SAVE] Début de la sauvegarde après 20s d\'inactivité');
+    AppLogger.info('[AUTO-SAVE] Début de la sauvegarde après 20s d\'inactivité');
     ['poste_cible', 'skills_cible', 'main_skills_bullet', 'main_skills_table'].forEach(section => {
       if (dirtyState[section]) {
-        console.log(`[AUTO-SAVE] Sauvegarde de ${section} après 20s d'inactivité`);
+        AppLogger.info(`[AUTO-SAVE] Sauvegarde de ${section} après 20s d'inactivité`);
         saveData(section, false);
         dirtyState[section] = false; // Réinitialiser après save
       }
@@ -1968,7 +2011,7 @@ function startAutosaveTimer() {
     // Pour xp_pro_step2 (contexte + technos + réalisations, par expérience)
     Object.entries(dirtyState.xp_pro_step2).forEach(([expIndex, isDirty]) => {
       if (isDirty) {
-        console.log(`[AUTO-SAVE] Sauvegarde de xp_pro_step2[${expIndex}] après 20s d'inactivité`);
+        AppLogger.info(`[AUTO-SAVE] Sauvegarde de xp_pro_step2[${expIndex}] après 20s d'inactivité`);
         const container = document.querySelector(`.xp-pro-step2-container[data-exp-index="${expIndex}"]`);
         if (container) {
           saveData('xp_pro_step2', false, container);
@@ -2001,7 +2044,7 @@ async function saveData(section, showFeedback = false, element = null) {
     // Envoyer aussi les orderUpdates s'il y en a
     if (data.order_updates && data.order_updates.length > 0) {
       formData.append('order_updates', JSON.stringify(data.order_updates));
-      console.log(`[ORDER-UPDATES] Envoi de ${data.order_updates.length} changements d'ordre pour xp_pro_step2[${expIndex}]`, data.order_updates);
+      AppLogger.info(`[ORDER-UPDATES] Envoi de ${data.order_updates.length} changements d'ordre pour xp_pro_step2[${expIndex}]`, data.order_updates);
     }
   } else if (config.type === 'bulk') {
     const items = config.getItems();
@@ -2016,7 +2059,7 @@ async function saveData(section, showFeedback = false, element = null) {
     // Envoyer aussi les orderUpdates s'il y en a
     if (result.orderUpdates && result.orderUpdates.length > 0) {
       formData.append('order_updates', JSON.stringify(result.orderUpdates));
-      console.log(`[ORDER-UPDATES] Envoi de ${result.orderUpdates.length} changements d'ordre pour ${section}`, result.orderUpdates);
+      AppLogger.info(`[ORDER-UPDATES] Envoi de ${result.orderUpdates.length} changements d'ordre pour ${section}`, result.orderUpdates);
     }
   } else {
     return;
@@ -2042,7 +2085,7 @@ async function saveData(section, showFeedback = false, element = null) {
         textSpan.innerHTML = '<i class="bi bi-hourglass-split"></i> Enregistrement...';
         btn.disabled = true;
         if (showFeedback) {
-          console.log(`[SAVING] Enregistrement en cours pour ${section}...`);
+          AppLogger.info(`[SAVING] Enregistrement en cours pour ${section}...`);
         }
       }
     }
@@ -2057,11 +2100,11 @@ async function saveData(section, showFeedback = false, element = null) {
       if (showFeedback && autosaveTimer) {
         clearTimeout(autosaveTimer);
         autosaveTimer = null;
-        console.log('[CLICK-SAVE] Timer auto-save annulé après succès du click-save');
+        AppLogger.info('[CLICK-SAVE] Timer auto-save annulé après succès du click-save');
       }
 
       if (showFeedback && btn) {
-        console.log(`[SUCCESS] ${section} enregistrée avec succès !`);
+        AppLogger.info(`[SUCCESS] ${section} enregistrée avec succès !`);
         const textSpan = btn.querySelector('.btn-save-text') || btn;
         // Sauvegarder les classes initiales du bouton
         const initialClasses = btn.className;
@@ -2104,7 +2147,7 @@ async function saveData(section, showFeedback = false, element = null) {
         const expIndex = element.dataset.expIndex;
         dirtyState.xp_pro_step2[expIndex] = false;
         if (!showFeedback) {
-          console.log(`[AUTO-SAVE SUCCESS] xp_pro_step2[${expIndex}] enregistré automatiquement`);
+          AppLogger.info(`[AUTO-SAVE SUCCESS] xp_pro_step2[${expIndex}] enregistré automatiquement`);
         }
       } else {
         dirtyState[section] = false;
@@ -2119,18 +2162,18 @@ async function saveData(section, showFeedback = false, element = null) {
           });
         }
         if (!showFeedback) {
-          console.log(`[AUTO-SAVE SUCCESS] ${section} enregistré automatiquement`);
+          AppLogger.info(`[AUTO-SAVE SUCCESS] ${section} enregistré automatiquement`);
         }
       }
     } else {
-      console.error(`[ERROR] Erreur lors de la sauvegarde de ${section}: réponse HTTP ${response.status}`);
+      AppLogger.error(`[ERROR] Erreur lors de la sauvegarde de ${section}: réponse HTTP ${response.status}`);
       if (showFeedback && btn) {
         btn.innerHTML = '<i class="bi bi-exclamation-circle"></i> Erreur!';
         btn.disabled = false;
       }
     }
   } catch (err) {
-    console.error(`[ERROR] Exception dans saveData ${section}:`, err);
+    AppLogger.error(`[ERROR] Exception dans saveData ${section}:`, err);
     if (showFeedback && btn) {
       btn.innerHTML = '<i class="bi bi-exclamation-circle"></i> Erreur!';
       btn.disabled = false;
@@ -2172,7 +2215,7 @@ function generateUUID() {
 }
 
 function normalizeExistingItems() {
-  console.log('[NORMALIZE] Verification des items existants...');
+  AppLogger.info('[NORMALIZE] Verification des items existants...');
   var itemsNeedingNormalization = false;
 
   document.querySelectorAll('#formations-list .alert').forEach(function(div) {
@@ -2182,7 +2225,7 @@ function normalizeExistingItems() {
       var btn = div.querySelector('.btn-formation-remove');
       if (btn) btn.setAttribute('data-item-id', id);
       itemsNeedingNormalization = true;
-      console.log('[NORMALIZE] Formation sans UUID - assigne: ' + id);
+      AppLogger.info('[NORMALIZE] Formation sans UUID - assigne: ' + id);
     }
   });
 
@@ -2193,7 +2236,7 @@ function normalizeExistingItems() {
       var btn = div.querySelector('.btn-certification-remove');
       if (btn) btn.setAttribute('data-item-id', id);
       itemsNeedingNormalization = true;
-      console.log('[NORMALIZE] Certification sans UUID - assigne: ' + id);
+      AppLogger.info('[NORMALIZE] Certification sans UUID - assigne: ' + id);
     }
   });
 
@@ -2204,7 +2247,7 @@ function normalizeExistingItems() {
       var btn = div.querySelector('.btn-langue-remove');
       if (btn) btn.setAttribute('data-item-id', id);
       itemsNeedingNormalization = true;
-      console.log('[NORMALIZE] Langue sans UUID - assigne: ' + id);
+      AppLogger.info('[NORMALIZE] Langue sans UUID - assigne: ' + id);
     }
   });
 
@@ -2214,7 +2257,7 @@ function normalizeExistingItems() {
 
 // Initialiser les data-original-order pour tracker l'ordre initial
 function initializeOriginalOrderTracking() {
-  console.log('[INIT-ORDER-TRACKING] Initialisation du suivi des ordres initiaux');
+  AppLogger.info('[INIT-ORDER-TRACKING] Initialisation du suivi des ordres initiaux');
 
   // Skills cible
   document.querySelectorAll('#skills-cible-list [data-skills-cible-id]').forEach((item, index) => {
@@ -2258,21 +2301,21 @@ function initializeAllHandlers(context = 'DOMContentLoaded') {
     try {
       fn();
     } catch (err) {
-      console.error(`[${context}] Erreur dans ${name}:`, err);
+      AppLogger.error(`[${context}] Erreur dans ${name}:`, err);
     }
   });
 }
 
 // Initialiser au chargement
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('[DOMContentLoaded] Initialisation des handlers');
+  AppLogger.info('[DOMContentLoaded] Initialisation des handlers');
   normalizeExistingItems();
   initializeAllHandlers('DOMContentLoaded');
 });
 
 // Réinitialiser après chaque insertion HTMX
 document.addEventListener('htmx:afterSwap', () => {
-  console.log('[htmx:afterSwap] Réinitialisation des handlers');
+  AppLogger.info('[htmx:afterSwap] Réinitialisation des handlers');
   initializeAllHandlers('htmx:afterSwap');
 });
 </script>
