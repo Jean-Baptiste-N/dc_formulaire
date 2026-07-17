@@ -568,6 +568,72 @@ const AppLogger = {
 };
 
 // ========================================================================
+// MARK: CONFIGURATION CONSTANTS
+// ========================================================================
+
+const CONFIG = {
+  // API Endpoints (paramétrés avec candidatPk)
+  api: {
+    posteCible: (pk, action) => `/candidat/${pk}/poste-cible/${action}/`,
+    skillsCible: (pk, action) => `/candidat/${pk}/skills-cible/${action}/`,
+    mainSkills: (pk, action) => `/candidat/${pk}/main-skills/${action}/`,
+    experience: (pk, action) => `/candidat/${pk}/experience/${action}/`,
+    formation: (pk, action) => `/candidat/${pk}/formation/${action}/`,
+    certification: (pk, action) => `/candidat/${pk}/certification/${action}/`,
+    langue: (pk, action) => `/candidat/${pk}/langue/${action}/`,
+  },
+
+  // Sélecteurs CSS pour les DOM elements
+  selectors: {
+    // Poste cible
+    posteCibleList: '#poste-cible-list',
+    posteCibleBtn: '.btn-poste-cible-add',
+    posteCibleRadio: '.poste-cible-radio',
+    posteCibleDelete: '.poste-cible-delete',
+
+    // Skills cible
+    skillsCibleList: '#skills-cible-list',
+    skillsCibleBtn: '.btn-skills-cible-add',
+    skillsCibleCheckbox: '.skills-cible-checkbox',
+    skillsCibleDelete: '.skills-cible-delete',
+
+    // Main skills
+    mainSkillsList: '#main-skills-list',
+    mainSkillsBtn: '.btn-main-skills-add',
+
+    // Experience
+    experienceList: '#experience-list',
+    experienceBtn: '.btn-experience-add',
+
+    // Generic
+    emptyMessage: '.text-muted.fst-italic',
+    csrfToken: '[name=csrfmiddlewaretoken]',
+  },
+
+  // Messages de contexte pour les logs et UI
+  messages: {
+    posteCible: 'Poste cible',
+    skillsCible: 'Compétence cible',
+    mainSkills: 'Domaine de compétence',
+    experience: 'Expérience professionnelle',
+    formation: 'Formation',
+    certification: 'Certification',
+    langue: 'Langue',
+  },
+
+  // Timers et délais
+  timers: {
+    autoSaveDebounce: 20000, // 20 secondes
+  },
+
+  // Placements DOM par défaut
+  placements: {
+    afterend: 'afterend',
+    beforeend: 'beforeend',
+  }
+};
+
+// ========================================================================
 // MARK: GENERIC UTILITIES - Consolidation patterns
 // ========================================================================
 
@@ -676,24 +742,24 @@ async function postAndInsertHTML(config) {
 
 function initPostesCibleHandlers() {
   createHandlerInitializer([
-    { selector: '.btn-poste-cible-add', event: 'click', handler: addPostesCible },
-    { selector: '.poste-cible-radio', event: 'change', handler: activatePostesCible },
-    { selector: '#poste-cible-list input[type="text"]', event: 'blur', handler: updatePostesCible },
-    { selector: '.poste-cible-delete', event: 'click', handler: deletePostesCible }
+    { selector: CONFIG.selectors.posteCibleBtn, event: 'click', handler: addPostesCible },
+    { selector: CONFIG.selectors.posteCibleRadio, event: 'change', handler: activatePostesCible },
+    { selector: `${CONFIG.selectors.posteCibleList} input[type="text"]`, event: 'blur', handler: updatePostesCible },
+    { selector: CONFIG.selectors.posteCibleDelete, event: 'click', handler: deletePostesCible }
   ])();
 }
 
 async function addPostesCible(e) {
   e.preventDefault();
-  const candidatPk = e.target.closest('.btn-poste-cible-add').dataset.candidatPk;
+  const candidatPk = e.target.closest(CONFIG.selectors.posteCibleBtn).dataset.candidatPk;
 
   await postAndInsertHTML({
-    endpoint: `/candidat/${candidatPk}/poste-cible/ajouter/`,
+    endpoint: CONFIG.api.posteCible(candidatPk, 'ajouter'),
     formData: new FormData(),
-    targetSelector: '#poste-cible-list',
-    placement: 'beforeend',
-    emptyMsgSelector: '.text-muted.fst-italic',
-    context: 'Poste cible',
+    targetSelector: CONFIG.selectors.posteCibleList,
+    placement: CONFIG.placements.beforeend,
+    emptyMsgSelector: CONFIG.selectors.emptyMessage,
+    context: CONFIG.messages.posteCible,
     onSuccess: initPostesCibleHandlers
   });
 }
@@ -706,9 +772,9 @@ function activatePostesCible(e) {
   const candidatPk = radio.dataset.candidatPk;
 
   const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+  formData.append('csrfmiddlewaretoken', document.querySelector(CONFIG.selectors.csrfToken).value);
 
-  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/activer/`, {
+  fetch(CONFIG.api.posteCible(candidatPk, posteCibleId + '/activer'), {
     method: 'POST',
     body: formData,
   })
@@ -741,7 +807,7 @@ function updatePostesCible(e) {
 
 function deletePostesCible(e) {
   e.preventDefault();
-  const btn = e.target.closest('.poste-cible-delete');
+  const btn = e.target.closest(CONFIG.selectors.posteCibleDelete);
   const posteCibleTitle = btn.closest('.list-group-item')?.querySelector('input')?.value || 'ce poste';
   if (!confirm('Supprimer cette variante de poste ?')) {
     return;
@@ -752,9 +818,9 @@ function deletePostesCible(e) {
   const posteCibleId = btn.dataset.posteCible;
 
   const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+  formData.append('csrfmiddlewaretoken', document.querySelector(CONFIG.selectors.csrfToken).value);
 
-  fetch(`/candidat/${candidatPk}/poste-cible/${posteCibleId}/supprimer/`, {
+  fetch(CONFIG.api.posteCible(candidatPk, posteCibleId + '/supprimer'), {
     method: 'POST',
     body: formData,
   })
@@ -765,7 +831,7 @@ function deletePostesCible(e) {
       itemDiv.remove();
     }
     // Vérifier si la liste est vide et afficher le message
-    const listDiv = document.getElementById('poste-cible-list');
+    const listDiv = document.querySelector(CONFIG.selectors.posteCibleList);
     if (listDiv.children.length === 0) {
       listDiv.innerHTML = '<p class="text-muted fst-italic">Aucune variante ajoutée</p>';
     }
@@ -783,24 +849,24 @@ function deletePostesCible(e) {
 
 function initSkillsCibleHandlers() {
   createHandlerInitializer([
-    { selector: '.btn-skills-cible-add', event: 'click', handler: addSkillsCible },
-    { selector: '.skills-cible-checkbox', event: 'change', handler: toggleSkillsCible },
-    { selector: '#skills-cible-list input[type="text"]', event: 'blur', handler: updateSkillsCible },
-    { selector: '.skills-cible-delete', event: 'click', handler: deleteSkillsCible }
+    { selector: CONFIG.selectors.skillsCibleBtn, event: 'click', handler: addSkillsCible },
+    { selector: CONFIG.selectors.skillsCibleCheckbox, event: 'change', handler: toggleSkillsCible },
+    { selector: `${CONFIG.selectors.skillsCibleList} input[type="text"]`, event: 'blur', handler: updateSkillsCible },
+    { selector: CONFIG.selectors.skillsCibleDelete, event: 'click', handler: deleteSkillsCible }
   ])();
 }
 
 async function addSkillsCible(e) {
   e.preventDefault();
-  const candidatPk = e.target.closest('.btn-skills-cible-add').dataset.candidatPk;
+  const candidatPk = e.target.closest(CONFIG.selectors.skillsCibleBtn).dataset.candidatPk;
 
   await postAndInsertHTML({
-    endpoint: `/candidat/${candidatPk}/skills-cible/ajouter/`,
+    endpoint: CONFIG.api.skillsCible(candidatPk, 'ajouter'),
     formData: new FormData(),
-    targetSelector: '#skills-cible-list',
-    placement: 'beforeend',
-    emptyMsgSelector: '.text-muted.fst-italic',
-    context: 'Compétence cible',
+    targetSelector: CONFIG.selectors.skillsCibleList,
+    placement: CONFIG.placements.beforeend,
+    emptyMsgSelector: CONFIG.selectors.emptyMessage,
+    context: CONFIG.messages.skillsCible,
     onSuccess: initSkillsCibleHandlers
   });
 }
