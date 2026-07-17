@@ -417,15 +417,18 @@
               <div style="flex: 1;">
                 <strong>{{ exp.date }} : {{ exp.poste }}</strong> chez <strong>{{ exp.company }}</strong><br>
               </div>
-              <input type="number"
-                     class="form-control form-control-sm xp-pro-order-index"
-                     value="{{ exp.order_index|default:forloop.counter }}"
-                     min="1"
-                     data-exp-id="{{ exp.id }}"
-                     data-exp-index="{{ forloop.counter0 }}"
-                     data-candidat-pk="{{ candidat.pk }}"
-                     data-original-index="{{ exp.order_index|default:forloop.counter }}"
-                     title="Ordre d'affichage">
+              <div class="input-group input-group-sm" style="width: 80px;">
+                <span class="input-group-text">#</span>
+                <input type="number"
+                       class="form-control xp-pro-order-index"
+                       value="{{ exp.order_index|default:forloop.counter }}"
+                       min="1"
+                       data-exp-id="{{ exp.id }}"
+                       data-exp-index="{{ forloop.counter0 }}"
+                       data-candidat-pk="{{ candidat.pk }}"
+                       data-original-index="{{ exp.order_index|default:forloop.counter }}"
+                       title="Ordre d'affichage">
+              </div>
               <button type="button" class="btn btn-sm btn-danger btn-experience-remove"
                       data-candidat-pk="{{ candidat.pk }}"
                       data-exp-index="{{ forloop.counter0 }}">
@@ -1664,7 +1667,7 @@ function initDragAndDropHandlers() {
         // Mark as dirty for auto-save (xp_pro_step2 keeps its auto-save behavior)
         if (expIndex && !dirtyState.xp_pro_step2[expIndex]) {
           console.log(`[DRAG-DROP] xp_pro_step2[${expIndex}] réalisations réordonnées, marqué dirty pour auto-save`);
-          dirtyState.xp_pro_step2[expIndex] = true;
+          triggerAutoSave('xp_pro_step2', expIndex);
         }
       }
     });
@@ -1757,6 +1760,16 @@ function buildXpProStep2RealizationTree(container) {
   return items;
 }
 
+// Construire l'arbre des réalisations ET retourner les changements d'ordre (racine seulement)
+function buildXpProStep2RealizationTreeWithOrder(container) {
+  const items = buildXpProStep2RealizationTree(container);
+
+  // Recollecte seulement les changements d'ordre pour les items racine (depth 0)
+  const orderUpdates = getOrderChanges('.xp-pro-step2-realizations > .xp-pro-hierarchy-item');
+
+  return { items, orderUpdates };
+}
+
 function buildXpProStep2SingleItem(itemDiv) {
   const idAttr = itemDiv.id;
   if (!idAttr || !idAttr.startsWith('item-')) return null;
@@ -1802,6 +1815,28 @@ function triggerAutoSave(section, subKey = null) {
   startAutosaveTimer();
 }
 
+// Fonction helper pour extraire les changements d'ordre réels (filtrer les inchangés)
+function getOrderChanges(selector, originalOrderAttr = 'data-original-order') {
+  const changes = [];
+  document.querySelectorAll(selector).forEach((item, currentIndex) => {
+    const currentOrder = currentIndex + 1;
+    const originalOrder = parseInt(item.getAttribute(originalOrderAttr)) || currentOrder;
+
+    // Ne renvoyer que si l'ordre a changé
+    if (currentOrder !== originalOrder) {
+      const idAttr = item.getAttribute('data-item-id') || item.getAttribute('data-skills-cible-id');
+      if (idAttr) {
+        changes.push({
+          item_id: idAttr,
+          skill_id: idAttr, // Compatibilité avec skills_cible
+          order_index: currentOrder
+        });
+      }
+    }
+  });
+  return changes;
+}
+
 // Fonction générique pour initialiser un bouton click-save
 // getSectionFn: callback optionnel pour déterminer la section dynamiquement
 function initClickSaveButton(selector, staticSection = null, getSectionFn = null) {
@@ -1838,11 +1873,8 @@ const autosaveConfig = {
         active: document.querySelector(`input[data-skills-cible="${input.dataset.skillsCible}"][type="checkbox"]`)?.checked || false,
       }));
 
-      // Recollecte aussi les order_index depuis le DOM (ordres actuels après drag-drop)
-      const orderUpdates = Array.from(document.querySelectorAll('#skills-cible-list [data-skills-cible-id]')).map((item, index) => ({
-        skill_id: item.getAttribute('data-skills-cible-id'),
-        order_index: index + 1
-      }));
+      // Recollecte seulement les changements d'ordre (pas tous les ordre_index)
+      const orderUpdates = getOrderChanges('#skills-cible-list [data-skills-cible-id]');
 
       return { items, orderUpdates };
     },
@@ -1857,11 +1889,8 @@ const autosaveConfig = {
         title: item.querySelector('.main-skills-hierarchy-title').value.trim(),
       }));
 
-      // Recollecte order_index depuis le DOM (depth 0 only)
-      const orderUpdates = Array.from(document.querySelectorAll('#main_skills_bullet_list > .main-skills-hierarchy-item')).map((item, index) => ({
-        item_id: item.getAttribute('data-item-id'),
-        order_index: index + 1
-      }));
+      // Recollecte seulement les changements d'ordre (pas tous les ordre_index)
+      const orderUpdates = getOrderChanges('#main_skills_bullet_list > .main-skills-hierarchy-item');
 
       return { items, orderUpdates };
     },
@@ -1876,11 +1905,8 @@ const autosaveConfig = {
         title: item.querySelector('.main-skills-hierarchy-title').value.trim(),
       }));
 
-      // Recollecte order_index depuis le DOM (depth 0 only)
-      const orderUpdates = Array.from(document.querySelectorAll('#main_skills_table_list > .main-skills-hierarchy-item')).map((item, index) => ({
-        item_id: item.getAttribute('data-item-id'),
-        order_index: index + 1
-      }));
+      // Recollecte seulement les changements d'ordre (pas tous les ordre_index)
+      const orderUpdates = getOrderChanges('#main_skills_table_list > .main-skills-hierarchy-item');
 
       return { items, orderUpdates };
     },
@@ -1900,9 +1926,9 @@ const autosaveConfig = {
         .map(tech => tech.replace(/^"|"$/g, '')) // Enlever les guillemets d'échappement
         .filter(t => t);
       const realizationsDiv = container.querySelector('.xp-pro-step2-realizations');
-      const realizations = buildXpProStep2RealizationTree(realizationsDiv);
+      const { items: realizations, orderUpdates } = buildXpProStep2RealizationTreeWithOrder(realizationsDiv);
 
-      return { context, env_tech: envTech, description: realizations };
+      return { context, env_tech: envTech, description: realizations, order_updates: orderUpdates };
     },
     endpoint: (expIndex) => `/candidat/${CANDIDAT_PK}/experience/${expIndex}/step2-update/`,
     type: 'xp_pro_step2'
@@ -1972,6 +1998,11 @@ async function saveData(section, showFeedback = false, element = null) {
     formData.append('context', data.context);
     formData.append('env_tech', JSON.stringify(data.env_tech));
     formData.append('realizations', JSON.stringify(data.description));
+    // Envoyer aussi les orderUpdates s'il y en a
+    if (data.order_updates && data.order_updates.length > 0) {
+      formData.append('order_updates', JSON.stringify(data.order_updates));
+      console.log(`[ORDER-UPDATES] Envoi de ${data.order_updates.length} changements d'ordre pour xp_pro_step2[${expIndex}]`, data.order_updates);
+    }
   } else if (config.type === 'bulk') {
     const items = config.getItems();
     endpoint = config.endpoint();
@@ -2022,6 +2053,13 @@ async function saveData(section, showFeedback = false, element = null) {
     });
 
     if (response.ok) {
+      // Annuler le timer auto-save si un click-save vient de réussir
+      if (showFeedback && autosaveTimer) {
+        clearTimeout(autosaveTimer);
+        autosaveTimer = null;
+        console.log('[CLICK-SAVE] Timer auto-save annulé après succès du click-save');
+      }
+
       if (showFeedback && btn) {
         console.log(`[SUCCESS] ${section} enregistrée avec succès !`);
         const textSpan = btn.querySelector('.btn-save-text') || btn;
@@ -2047,11 +2085,16 @@ async function saveData(section, showFeedback = false, element = null) {
           item.setAttribute('data-original-order', index + 1);
         });
       } else if (section === 'main_skills_bullet') {
-        document.querySelectorAll('#main_skills_bullet_list > [data-item-id]').forEach((item, index) => {
+        document.querySelectorAll('#main_skills_bullet_list > .main-skills-hierarchy-item').forEach((item, index) => {
           item.setAttribute('data-original-order', index + 1);
         });
       } else if (section === 'main_skills_table') {
-        document.querySelectorAll('#main_skills_table_list > [data-item-id]').forEach((item, index) => {
+        document.querySelectorAll('#main_skills_table_list > .main-skills-hierarchy-item').forEach((item, index) => {
+          item.setAttribute('data-original-order', index + 1);
+        });
+      } else if (section === 'xp_pro_step2' && element) {
+        // Réinitialiser les data-original-order pour réalisations
+        element.querySelectorAll('.xp-pro-step2-realizations > .xp-pro-hierarchy-item').forEach((item, index) => {
           item.setAttribute('data-original-order', index + 1);
         });
       }
@@ -2104,8 +2147,8 @@ function initAutosaveHandlers() {
     return `main_skills_${this.dataset.section}`;
   });
 
-  // NOTE: Les handlers personnalisés (updateMainSkillsHierarchyItem, updateXpProHierarchyItem, 
-  // updateSkillsCible, updatePostesCible, etc.) marquent déjà dirtyState et appellent 
+  // NOTE: Les handlers personnalisés (updateMainSkillsHierarchyItem, updateXpProHierarchyItem,
+  // updateSkillsCible, updatePostesCible, etc.) marquent déjà dirtyState et appellent
   // startAutosaveTimer(). Pas besoin de listeners supplémentaires pour éviter les doublons.
 }
 
@@ -2163,6 +2206,34 @@ function normalizeExistingItems() {
       itemsNeedingNormalization = true;
       console.log('[NORMALIZE] Langue sans UUID - assigne: ' + id);
     }
+  });
+
+  // Initialiser data-original-order pour tracker les changements d'ordre
+  initializeOriginalOrderTracking();
+}
+
+// Initialiser les data-original-order pour tracker l'ordre initial
+function initializeOriginalOrderTracking() {
+  console.log('[INIT-ORDER-TRACKING] Initialisation du suivi des ordres initiaux');
+
+  // Skills cible
+  document.querySelectorAll('#skills-cible-list [data-skills-cible-id]').forEach((item, index) => {
+    item.setAttribute('data-original-order', index + 1);
+  });
+
+  // Main skills bullet (root items only)
+  document.querySelectorAll('#main_skills_bullet_list > .main-skills-hierarchy-item').forEach((item, index) => {
+    item.setAttribute('data-original-order', index + 1);
+  });
+
+  // Main skills table (root items only)
+  document.querySelectorAll('#main_skills_table_list > .main-skills-hierarchy-item').forEach((item, index) => {
+    item.setAttribute('data-original-order', index + 1);
+  });
+
+  // XP Pro realizations (root items only) pour chaque expérience
+  document.querySelectorAll('.xp-pro-step2-realizations > .xp-pro-hierarchy-item').forEach((item, index) => {
+    item.setAttribute('data-original-order', index + 1);
   });
 }
 
