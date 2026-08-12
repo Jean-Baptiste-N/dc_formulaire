@@ -544,25 +544,25 @@ const AppLogger = {
   // Méthodes de logging
   debug: function(message, data = null) {
     if (this.ENABLED && this.DEBUG >= this.MIN_LEVEL) {
-      AppLogger.info(`[DEBUG] ${message}`, data || '');
+      console.log(`[DEBUG] ${message}`, data || '');
     }
   },
 
   info: function(message, data = null) {
     if (this.ENABLED && this.INFO >= this.MIN_LEVEL) {
-      AppLogger.info(`[INFO] ${message}`, data || '');
+      console.log(`[INFO] ${message}`, data || '');
     }
   },
 
   warn: function(message, data = null) {
     if (this.ENABLED && this.WARN >= this.MIN_LEVEL) {
-      AppLogger.warn(`[WARN] ${message}`, data || '');
+      console.warn(`[WARN] ${message}`, data || '');
     }
   },
 
   error: function(message, data = null) {
     if (this.ENABLED && this.ERROR >= this.MIN_LEVEL) {
-      AppLogger.error(`[ERROR] ${message}`, data || '');
+      console.error(`[ERROR] ${message}`, data || '');
     }
   }
 };
@@ -649,9 +649,15 @@ const CONFIG = {
  *   ]);
  */
 function createHandlerInitializer(bindings) {
-  return function init() {
+  return function init(container = null) {
     bindings.forEach(({ selector, event, handler }) => {
-      document.querySelectorAll(selector).forEach(el => {
+      // Si container est fourni, chercher seulement dedans; sinon, tout le document
+      const searchIn = container || document;
+      const elements = container 
+        ? container.querySelectorAll(selector)
+        : document.querySelectorAll(selector);
+      
+      elements.forEach(el => {
         if (!el.hasAttribute('data-listener-initialized')) {
           el.addEventListener(event, handler);
           el.setAttribute('data-listener-initialized', 'true');
@@ -931,14 +937,14 @@ function deleteSkillsCible(e) {
 // MARK: MAIN_SKILLS HANDLERS (main_skills_hierarchy_item.html)
 // ========================================================================
 
-function initMainSkillsHierarchyHandlers() {
+function initMainSkillsHierarchyHandlers(container = null) {
   createHandlerInitializer([
     { selector: '.btn-main-skills-hierarchy-add-root', event: 'click', handler: addMainSkillsHierarchyParentItem },
     { selector: '.btn-main-skills-hierarchy-add-child', event: 'click', handler: addMainSkillsHierarchyChildItem },
     { selector: '.main-skills-hierarchy-title', event: 'change', handler: updateMainSkillsHierarchyItem },
     { selector: '.main-skills-hierarchy-title', event: 'blur', handler: updateMainSkillsHierarchyItem },
     { selector: '.btn-main-skills-hierarchy-delete', event: 'click', handler: deleteMainSkillsHierarchyItem }
-  ])();
+  ])(container);
 }
 
 // Ajouter un root item pour main_skills (bullet ou table)
@@ -970,7 +976,9 @@ function addMainSkillsHierarchyParentItem(e) {
     }
 
     listDiv.insertAdjacentHTML('beforeend', html);
-    initMainSkillsHierarchyHandlers();
+    // Initialiser les handlers seulement pour le nouvel élément inséré
+    const newItem = listDiv.lastElementChild;
+    initMainSkillsHierarchyHandlers(newItem);
     triggerAutoSave(`main_skills_${section}`);
   })
   .catch(err => AppLogger.error('Erreur addMainSkillsHierarchyParentItem:', err));
@@ -1011,8 +1019,11 @@ function addMainSkillsHierarchyChildItem(e) {
     return r.text();
   })
   .then(html => {
-    document.getElementById(`description-${itemId}`).insertAdjacentHTML('beforeend', html);
-    initMainSkillsHierarchyHandlers();
+    const descContainer = document.getElementById(`description-${itemId}`);
+    descContainer.insertAdjacentHTML('beforeend', html);
+    // Initialiser les handlers seulement pour le nouvel élément inséré
+    const newItem = descContainer.lastElementChild;
+    initMainSkillsHierarchyHandlers(newItem);
     startAutosaveTimer(); // Relancer le timer après l'ajout du sous-item
   })
   .catch(err => {
@@ -1326,14 +1337,14 @@ function removeLangue(e) {
 // MARK: XP_PRO HANDLERS (xp_pro_hierarchy_item.html)
 // ========================================================================
 
-function initXpProHierarchyHandlers() {
+function initXpProHierarchyHandlers(container = null) {
   createHandlerInitializer([
     { selector: '.btn-xp-pro-hierarchy-add-child', event: 'click', handler: addXpProHierarchyChildItem },
     { selector: '.xp-pro-hierarchy-title', event: 'change', handler: updateXpProHierarchyItem },
     { selector: '.xp-pro-hierarchy-title', event: 'blur', handler: updateXpProHierarchyItem },
     { selector: '.btn-xp-pro-hierarchy-delete', event: 'click', handler: deleteXpProHierarchyItem },
     { selector: '.btn-xp-pro-hierarchy-add-root', event: 'click', handler: addXpProHierarchyParentItem }
-  ])();
+  ])(container);
 }
 
 // Ajouter une réalisation racine (xp_pro)
@@ -1352,8 +1363,11 @@ function addXpProHierarchyParentItem(e) {
   })
   .then(r => r.text())
   .then(html => {
-    document.getElementById(`realizations-${expIndex}`).insertAdjacentHTML('beforeend', html);
-    initXpProHierarchyHandlers();
+    const realizationsDiv = document.getElementById(`realizations-${expIndex}`);
+    realizationsDiv.insertAdjacentHTML('beforeend', html);
+    // Initialiser les handlers seulement pour le nouvel élément inséré
+    const newItem = realizationsDiv.lastElementChild;
+    initXpProHierarchyHandlers(newItem);
     triggerAutoSave('xp_pro_step2', expIndex);
   })
   .catch(err => AppLogger.error('Erreur addXpProHierarchyParentItem:', err));
@@ -1388,8 +1402,11 @@ function addXpProHierarchyChildItem(e) {
     return r.text();
   })
   .then(html => {
-    document.getElementById(`description-${itemId}`).insertAdjacentHTML('beforeend', html);
-    initXpProHierarchyHandlers();
+    const descContainer = document.getElementById(`description-${itemId}`);
+    descContainer.insertAdjacentHTML('beforeend', html);
+    // Initialiser les handlers seulement pour le nouvel élément inséré
+    const newItem = descContainer.lastElementChild;
+    initXpProHierarchyHandlers(newItem);
     triggerAutoSave('xp_pro_step2', expIndex);
   })
   .catch(err => {
@@ -1815,7 +1832,9 @@ function addXpProStep2Realization(e) {
   .then(html => {
     const realizationsDiv = container.querySelector(`#realizations-${expIndex}`);
     realizationsDiv.insertAdjacentHTML('beforeend', html);
-    initXpProHierarchyHandlers();
+    // Initialiser les handlers seulement pour le nouvel élément inséré
+    const newItem = realizationsDiv.lastElementChild;
+    initXpProHierarchyHandlers(newItem);
     triggerAutoSave('xp_pro_step2', expIndex);
   })
   .catch(err => AppLogger.error('Erreur addXpProStep2Realization:', err));
