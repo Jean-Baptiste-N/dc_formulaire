@@ -23,7 +23,7 @@ class Candidat(models.Model):
         default=dict,
         blank=True,
         verbose_name="Dossier de compétences",
-    )
+    )  # Note: JSONField handles mutable default properly via callable
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Mis à jour le")
@@ -31,7 +31,7 @@ class Candidat(models.Model):
     class Meta:
         verbose_name = "Candidat"
         verbose_name_plural = "Candidats"
-        ordering = ["-updated_at"]
+        ordering = ("-updated_at",)
 
     def __str__(self):
         return f"{self.prenom} {self.nom}"

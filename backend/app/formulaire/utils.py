@@ -1,6 +1,7 @@
-import re
 import calendar
-from datetime import datetime
+import re
+from datetime import datetime, timezone
+
 from docx import Document
 
 # ===========================================================================
@@ -96,7 +97,7 @@ def parse_date_to_end_date(date_str):
     Retourne un tuple (date_obj, date_str) pour le tri.
     """
     if not date_str or not isinstance(date_str, str):
-        return (datetime.min, "")
+        return (datetime.min.replace(tzinfo=timezone.utc), date_str)
 
     date_str = date_str.strip()
 
@@ -108,7 +109,7 @@ def parse_date_to_end_date(date_str):
     def get_last_day_of_month(year, month):
         """Retourne le dernier jour du mois donné."""
         last_day = calendar.monthrange(year, month)[1]
-        return datetime(year, month, last_day)
+        return datetime(year, month, last_day, tzinfo=timezone.utc)
 
     # Format: "MM/YYYY – MM/YYYY" ou "MM/YYYY - MM/YYYY"
     month_year_range = re.search(
@@ -128,10 +129,10 @@ def parse_date_to_end_date(date_str):
     # Format: "YYYY-YYYY" (ex: 2014-2016)
     year_range = re.search(r'(\d{4})\s*(?:-|–|—)\s*(\d{4})', normalized)
     if year_range:
-        start_year, end_year = year_range.groups()
+        _, end_year = year_range.groups()
         try:
             end_year = int(end_year)
-            date_obj = datetime(end_year, 12, 31)
+            date_obj = datetime(end_year, 12, 31, tzinfo=timezone.utc)
             return (date_obj, date_str)
         except (ValueError, OverflowError):
             pass
@@ -178,7 +179,7 @@ def parse_date_to_end_date(date_str):
     if year_only:
         try:
             year = int(year_only.group(1))
-            date_obj = datetime(year, 12, 31)
+            date_obj = datetime(year, 12, 31, tzinfo=timezone.utc)
             return (date_obj, date_str)
         except (ValueError, OverflowError):
             pass
@@ -215,7 +216,7 @@ def parse_date_to_end_date(date_str):
     # Sinon, chercher les "YYYY" seules (4 chiffres seuls, pas dans une plage)
     for match in re.finditer(r'\b(\d{4})\b', normalized):
         year = int(match.group(1))
-        all_dates_year_only.append((match.start(), datetime(year, 12, 31)))
+        all_dates_year_only.append((match.start(), datetime(year, 12, 31, tzinfo=timezone.utc)))
 
     # Si on a trouvé des années seules, prendre la DERNIÈRE
     if all_dates_year_only:
@@ -228,7 +229,7 @@ def parse_date_to_end_date(date_str):
             pass
 
     # Si aucun format ne correspond, retourner une date minimale
-    return (datetime.min, date_str)
+    return (datetime.min.replace(tzinfo=timezone.utc), date_str)
 
 
 def sort_items_by_date_desc(items, date_field="date"):

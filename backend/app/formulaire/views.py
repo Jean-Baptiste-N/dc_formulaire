@@ -1,24 +1,28 @@
+import io
 import json
 import logging
+import tempfile
 import uuid
 from pathlib import Path
-import io
-import tempfile
-from typing import Tuple, Literal, Optional
-from docxtpl import DocxTemplate
+from typing import Literal
 
 from django.conf import settings
-from django.http import HttpResponse, JsonResponse, Http404
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils.html import escape
 from django.views.decorators.http import require_POST
+from docxtpl import DocxTemplate
 
 from .forms import CandidatInfoForm
 from .models import Candidat
 from .utils import (
-    clean_text, remove_empty_paragraphs, sort_dossier_items, sort_xp_pro_by_order_index,
-    normalize_item_with_id_and_order, normalize_items_list_with_order
+    clean_text,
+    normalize_item_with_id_and_order,
+    normalize_items_list_with_order,
+    remove_empty_paragraphs,
+    sort_dossier_items,
+    sort_xp_pro_by_order_index,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,7 +38,7 @@ def _new_id() -> str:
     """
     return str(uuid.uuid4())
 
-def get_candidat_or_redirect(pk_or_slug, index=0) -> Tuple[Literal['success', 'redirect', 'not_found'], Optional[Candidat]]:
+def get_candidat_or_redirect(pk_or_slug, index=0) -> tuple[Literal['success', 'redirect', 'not_found'], Candidat | None]:
     """Lookup candidat par slug ou pk. Si accès via pk, redirige vers slug.
 
     Pour les slugs avec doublons, utiliser le paramètre 'index' pour accéder au Nth candidat.
@@ -821,7 +825,7 @@ def main_skills_hierarchy_update(request, pk, section, item_id):
         candidat.save(update_fields=["dossier"])
 
         return HttpResponse("OK")
-    except Exception as e:
+    except (ValueError, KeyError) as e:
         logger.error(f"Erreur main_skills_hierarchy_update: {e}")
         return HttpResponse(f"Erreur: {e}", status=400)
 
@@ -844,7 +848,7 @@ def main_skills_hierarchy_delete(request, pk, section, item_id):
         candidat.save(update_fields=["dossier"])
 
         return HttpResponse("OK")
-    except Exception as e:
+    except (ValueError, KeyError) as e:
         logger.error(f"Erreur main_skills_hierarchy_delete: {e}")
         return HttpResponse(f"Erreur: {e}", status=400)
 
@@ -1486,9 +1490,7 @@ def xp_pro_realization_add(request, pk, exp_index):
         experience = dossier["xp_pro"][exp_index]
 
         # Initialiser description si nécessaire
-        if "description" not in experience:
-            experience["description"] = []
-        elif not isinstance(experience["description"], list):
+        if "description" not in experience or not isinstance(experience["description"], list):
             experience["description"] = []
 
         # Vérifier si c'est un sous-item (a un parent_id)
@@ -1837,9 +1839,9 @@ def candidat_export_docx(request, pk=None, slug=None):
             Path(tmp_path).unlink(missing_ok=True)
 
     except Exception as e:
-        logger.exception("Erreur lors de la génération du DOCX pour le candidat %s: %s", pk, str(e))
+        logger.exception("Erreur lors de la génération du DOCX pour le candidat %s", pk)
         return HttpResponse(
-            f"Une erreur est survenue lors de la génération du document:\n{str(e)}",
+            f"Une erreur est survenue lors de la génération du document:\n{e!s}",
             status=500,
             content_type="text/plain; charset=utf-8",
         )
