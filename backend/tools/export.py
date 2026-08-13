@@ -1,7 +1,9 @@
-import docxtpl
-import json
 import argparse
+import json
+
+import docxtpl
 from docx import Document
+
 
 def remove_empty_paragraphs(docx_path):
     """Supprime les bullets vides ET les paragraphes vides dans les tables (colonne 1 seulement)"""

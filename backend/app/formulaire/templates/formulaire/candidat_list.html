@@ -18,7 +18,7 @@
           <th>Nom</th>
           <th>Prénom</th>
           <th>Email</th>
-          <th>Mis à jour</th>
+          <th>Dernière mise à jour</th>
           <th class="text-end">Actions</th>
         </tr>
       </thead>
@@ -57,4 +57,12 @@
     <a href="{% url 'formulaire:candidat_create' %}">Créer le premier</a>.
   </div>
 {% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <a href="{% url 'formulaire:guide_pdf' %}"
+     target="_blank"
+     class="btn btn-primary">
+    <i class="bi bi-file-earmark-pdf"></i> Guide d'utilisation
+  </a>
+</div>
 {% endblock %}

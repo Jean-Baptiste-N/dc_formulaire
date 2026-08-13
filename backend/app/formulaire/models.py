@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.utils import timezone
 from django.utils.text import slugify
 
 
@@ -23,20 +24,32 @@ class Candidat(models.Model):
         default=dict,
         blank=True,
         verbose_name="Dossier de compétences",
-    )
+    )  # Note: JSONField handles mutable default properly via callable
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Mis à jour le")
+    updated_at = models.DateTimeField(default=timezone.now, verbose_name="Mis à jour le")
 
     class Meta:
         verbose_name = "Candidat"
         verbose_name_plural = "Candidats"
-        ordering = ["-updated_at"]
+        ordering = ("-updated_at",)
 
     def __str__(self):
         return f"{self.prenom} {self.nom}"
 
     def save(self, *args, **kwargs):
+        # Toujours mettre à jour updated_at au moment de l'enregistrement (sans microsecondes)
+        self.updated_at = timezone.now().replace(microsecond=0)
+
+        # Truncate created_at to seconds si c'est la première sauvegarde
+        if not self.pk:
+            self.created_at = timezone.now().replace(microsecond=0)
+        # S'assurer que updated_at est toujours sauvegardé, même avec update_fields
+        if 'update_fields' in kwargs:
+            update_fields = kwargs['update_fields']
+            if 'updated_at' not in update_fields:
+                kwargs['update_fields'] = list(update_fields) + ['updated_at']
+
         if not self.slug:
             self.slug = slugify(f"{self.prenom}-{self.nom}")
         super().save(*args, **kwargs)
