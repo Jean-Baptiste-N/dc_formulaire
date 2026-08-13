@@ -6,6 +6,11 @@ app_name = "formulaire"
 
 urlpatterns = [
     # ========================================================================
+    # GUIDE PDF
+    # ========================================================================
+    path("guide/", views.serve_guide_pdf, name="guide_pdf"),
+
+    # ========================================================================
     # 1. HEADERS & INFOS DU CANDIDAT - List, Create, Edit, Detail
     # ========================================================================
     path("", views.candidat_list, name="candidat_list"),

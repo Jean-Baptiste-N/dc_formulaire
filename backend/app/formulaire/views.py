@@ -28,6 +28,22 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 # ============================================================================
+# MARK: GUIDE - Serve guide PDF
+# ============================================================================
+
+def serve_guide_pdf(request):
+    """Serve the PDF guide directly."""
+    guide_path = Path("/guide") / "GUIDE UTILISATION.pdf"
+
+    if not guide_path.exists():
+        raise Http404("Guide PDF not found")
+
+    with open(guide_path, "rb") as f:
+        response = HttpResponse(f.read(), content_type="application/pdf")
+        response["Content-Disposition"] = 'inline; filename="GUIDE_UTILISATION.pdf"'
+        return response
+
+# ============================================================================
 # MARK: 0. HELPERS - Utility functions
 # ============================================================================
 
