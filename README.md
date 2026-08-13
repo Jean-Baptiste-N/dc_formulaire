@@ -118,6 +118,9 @@ dc_formulaire/
 │           └── migrations/      # Migrations de BD
 ├── templates_docx/
 │   └── template_jinja.docx     # ← Template DOCX à personnaliser
+├── guide/
+│   ├── GUIDE UTILSATION.docx   #
+│   └── GUIDE UTILSATION.pdf    # ← Guide d'utilisation affiché en PDF viewer
 └── postgres/                    # (ignoré) Volume de données PostgreSQL
 ```
 
