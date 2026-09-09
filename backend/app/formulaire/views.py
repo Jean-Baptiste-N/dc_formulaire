@@ -798,7 +798,7 @@ def main_skills_hierarchy_add_child(request, pk, section):
         if "main_skills" not in dossier or section not in dossier["main_skills"]:
             return HttpResponse("Section introuvable", status=404)
 
-        if depth > 2:
+        if depth > 3:
             return HttpResponse("⚠️ Limite de profondeur atteinte (4 niveaux maximum)", status=400)
 
         # Trouver le parent
