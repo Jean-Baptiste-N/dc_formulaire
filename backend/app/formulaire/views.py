@@ -292,6 +292,11 @@ def candidat_create(request):
             candidat = form.save(commit=False)
             candidat.dossier = _empty_dossier()
 
+            # Stocker la valeur initiale de xp_duration dans xp_duration_start
+            # pour l'auto-incrémentation ultérieure
+            if candidat.xp_duration is not None:
+                candidat.xp_duration_start = candidat.xp_duration
+
             # Ajouter une première variante de poste cible avec le poste principal
             if candidat.poste:
                 candidat.dossier["poste_cible"].append({
@@ -330,6 +335,9 @@ def candidat_edit(request, pk=None, slug=None):
     # Synchro du header et initialisation des defaults (poste_cible)
     # À faire en premier, avant toute autre logique
     _sync_header_and_defaults(candidat)
+
+    # Mettre à jour automatiquement xp_duration si elle a changé
+    candidat.update_xp_duration()
 
     # Enrichir les réalisations et hiérarchies avec des IDs si nécessaire et sauvegarder
     ids_added = False
@@ -379,6 +387,9 @@ def candidat_edit(request, pk=None, slug=None):
         if form.is_valid():
             form.save()
 
+            # Mettre à jour automatiquement xp_duration après la sauvegarde
+            candidat.update_xp_duration()
+
             # Synchroniser les infos dans le dossier['header']
             # (le formulaire a mis à jour candidat, on synchro dans le dossier)
             _sync_header_and_defaults(candidat)
@@ -420,6 +431,9 @@ def candidat_detail(request, pk=None, slug=None):
         if index > 0:
             url += f'?index={index}'
         return redirect(url)
+
+    # Mettre à jour automatiquement xp_duration si elle a changé
+    candidat.update_xp_duration()
 
     # Trier les items par date (anti-chronologique) au chargement
     if candidat.dossier:
