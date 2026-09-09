@@ -196,6 +196,8 @@ def _get_placeholders():
             "bullet": {
                 0: "Domaine de Compétence",
                 1: "Expertise",
+                2: "Activité",
+                3: "Sous-activité",
             },
             "table": {
                 0: "Catégorie",
@@ -777,7 +779,7 @@ def main_skills_hierarchy_add(request, pk, section):
             "depth": 0,
             "target_index": len(dossier["main_skills"][section]) - 1,
             "endpoint_base": f"main_skills_{section}",
-            "max_depth": 1,
+            "max_depth": 3,
             "main_skills_placeholders": placeholders,
         }
     )
@@ -796,8 +798,8 @@ def main_skills_hierarchy_add_child(request, pk, section):
         if "main_skills" not in dossier or section not in dossier["main_skills"]:
             return HttpResponse("Section introuvable", status=404)
 
-        if depth > 1:
-            return HttpResponse("⚠️ Limite de profondeur atteinte (2 niveaux maximum)", status=400)
+        if depth > 2:
+            return HttpResponse("⚠️ Limite de profondeur atteinte (4 niveaux maximum)", status=400)
 
         # Trouver le parent
         parent_list, parent_idx = _find_main_skills_hierarchy_parent_and_index(dossier["main_skills"][section], parent_id)
@@ -827,7 +829,7 @@ def main_skills_hierarchy_add_child(request, pk, section):
                 "depth": depth,
                 "target_index": target_index,
                 "endpoint_base": f"main_skills_{section}",
-                "max_depth": 1,
+                "max_depth": 3,
                 "main_skills_placeholders": placeholders,
             }
         )
