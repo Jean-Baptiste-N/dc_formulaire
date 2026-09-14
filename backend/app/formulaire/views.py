@@ -196,6 +196,8 @@ def _get_placeholders():
             "bullet": {
                 0: "Domaine de Compétence",
                 1: "Expertise",
+                2: "Activité",
+                3: "Sous-activité",
             },
             "table": {
                 0: "Catégorie",
@@ -292,6 +294,11 @@ def candidat_create(request):
             candidat = form.save(commit=False)
             candidat.dossier = _empty_dossier()
 
+            # Stocker la valeur initiale de xp_duration dans xp_duration_start
+            # pour l'auto-incrémentation ultérieure
+            if candidat.xp_duration is not None:
+                candidat.xp_duration_start = candidat.xp_duration
+
             # Ajouter une première variante de poste cible avec le poste principal
             if candidat.poste:
                 candidat.dossier["poste_cible"].append({
@@ -330,6 +337,9 @@ def candidat_edit(request, pk=None, slug=None):
     # Synchro du header et initialisation des defaults (poste_cible)
     # À faire en premier, avant toute autre logique
     _sync_header_and_defaults(candidat)
+
+    # Mettre à jour automatiquement xp_duration si elle a changé
+    candidat.update_xp_duration()
 
     # Enrichir les réalisations et hiérarchies avec des IDs si nécessaire et sauvegarder
     ids_added = False
@@ -379,6 +389,9 @@ def candidat_edit(request, pk=None, slug=None):
         if form.is_valid():
             form.save()
 
+            # Mettre à jour automatiquement xp_duration après la sauvegarde
+            candidat.update_xp_duration()
+
             # Synchroniser les infos dans le dossier['header']
             # (le formulaire a mis à jour candidat, on synchro dans le dossier)
             _sync_header_and_defaults(candidat)
@@ -420,6 +433,9 @@ def candidat_detail(request, pk=None, slug=None):
         if index > 0:
             url += f'?index={index}'
         return redirect(url)
+
+    # Mettre à jour automatiquement xp_duration si elle a changé
+    candidat.update_xp_duration()
 
     # Trier les items par date (anti-chronologique) au chargement
     if candidat.dossier:
@@ -763,7 +779,7 @@ def main_skills_hierarchy_add(request, pk, section):
             "depth": 0,
             "target_index": len(dossier["main_skills"][section]) - 1,
             "endpoint_base": f"main_skills_{section}",
-            "max_depth": 1,
+            "max_depth": 3,
             "main_skills_placeholders": placeholders,
         }
     )
@@ -782,8 +798,8 @@ def main_skills_hierarchy_add_child(request, pk, section):
         if "main_skills" not in dossier or section not in dossier["main_skills"]:
             return HttpResponse("Section introuvable", status=404)
 
-        if depth > 1:
-            return HttpResponse("⚠️ Limite de profondeur atteinte (2 niveaux maximum)", status=400)
+        if depth > 3:
+            return HttpResponse("⚠️ Limite de profondeur atteinte (4 niveaux maximum)", status=400)
 
         # Trouver le parent
         parent_list, parent_idx = _find_main_skills_hierarchy_parent_and_index(dossier["main_skills"][section], parent_id)
@@ -813,7 +829,7 @@ def main_skills_hierarchy_add_child(request, pk, section):
                 "depth": depth,
                 "target_index": target_index,
                 "endpoint_base": f"main_skills_{section}",
-                "max_depth": 1,
+                "max_depth": 3,
                 "main_skills_placeholders": placeholders,
             }
         )

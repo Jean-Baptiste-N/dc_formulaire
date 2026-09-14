@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from django import forms
 from django.forms import ModelForm
 
@@ -13,8 +15,8 @@ class CandidatInfoForm(ModelForm):
 
     class Meta:
         model = Candidat
-        fields = ["nom", "prenom", "email", "trigramme", "poste", "xp_duration"]
-        widgets = {
+        fields: ClassVar[list[str]] = ["nom", "prenom", "email", "trigramme", "poste", "xp_duration"]
+        widgets: ClassVar[dict[str, forms.Widget]] = {
             "nom": forms.TextInput(attrs={"class": "form-control", "placeholder": "DUPONT"}),
             "prenom": forms.TextInput(attrs={"class": "form-control", "placeholder": "Jean"}),
             "email": forms.EmailInput(
@@ -24,7 +26,7 @@ class CandidatInfoForm(ModelForm):
             "poste": forms.TextInput(attrs={"class": "form-control", "placeholder": "ex: Développeur Python"}),
             "xp_duration": forms.NumberInput(attrs={"class": "form-control", "placeholder": "ex: 3", "min": "0"}),
         }
-        labels = {
+        labels: ClassVar[dict[str, str]] = {
             "nom": "Nom",
             "prenom": "Prénom",
             "email": "Email",
@@ -32,7 +34,7 @@ class CandidatInfoForm(ModelForm):
             "poste": "Poste",
             "xp_duration": "Années d'expérience",
         }
-        help_texts = {
+        help_texts: ClassVar[dict[str, str]] = {
             "nom": "Votre nom de famille",
             "prenom": "Votre prénom",
             "email": "Adresse email professionnelle",
