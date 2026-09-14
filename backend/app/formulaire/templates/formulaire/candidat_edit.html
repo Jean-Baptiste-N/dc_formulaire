@@ -135,7 +135,7 @@
     <div id="main_skills_bullet_list">
       {% if candidat.dossier.main_skills.bullet %}
       {% for item in candidat.dossier.main_skills.bullet %}
-      {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_bullet" main_skills_placeholders=placeholders.main_skills.bullet max_depth=1 %}
+      {% include "formulaire/partials/main_skills_hierarchy_item.html" with item=item depth=0 target_index=forloop.counter0 endpoint_base="main_skills_bullet" main_skills_placeholders=placeholders.main_skills.bullet max_depth=3 %}
       {% endfor %}
       {% else %}
       <p class="text-muted">Aucune compétence ajoutée</p>
@@ -996,8 +996,8 @@ function addMainSkillsHierarchyChildItem(e) {
   const section = endpointBase.replace('main_skills_', ''); // 'bullet' ou 'table'
   const dirtyKey = `main_skills_${section}`;
 
-  // Refuser si on dépasse la limite de profondeur (max 2 niveaux: 0, 1)
-  if (childDepth > 1) {
+  // Refuser si on dépasse la limite de profondeur (max 4 niveaux: 0, 1, 2, 3)
+  if (childDepth > 3) {
     alert(`⚠️ Limite de profondeur atteinte (2 niveaux maximum)`);
     return;
   }
