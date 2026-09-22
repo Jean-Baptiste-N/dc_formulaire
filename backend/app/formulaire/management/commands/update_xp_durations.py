@@ -10,6 +10,7 @@ Options:
 """
 
 from django.core.management.base import BaseCommand
+
 from formulaire.models import Candidat
 
 

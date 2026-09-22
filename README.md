@@ -176,6 +176,32 @@ POSTGRES_PASSWORD=your-secure-password
 ALLOWED_HOSTS=localhost,127.0.0.1
 ```
 
+## ⏱️ Auto-Incrémentation Expérience (XP Duration)
+
+L'application gère automatiquement la progression de l'expérience professionnelle :
+
+**Fonctionnement** :
+- À la création, l'utilisateur renseigne sa durée d'expérience initiale
+- Le système mémorise cette valeur (`xp_duration_start`) et la date de création
+- La durée affichée (`xp_duration`) se recalcule automatiquement : `initial + ⌊(aujourd'hui - création) / 365.25⌋`
+- Transparente pour l'utilisateur : aucune action manuelle requise
+
+**Exemple** :
+```
+2026-09-09 : Création avec 5 ans d'XP → affiche "5"
+2027-09-09 : Auto-calcul → affiche "6"
+2028-09-09 : Auto-calcul → affiche "7"
+```
+
+**Commande admin** : 
+```bash
+# Mettre à jour tous les candidats
+docker compose exec web python manage.py update_xp_durations
+
+# Voir les changements avant de les appliquer
+docker compose exec web python manage.py update_xp_durations --dry-run
+```
+
 ## 📄 Export DOCX
 
 Pour exporter le dossier d'un candidat en document Word :
@@ -227,4 +253,4 @@ python manage.py runserver
 
 ## 📝 Licence
 
-© 2025 - DC Formulaire
+© 2026 - DC Formulaire

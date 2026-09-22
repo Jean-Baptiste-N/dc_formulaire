@@ -1,12 +1,14 @@
 """
 Test DOCX export to identify template rendering issues.
 """
-from django.core.management.base import BaseCommand
-from django.conf import settings
-from pathlib import Path
-from docxtpl import DocxTemplate
-from formulaire.models import Candidat
 import logging
+from pathlib import Path
+
+from django.conf import settings
+from django.core.management.base import BaseCommand
+from docxtpl import DocxTemplate
+
+from formulaire.models import Candidat
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +21,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         candidat_id = options['candidat_id']
-        
+
         try:
             candidat = Candidat.objects.get(pk=candidat_id)
         except Candidat.DoesNotExist:
@@ -27,7 +29,7 @@ class Command(BaseCommand):
             return
 
         template_path = Path(settings.DOCX_TEMPLATE_PATH)
-        
+
         if not template_path.exists():
             self.stdout.write(self.style.ERROR(f'Template not found: {template_path}'))
             return
@@ -76,22 +78,22 @@ class Command(BaseCommand):
 
             self.stdout.write(self.style.SUCCESS('\n=== Rendering Template ==='))
             tpl.render(context)
-            
+
             self.stdout.write(self.style.SUCCESS('✅ Template rendered successfully!'))
-            
+
             # Try to save to a test file
             import io
             buffer = io.BytesIO()
             tpl.save(buffer)
             buffer.seek(0)
-            
+
             test_path = Path(settings.DOCX_TEMPLATE_PATH).parent / "test_export.docx"
             with open(test_path, 'wb') as f:
                 f.write(buffer.read())
-            
+
             self.stdout.write(self.style.SUCCESS(f'✅ Saved test file: {test_path}'))
-            
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f'❌ Error: {str(e)}'))
+
+        except (OSError, FileNotFoundError, ValueError, AttributeError) as e:
+            self.stdout.write(self.style.ERROR(f'❌ Error: {e!s}'))
             import traceback
             self.stdout.write(self.style.ERROR(traceback.format_exc()))
