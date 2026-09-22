@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1,dos-comp.epsilon.fr", cast=Csv())
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -93,3 +93,8 @@ DOCX_TEMPLATE_PATH = config(
     "DOCX_TEMPLATE_PATH",
     default=str(BASE_DIR.parent.parent / "templates_docx" / "template_jinja.docx"),
 )
+
+CSRF_TRUSTED_ORIGINS = ['https://dos-comp.epsilon.fr', 'https://localhost']
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = False  # ← Important pour les formulaires
