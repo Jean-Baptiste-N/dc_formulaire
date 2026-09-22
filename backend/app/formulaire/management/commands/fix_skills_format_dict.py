@@ -3,6 +3,7 @@ Migration des competences du format string vers le format dict {title, descripti
 Utilise apres la modification du code qui attend des dicts pour les skills.
 """
 from django.core.management.base import BaseCommand
+
 from formulaire.models import Candidat
 
 
